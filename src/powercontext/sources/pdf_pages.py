@@ -89,6 +89,12 @@ _METRIC_TERMS = (
     "cash",
 )
 _STATEMENT_WEIGHT = 2.0
+# Document identities look like ``PEPSICO_2022_10K``; the company token is what a question
+# names, so the form and period tokens must not count as addressing the filing.
+_DOCUMENT_TOKEN = re.compile(r"[a-z0-9]+")
+_DOCUMENT_NOISE_TOKENS = frozenset(
+    {"10k", "10q", "8k", "pdf", "annual", "report", "reports", "form", "fy", "q1", "q2", "q3", "q4"}
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -175,7 +181,7 @@ def parse_pdf_document(value: PDFDocumentInput, /) -> tuple[PDFPageInput, ...]:
     return tuple(pages)
 
 
-async def search_pdf_pages(memory: object, question: str, limit: int = 20) -> tuple[object, ...]:
+async def search_pdf_pages(memory: object, question: str, limit: int = 10) -> tuple[object, ...]:
     """Return distinct, exact page citations for one natural-language question.
 
     The shared keyword recall applies an admission floor that a long analyst question can
@@ -192,16 +198,45 @@ async def search_pdf_pages(memory: object, question: str, limit: int = 20) -> tu
     if not isinstance(question, str) or not question.strip():
         raise ValueError("question must be a non-empty string")
     candidates = await _pdf_page_candidates(memory)
-    return _rank_pdf_pages(candidates, question, limit)
+    scoped = _question_document_candidates(candidates, question)
+    return _rank_pdf_pages(scoped, question, limit)
 
 
-async def _pdf_page_candidates(memory: object) -> list[tuple[object, str]]:
+def _question_document_candidates(
+    candidates: Sequence[tuple[object, str, str]],
+    question: str,
+) -> Sequence[tuple[object, str, str]]:
+    """Narrow to the filing the question names, so one report cannot crowd out another.
+
+    A document set may hold several filings, and a page of the wrong company competes for
+    the same top-N slots. Every page identity carries its document id, so a question that
+    names exactly one filing is answered from that filing alone. Comparisons and unnamed
+    questions keep the whole set.
+    """
+
+    documents: dict[str, set[str]] = {}
+    for _citation, _text, document_id in candidates:
+        documents.setdefault(document_id, set())
+    if len(documents) < 2:
+        return candidates
+    asked = set(_DOCUMENT_TOKEN.findall(question.lower()))
+    addressed = [
+        document_id
+        for document_id in documents
+        if (set(_DOCUMENT_TOKEN.findall(document_id.lower())) - _DOCUMENT_NOISE_TOKENS) & asked
+    ]
+    if len(addressed) != 1:
+        return candidates
+    return tuple(candidate for candidate in candidates if candidate[2] == addressed[0])
+
+
+async def _pdf_page_candidates(memory: object) -> list[tuple[object, str, str]]:
     """Enumerate one entry per stored PDF page through the scoped Memory API."""
 
     from powercontext.artifacts import MemoryCitation
 
     page = await memory.list()  # type: ignore[attr-defined]
-    candidates: list[tuple[object, str]] = []
+    candidates: list[tuple[object, str, str]] = []
     seen: set[tuple[str, int]] = set()
     for record in getattr(page, "entries", ()):
         location = None
@@ -220,6 +255,7 @@ async def _pdf_page_candidates(memory: object) -> list[tuple[object, str]]:
                     entry_version_id=record.entry.entry_version_id,
                 ),
                 record.entry.text,
+                location[0],
             )
         )
     return candidates
@@ -250,7 +286,7 @@ def _is_statement_page(text: str) -> bool:
 
 
 def _rank_pdf_pages(
-    candidates: Sequence[tuple[object, str]],
+    candidates: Sequence[tuple[object, str, str]],
     question: str,
     limit: int,
 ) -> tuple[object, ...]:
@@ -258,8 +294,8 @@ def _rank_pdf_pages(
 
     if not candidates:
         return ()
-    texts = [text for _, text in candidates]
-    tokenized = [(_TOKEN.findall(text.lower()), citation) for citation, text in candidates]
+    texts = [candidate[1] for candidate in candidates]
+    tokenized = [(_TOKEN.findall(candidate[1].lower()), candidate[0]) for candidate in candidates]
     counts = [Counter(tokens) for tokens, _ in tokenized]
     lengths = [len(tokens) for tokens, _ in tokenized]
     average = (sum(lengths) / len(lengths)) or 1.0
