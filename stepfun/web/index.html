@@ -57,6 +57,7 @@
         <span id="modelInfo">模型加载中…</span>
         <span class="muted">embedding 全部在浏览器本地计算，不调用云端推理</span>
       </div>
+      <div class="meta muted" id="statusBar" style="margin-top: 6px"></div>
     </header>
 
     <main>
@@ -72,8 +73,13 @@
             <option value="fp16">FP16</option>
             <option value="fp32">FP32（未量化基线）</option>
           </select>
-        </div>
-        <progress id="progress" value="0" max="100"></progress>
+          <label class="muted" for="modelSelect">模型</label>
+          <select id="modelSelect">
+            <option value="Xenova/bge-small-zh-v1.5" selected>BAAI bge-small-zh-v1.5（中文，512 维）</option>
+            <option value="Xenova/all-MiniLM-L6-v2">all-MiniLM-L6-v2（多语言，384 维）</option>
+            <option value="Xenova/paraphrase-multilingual-MiniLM-L12-v2">paraphrase-multilingual-MiniLM-L12-v2（多语言，384 维）</option>
+          </select>
+        </div>        <progress id="progress" value="0" max="100"></progress>
         <div class="muted" id="progressText"></div>
         <h2 style="margin-top: 18px">2. 检索</h2>
         <input id="query" type="text" placeholder="输入查询，例如：向量索引和全文检索怎么结合" />

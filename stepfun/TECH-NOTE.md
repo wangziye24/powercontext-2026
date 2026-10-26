@@ -25,8 +25,10 @@ feature-extraction / embedding 类、带 ONNX 权重的模型**；阶跃的 embe
 | 模型 | `Xenova/bge-small-zh-v1.5`（BAAI 开源中文 embedding 模型，Apache-2.0），revision `main`，512 维 |
 | 获取 | `scripts/download-model.mjs` 从公开模型仓库下载（直连不可用时自动回落 `hf-mirror.com`），落到 `web/public/models/`，运行时完全离线 |
 | 运行时 | Transformers.js 3.8.1 + onnxruntime-web（wasm 运行时同样本地化于 `web/public/ort/`，不依赖 CDN） |
-| 量化方案 | 同一份权重的三种精度：FP32（`onnx/model.onnx`）、FP16（`onnx/model_fp16.onnx`）、INT8（`onnx/model_quantized.onnx`，动态量化） |
+| 量化方案 | 同一份权重的三种精度：FP32（`onnx/model.onnx`）、FP16（`onnx/model_fp16.onnx`）、INT8（`onnx/model_quantized.onnx`） |
+| 量化处理方式 | INT8 采用 **ONNX 动态量化**：权重在模型加载期按张量量化到 int8（`quantize_dynamic`），无需额外校准数据；FP16 为半精度权重直存。两者都是官方仓库提供的量化权重，本项目直接取用，不自行训练或校准 |
 | 池化 | CLS + L2 归一化（bge 官方推荐） |
+| 模型获取与加载 | `scripts/download-model.mjs` 下载到 `web/public/models/`（下载耗时与字节数记入 `manifest.json`）；**运行时从本地读取，无下载等待**，加载 0.5–0.8 s |
 
 **体积与压缩比**（同一口径：本地实际文件总字节数，含分词器与配置；清单与 sha256 见 `web/public/models/Xenova/bge-small-zh-v1.5/manifest.json`）
 
@@ -80,28 +82,54 @@ CREATE TABLE `c$v2$<collection_id>` (
 **增量写入与索引刷新**：写入后显式 `collection.refresh_index()`，新内容随即可检索；重复导入同一文档 id 走 **upsert** 语义不报错；
 "清空知识库"用 `DROP TABLE` + 删除 SDK 元数据 + 重建集合（SDK 自带的 `delete()` 是软删除，行仍在表内，因此不能直接用）。
 
+**集合与会话状态**：集合状态在 seekdb 侧（表 + `sdk_collections` 元数据）；会话状态在浏览器侧（`localStorage` 记录当前模型、精度、推理后端、集合名、片段数与上次查询），页面顶部状态栏实时展示"模型 · 精度 · 后端 · 集合 · 片段数 · 批大小 · 写入方式"。切换模型若向量维度不同，服务端会按新维度重建集合，避免旧向量残留导致检索结果与当前知识库不一致。
+
+**模型可切换**：模型目录见 `web/src/embedder.js::MODEL_CATALOG`（默认 BAAI bge-small-zh-v1.5，另有 all-MiniLM-L6-v2 与 paraphrase-multilingual-MiniLM-L12-v2 两个多语言备选），界面下拉或 `?model=<id>` 均可切换；换维度时服务端自动重建集合。
+
 **向量只来自浏览器**：服务端注册的 embedding 函数是占位实现，一旦服务端试图代算向量即抛错（`ClientSideEmbeddingFunction.generate`），
 从机制上杜绝"服务端预计算向量"。
 
-## 4. 性能（分阶段计时，中位数；首次与预热分开）
+## 4. 性能（固定条件、分阶段计时、中位数）
 
-语料：9 篇文档 / 27 个片段 / 30 条标注查询；浏览器：系统 Edge。
+**固定测试条件**
 
-| 精度 | 后端 | 模型加载 | 文档向量化 | 写入+刷新 | 向量化吞吐 | 查询向量化 | seekdb 检索 | 端到端(热) |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| FP32 | WebGPU | 769 ms | 686 ms | 789 ms | **39.3 chunk/s** | 14.4 ms | 5.0 ms | 20 ms |
-| FP32 | WASM | 685 ms | 2706 ms | 477 ms | 10.0 chunk/s | 14.3 ms | 5.0 ms | 19 ms |
-| FP16 | WebGPU | 604 ms | 607 ms | 786 ms | **44.5 chunk/s** | 15.2 ms | 5.0 ms | 20 ms |
-| INT8 | WebGPU | 539 ms | 2501 ms | 584 ms | 10.8 chunk/s | 166.4 ms | 5.0 ms | 171 ms |
-| INT8 | WASM | 469 ms | 1985 ms | 682 ms | 13.6 chunk/s | 14.3 ms | 5.0 ms | 19 ms |
+| 项 | 值 |
+| --- | --- |
+| 设备 | Windows 11 (10.0.26200) · Intel Core Ultra 7 155H · 31.5 GiB RAM |
+| GPU 适配器 | `intel xe-lpg`（Intel Arc 核显，WebGPU 可用） |
+| 浏览器 | Microsoft Edge（系统自带，Playwright 驱动） |
+| Node.js | v24.15.0 |
+| 语料 | 9 篇文档 / 27 个片段 / 30 条标注查询（`scripts/make_corpus.py` 固定生成） |
+| seekdb | 本地 server 进程（seekdb 1.4.0，MySQL 协议）；集合 `knowledge_base`，512 维；`FULLTEXT KEY idx_fts (document) WITH PARSER ik, ik_mode=smart`；`VECTOR KEY idx_vec (embedding) WITH DISTANCE=COSINE, TYPE=HNSW, M=16, EF_CONSTRUCTION=200, EF_SEARCH=64` |
+| 模型 | `Xenova/bge-small-zh-v1.5` @ `main`；批大小 8（基线组为 1） |
+| 计时范围 | 模型加载＝从本地加载 ONNX 权重到会话可用；文档向量化＝全量片段的端侧批量 embedding；写入+刷新＝一次 POST 写入与随后的索引刷新；查询向量化＝单条查询的端侧 embedding；seekdb 检索＝服务端 `hybridSearch` 的响应耗时；端到端＝查询向量化＋检索（不含结果渲染）。冷启动与预热后分开统计，热数据取 3 次重复的**中位数**。 |
+
+| 配置 | 精度 | 后端 | 批大小 | 写入方式 | 模型体积 | Recall@5 | nDCG@5 | 吞吐 | 文档向量化 | 写入+刷新 | 查询向量化 | seekdb 检索 | 端到端(热) |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 优化配置 | FP32 | WebGPU | 8 | 批量 | 90.88 MiB | 1.000 | 0.977 | 37.3 chunk/s | 724 ms | 783 ms | 15 ms | 7 ms | **21 ms** |
+| 优化配置 | FP32 | WASM | 8 | 批量 | 90.88 MiB | 1.000 | 0.977 | 7.4 chunk/s | 3642 ms | 668 ms | 18 ms | 6 ms | 24 ms |
+| 优化配置 | FP16 | WebGPU | 8 | 批量 | 45.72 MiB | 1.000 | **0.977** | **43.4 chunk/s** | 623 ms | 554 ms | 15 ms | 6 ms | **21 ms** |
+| 优化配置 | FP16 | WASM | 8 | 批量 | 45.72 MiB | 1.000 | 0.977 | 7.6 chunk/s | 3554 ms | 768 ms | 32 ms | 6 ms | 39 ms |
+| 优化配置 | INT8 | WebGPU | 8 | 批量 | 23.32 MiB | 1.000 | 0.949 | 9.1 chunk/s | 2980 ms | 858 ms | 151 ms | 7 ms | 159 ms |
+| 优化配置 | INT8 | WASM | 8 | 批量 | 23.32 MiB | 1.000 | 0.974 | 12.3 chunk/s | 2191 ms | 767 ms | 14 ms | 6 ms | **20 ms** |
+| 基线配置 | FP32 | WebGPU | **1** | **逐条** | 90.88 MiB | 1.000 | 0.977 | 28.9 chunk/s | 933 ms | **17289 ms** | 14 ms | 5 ms | 19 ms |
+
+**优化前后对比**（除"批大小 / 写入方式"外，其余条件完全一致：同设备、同浏览器、同语料、同查询集、同 seekdb 配置、同模型同精度）
+
+| 指标 | 基线：逐条推理 + 逐条写入（每条都刷新索引） | 优化后：批量推理 + 批量写入（批次末尾刷新一次） | 变化 |
+| --- | --- | --- | --- |
+| 文档向量化（27 片段） | 933 ms | 724 ms | **快 1.29×**（吞吐 28.9 → 37.3 chunk/s） |
+| 写入 + 索引刷新 | 17289 ms | 783 ms | **快 22.1×** |
+| Recall@5 / nDCG@5 | 1.000 / 0.977 | 1.000 / 0.977 | 质量完全一致 |
 
 观察与优化点：
 
-1. **WebGPU 优先是划算的**：同精度 FP32 下 WebGPU 向量化吞吐是 WASM 的 **3.9×**（39.3 vs 10.0 chunk/s），端到端查询延迟两者都在 20 ms 内（查询只有一条文本，编码占比小）。
-2. **FP16 优于 FP32**：体积减半、吞吐更高（44.5 vs 39.3）、质量不变。
-3. **INT8 在本机 WebGPU 上是负优化**：动态量化图未针对 Xe-LPG 优化，吞吐掉到 10.8 chunk/s，单条查询编码 166 ms；换 WASM 反而更快（13.6 chunk/s、14.3 ms）。
-4. **优化措施**：模型与 wasm 运行时本地化（消除首次下载等待，加载稳定在 0.5–0.8 s）；批量 embedding（批大小 8）+ 每批让出主线程；写入批量提交并只在批次边界刷新索引；切块按段落合并到约 200 字。
-5. **seekdb 检索稳定在 5 ms**（含混合检索的全文+向量两路召回与融合排序），是端到端延迟里最小的一段。
+1. **写入与刷新策略是最大收益点**：逐条写入时每条都触发一次索引刷新，27 个片段要重建 27 次索引；改为一次批量写入、批次末尾刷新一次后，从 17.3 s 降到 0.78 s。
+2. **WebGPU 优先是划算的**：同精度 FP32 下 WebGPU 向量化吞吐是 WASM 的 **5.0×**（37.3 vs 7.4 chunk/s）；端到端查询延迟两者都在 25 ms 内（查询只有一条文本，编码占比小）。
+3. **FP16 优于 FP32**：体积减半、吞吐更高（43.4 vs 37.3 chunk/s）、质量完全一致。
+4. **INT8 在本机 WebGPU 上是负优化**：动态量化图未针对 Xe-LPG 优化，吞吐掉到 9.1 chunk/s，单条查询编码 151 ms；换 WASM 反而更快（12.3 chunk/s、14 ms）且 nDCG 更高（0.974）。
+5. **模型与运行时本地化**：模型文件在准备阶段一次性下载到 `web/public/models/`（下载耗时与字节数记入 `manifest.json`），运行时从本地读取，**没有下载等待**，加载稳定在 0.5–0.8 s；onnxruntime-web 的 wasm 运行时同样本地化于 `web/public/ort/`。
+6. **seekdb 检索稳定在 5–7 ms**（含全文 + 向量两路召回与融合排序），是端到端延迟里最小的一段。
 
 ## 5. 复现
 

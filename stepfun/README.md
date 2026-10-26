@@ -18,7 +18,9 @@
 | 用 seekdb 存取向量 + 原文 + 元数据 | 集合 `knowledge_base`：`ik` 中文全文索引 + HNSW 向量索引（cosine，512 维） | `GET /api/schema` 返回真实 DDL |
 | 混合检索必须由 seekdb 完成，不得客户端拼合 | 一次 `hybridSearch({query:{whereDocument}, knn:{queryEmbeddings}})` 由数据库融合排序 | `server/src/seekdb-store.mjs::hybridSearch` |
 | 增量写入与索引刷新 | 写入后显式 `refresh_index()`；重复导入同一 id 走 upsert 语义，不报错 | `server/src/seekdb-store.mjs::addDocuments` |
-| 性能优化并给出优化前后实测 | 批处理、模型本地化（无下载等待）、写入后批量刷新 | `bench/results/bench.md`（各阶段耗时 + 中位数） |
+| 集合与会话状态 | 集合状态在 seekdb；会话状态（模型/精度/后端/集合/片段数/上次查询）在浏览器 `localStorage`，界面状态栏实时展示 | 界面顶部状态栏、`web/src/main.js` |
+| 性能优化并给出**优化前后**实测 | 基线（逐条推理 + 逐条写入、每条都刷新索引）vs 优化（批量推理 + 批量写入、批次末尾刷新一次）：写入+刷新 **17289 ms → 783 ms（22.1×）**，质量完全一致 | `bench/results/bench.md` 的"优化前后对比" |
+| 固定测试条件与计时范围 | 设备、GPU 适配器、语料规模、批大小、seekdb 索引参数、各阶段计时口径全部随结果落盘 | `bench/results/bench.json` 的 `conditions` |
 | 一页技术说明 | `TECH-NOTE.md` | — |
 
 ## 2. 架构

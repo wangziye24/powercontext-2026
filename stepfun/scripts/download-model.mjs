@@ -72,7 +72,8 @@ async function main() {
   const base = path.join(MODELS_ROOT, model);
   fs.mkdirSync(base, { recursive: true });
 
-  const manifest = { model, revision, source: host, files: [] };
+  const downloadStarted = Date.now();
+  const manifest = { model, revision, source: host, files: [], downloadedAt: new Date().toISOString() };
   for (const [file, label] of FILES) {
     const target = path.join(base, file);
     if (fs.existsSync(target) && fs.statSync(target).size > 0) {
@@ -101,8 +102,13 @@ async function main() {
     fp32ToInt8: manifest.totals.fp32 / manifest.totals.q8,
   };
 
+  manifest.downloadSeconds = Number(((Date.now() - downloadStarted) / 1000).toFixed(2));
+  manifest.downloadedBytes = manifest.files.reduce((sum, item) => sum + item.bytes, 0);
   fs.writeFileSync(path.join(base, "manifest.json"), JSON.stringify(manifest, null, 2), "utf-8");
   console.log(`[model] 完成 → ${base}`);
+  console.log(
+    `[model] 下载耗时 ${manifest.downloadSeconds}s，共 ${(manifest.downloadedBytes / 1048576).toFixed(2)} MiB（运行时从本地读取，无需再下载）`,
+  );
   console.log(
     `[model] 体积：FP32 ${(manifest.totals.fp32 / 1048576).toFixed(2)} MiB · ` +
       `FP16 ${(manifest.totals.fp16 / 1048576).toFixed(2)} MiB · ` +

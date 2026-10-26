@@ -9,15 +9,52 @@ const API = "";
 const params = new URLSearchParams(location.search);
 const requestedBackend = params.get("backend");
 const requestedModel = params.get("model");
+const SESSION_KEY = "stepfun-kb-session";
 const state = {
   embedder: null,
   dtype: params.get("dtype") ?? "q8",
   // auto / 空 → 自动探测（WebGPU 优先，不可用则 WASM）
   forceBackend: requestedBackend && requestedBackend !== "auto" ? requestedBackend : null,
   model: requestedModel && MODEL_CATALOG.some((item) => item.id === requestedModel) ? requestedModel : MODEL_ID,
+  batchSize: Number(params.get("batch") ?? 8),      // embedding 批大小
+  writeMode: params.get("write") === "each" ? "each" : "batch", // 批量写入（优化）/ 逐条写入（基线）
   chunks: [], // {id, text, source}
   timings: { embedMs: 0, writeMs: 0, queryEmbedMs: 0, searchMs: 0 },
 };
+
+/** 会话状态：模型/精度/后端/上次查询，刷新页面后仍保留。 */
+function loadSession() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(SESSION_KEY) ?? "{}");
+    if (saved.dtype) state.dtype = saved.dtype;
+    if (saved.model && MODEL_CATALOG.some((item) => item.id === saved.model)) state.model = saved.model;
+    if (saved.lastQuery) $("query").value = saved.lastQuery;
+    return saved;
+  } catch {
+    return {};
+  }
+}
+
+function saveSession(patch = {}) {
+  try {
+    const current = JSON.parse(localStorage.getItem(SESSION_KEY) ?? "{}");
+    localStorage.setItem(
+      SESSION_KEY,
+      JSON.stringify({
+        ...current,
+        model: state.model,
+        dtype: state.dtype,
+        backend: state.embedder?.backend ?? state.forceBackend ?? "auto",
+        collection: "knowledge_base",
+        lastQuery: $("query")?.value ?? "",
+        updatedAt: new Date().toISOString(),
+        ...patch,
+      }),
+    );
+  } catch {
+    /* 隐私模式下 localStorage 不可用，忽略 */
+  }
+}
 
 const $ = (id) => document.getElementById(id);
 const setText = (id, value) => { $(id).textContent = value; };
@@ -83,6 +120,7 @@ async function ensureEmbedder() {
     loadMs: state.modelLoadMs,
   };
   log(`模型就绪：${state.model}（${DTYPE_LABEL[state.dtype]}，加载 ${Math.round(state.modelLoadMs)} ms）`, "ok");
+  updateStatusBar();
   return state.embedder;
 }
 
@@ -107,7 +145,7 @@ async function importFiles(fileList) {
   const embeddings = await embedder.embed(
     chunks.map((chunk) => chunk.text),
     {
-      batchSize: 8,
+      batchSize: state.batchSize,
       onBatch: (done, total) => {
         const percent = Math.round((done / total) * 100);
         $("progress").value = percent;
@@ -116,22 +154,57 @@ async function importFiles(fileList) {
     },
   );
   state.timings.embedMs = performance.now() - embedStarted;
-  log(`端侧向量化完成：${chunks.length} 条，用时 ${Math.round(state.timings.embedMs)} ms`, "ok");
+  log(
+    `端侧向量化完成：${chunks.length} 条，用时 ${Math.round(state.timings.embedMs)} ms（批大小 ${state.batchSize}）`,
+    "ok",
+  );
 
   setText("progressText", "写入 seekdb…");
   const writeStarted = performance.now();
-  const response = await fetch(`${API}/api/documents`, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({
-      ids: chunks.map((chunk) => chunk.id),
-      documents: chunks.map((chunk) => chunk.text),
-      metadatas: chunks.map((chunk) => ({ source: chunk.source })),
+  // 优化路径：一次性批量写入并在批次末尾刷新一次索引；
+  // 基线路径（?write=each）：逐条写入，每条写入后都会触发一次索引刷新。
+  const writeOne = async (ids, documents, metadatas, vectors) => {
+    const response = await fetch(`${API}/api/documents`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        ids,
+        documents,
+        metadatas,
+        embeddings: vectors,
+        dimension: state.embedder.dimension,
+      }),
+    });
+    return response.json();
+  };
+
+  let result;
+  if (state.writeMode === "each") {
+    result = { ok: true, written: 0, elapsedMs: 0 };
+    for (let index = 0; index < chunks.length; index += 1) {
+      const single = await writeOne(
+        [chunks[index].id],
+        [chunks[index].text],
+        [{ source: chunks[index].source }],
+        [embeddings[index]],
+      );
+      if (!single.ok) {
+        result = single;
+        break;
+      }
+      result.written += single.written;
+      $("progress").value = Math.round(((index + 1) / chunks.length) * 100);
+      setText("progressText", `写入 seekdb ${index + 1}/${chunks.length}`);
+    }
+    result.elapsedMs = Math.round(performance.now() - writeStarted);
+  } else {
+    result = await writeOne(
+      chunks.map((chunk) => chunk.id),
+      chunks.map((chunk) => chunk.text),
+      chunks.map((chunk) => ({ source: chunk.source })),
       embeddings,
-      dimension: state.embedder.dimension,
-    }),
-  });
-  const result = await response.json();
+    );
+  }
   state.timings.writeMs = performance.now() - writeStarted;
   if (!result.ok) {
     log(`写入失败：${result.error}`, "err");
@@ -146,7 +219,15 @@ async function importFiles(fileList) {
     embedMs: state.timings.embedMs,
     writeMs: state.timings.writeMs,
     embedThroughput: chunks.length / (state.timings.embedMs / 1000),
+    batchSize: state.batchSize,
+    writeMode: state.writeMode,
+    model: state.embedder.model,
+    dtype: state.embedder.dtype,
+    dimension: state.embedder.dimension,
+    backend: state.embedder.backend,
   };
+  saveSession({ chunks: chunks.length });
+  updateStatusBar();
 }
 
 async function runQuery() {
@@ -198,6 +279,21 @@ async function runQuery() {
     sources: result.items.map((item) => item.metadata?.source ?? item.id),
   };
   window.__lastQuery = keyword;
+  saveSession();
+}
+
+/** 状态栏：当前模型 / 精度 / 推理后端 / 集合 / 片段数（会话状态一览）。 */
+function updateStatusBar() {
+  const parts = [
+    `模型 ${state.embedder?.model ?? state.model}`,
+    `精度 ${state.embedder?.dtype ?? state.dtype}`,
+    `后端 ${state.embedder?.backend ?? (state.forceBackend ?? "auto")}`,
+    `集合 knowledge_base`,
+    `片段 ${state.chunks.length}`,
+    `批大小 ${state.batchSize}`,
+    `写入 ${state.writeMode === "each" ? "逐条" : "批量"}`,
+  ];
+  setText("statusBar", parts.join(" · "));
 }
 
 function escapeHtml(text) {
@@ -227,12 +323,28 @@ function bind() {
     state.dtype = event.target.value;
     state.embedder = null; // 换精度需要重新加载模型
     setText("modelInfo", `${state.model} · ${DTYPE_LABEL[state.dtype]}`);
+    saveSession();
+    updateStatusBar();
     log(`切换到 ${DTYPE_LABEL[state.dtype]}，下次加载模型时生效`, "info");
+  });
+$("modelSelect").addEventListener("change", (event) => {
+    const next = event.target.value;
+    if (!MODEL_CATALOG.some((item) => item.id === next)) return;
+    state.model = next;
+    state.embedder = null; // 换模型需要重新加载（维度可能变化，服务端会自动重建集合）
+    setText("modelInfo", `${state.model} · ${DTYPE_LABEL[state.dtype]}`);
+    saveSession();
+    updateStatusBar();
+    log(`切换模型到 ${next}，下次加载模型时生效`, "info");
   });
 }
 
 bind();
+loadSession();
 setText("modelInfo", `${state.model} · ${DTYPE_LABEL[state.dtype]}`);
+$("dtype").value = state.dtype;
+$("modelSelect").value = state.model;
+updateStatusBar();
 
 // 页面打开即探测并显示当前推理后端（评审第一眼就能看到端侧后端状态）
 (async () => {
