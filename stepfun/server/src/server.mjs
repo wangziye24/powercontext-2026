@@ -9,7 +9,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { startLocalSeekdb } from "./local-seekdb.mjs";
-import { createClient, ensureCollection, addDocuments, hybridSearch, resetCollection } from "./seekdb-store.mjs";
+import { createClient, ensureCollection, addDocuments, hybridSearch, resetCollection, ensureDimension } from "./seekdb-store.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const WEB_ROOT = path.resolve(HERE, "../../web");       // 前端源码（零构建，浏览器直接跑 ESM）
@@ -121,6 +121,12 @@ async function main() {
 
       if (pathname === "/api/documents" && req.method === "POST") {
         const payload = await readBody(req);
+        const dimension = Number(payload.dimension ?? DIMENSION);
+        // 换了模型导致维度变化时，按新维度重建集合
+        if (dimension && collection.dimension !== dimension) {
+          console.log(`[server] 集合维度 ${collection.dimension} → ${dimension}，重建集合`);
+          collection = (await ensureDimension(client, { name: COLLECTION, dimension })).collection;
+        }
         const started = Date.now();
         await addDocuments(collection, payload);
         sendJson(res, 200, { ok: true, written: payload.ids.length, elapsedMs: Date.now() - started });

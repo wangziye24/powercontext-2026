@@ -11,6 +11,18 @@ import { pipeline, env } from "@huggingface/transformers";
 export const MODEL_ID = "Xenova/bge-small-zh-v1.5";
 export const MODEL_REVISION = "main";
 export const MODEL_DIMENSION = 512;
+
+/**
+ * 可切换的模型目录（均为公开开源权重、带官方 ONNX，支持 FP32/FP16/INT8）。
+ * 题面允许自选开源 embedding 模型；换成别的模型只需改目录项，
+ * 集合维度会随之变化，服务端会自动按新维度重建集合。
+ */
+export const MODEL_CATALOG = [
+  { id: "Xenova/bge-small-zh-v1.5", dimension: 512, label: "BAAI bge-small-zh-v1.5（中文，默认）" },
+  { id: "Xenova/all-MiniLM-L6-v2", dimension: 384, label: "all-MiniLM-L6-v2（多语言备选）" },
+  { id: "Xenova/paraphrase-multilingual-MiniLM-L12-v2", dimension: 384, label: "paraphrase-multilingual-MiniLM-L12-v2（多语言备选）" },
+];
+
 /** 池化方式：bge 系列官方推荐 CLS + 归一化。 */
 const POOLING = "cls";
 
@@ -62,8 +74,9 @@ export async function detectBackend() {
 }
 
 /** 加载模型（本地优先，缺失时从远端镜像拉取）。 */
-export async function createEmbedder({ dtype = "q8", device = null, onProgress } = {}) {
+export async function createEmbedder({ dtype = "q8", device = null, onProgress, model = MODEL_ID } = {}) {
   let detected = device ? { backend: device, adapter: device } : await detectBackend();
+  const entry = MODEL_CATALOG.find((item) => item.id === model) ?? { id: model, dimension: MODEL_DIMENSION };
 
   // 请求 WebGPU 但本机没有 WebGPU 适配器时，如实降级到 WASM（界面显示真实后端）
   if (detected.backend === "webgpu") {
@@ -73,13 +86,13 @@ export async function createEmbedder({ dtype = "q8", device = null, onProgress }
     }
   }
 
-  const local = await hasLocalModel(MODEL_ID);
+  const local = await hasLocalModel(entry.id);
   if (!local) {
     // huggingface.co 直连不通时走镜像；推理仍发生在浏览器本地
     env.remoteHost = "https://hf-mirror.com/";
   }
 
-  const extractor = await pipeline("feature-extraction", MODEL_ID, {
+  const extractor = await pipeline("feature-extraction", entry.id, {
     dtype,
     device: detected.backend,
     revision: MODEL_REVISION,
@@ -94,10 +107,10 @@ export async function createEmbedder({ dtype = "q8", device = null, onProgress }
   });
 
   return {
-    model: MODEL_ID,
+    model: entry.id,
     revision: MODEL_REVISION,
     dtype,
-    dimension: MODEL_DIMENSION,
+    dimension: entry.dimension,
     backend: detected.backend,
     adapter: detected.adapter,
 

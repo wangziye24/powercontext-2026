@@ -3,16 +3,18 @@
  *
  * 所有 embedding 都在浏览器本地完成；后端只负责落库与检索。
  */
-import { createEmbedder, detectBackend, MODEL_ID, DTYPE_LABEL } from "./embedder.js";
+import { createEmbedder, detectBackend, MODEL_ID, MODEL_CATALOG, DTYPE_LABEL } from "./embedder.js";
 
 const API = "";
 const params = new URLSearchParams(location.search);
 const requestedBackend = params.get("backend");
+const requestedModel = params.get("model");
 const state = {
   embedder: null,
   dtype: params.get("dtype") ?? "q8",
   // auto / 空 → 自动探测（WebGPU 优先，不可用则 WASM）
   forceBackend: requestedBackend && requestedBackend !== "auto" ? requestedBackend : null,
+  model: requestedModel && MODEL_CATALOG.some((item) => item.id === requestedModel) ? requestedModel : MODEL_ID,
   chunks: [], // {id, text, source}
   timings: { embedMs: 0, writeMs: 0, queryEmbedMs: 0, searchMs: 0 },
 };
@@ -52,12 +54,13 @@ async function ensureEmbedder() {
     : await detectBackend();
   log(`推理后端：${detected.backend === "webgpu" ? "WebGPU" : "WASM（自动降级）"} · ${detected.adapter}`, "info");
   setText("backendBadge", detected.backend === "webgpu" ? "WebGPU" : "WASM");
-  setText("modelInfo", `${MODEL_ID} · ${DTYPE_LABEL[state.dtype]}`);
+  setText("modelInfo", `${state.model} · ${DTYPE_LABEL[state.dtype]}`);
 
   const loadStarted = performance.now();
   state.embedder = await createEmbedder({
     dtype: state.dtype,
     device: detected.backend,
+    model: state.model,
     onProgress: (progress) => {
       if (progress.status === "download" && progress.total) {
         const percent = Math.round((progress.loaded / progress.total) * 100);
@@ -79,7 +82,7 @@ async function ensureEmbedder() {
     adapter: state.embedder.adapter,
     loadMs: state.modelLoadMs,
   };
-  log(`模型就绪：${MODEL_ID}（${DTYPE_LABEL[state.dtype]}，加载 ${Math.round(state.modelLoadMs)} ms）`, "ok");
+  log(`模型就绪：${state.model}（${DTYPE_LABEL[state.dtype]}，加载 ${Math.round(state.modelLoadMs)} ms）`, "ok");
   return state.embedder;
 }
 
@@ -125,6 +128,7 @@ async function importFiles(fileList) {
       documents: chunks.map((chunk) => chunk.text),
       metadatas: chunks.map((chunk) => ({ source: chunk.source })),
       embeddings,
+      dimension: state.embedder.dimension,
     }),
   });
   const result = await response.json();
@@ -222,13 +226,13 @@ function bind() {
   $("dtype").addEventListener("change", (event) => {
     state.dtype = event.target.value;
     state.embedder = null; // 换精度需要重新加载模型
-    setText("modelInfo", `${MODEL_ID} · ${DTYPE_LABEL[state.dtype]}`);
+    setText("modelInfo", `${state.model} · ${DTYPE_LABEL[state.dtype]}`);
     log(`切换到 ${DTYPE_LABEL[state.dtype]}，下次加载模型时生效`, "info");
   });
 }
 
 bind();
-setText("modelInfo", `${MODEL_ID} · ${DTYPE_LABEL[state.dtype]}`);
+setText("modelInfo", `${state.model} · ${DTYPE_LABEL[state.dtype]}`);
 
 // 页面打开即探测并显示当前推理后端（评审第一眼就能看到端侧后端状态）
 (async () => {

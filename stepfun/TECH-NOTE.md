@@ -3,6 +3,21 @@
 > OceanBase 2026 阶跃星辰赛题作品。全部 embedding 在浏览器本地计算，向量与原文写入本地 seekdb，
 > 混合检索由 seekdb 完成。运行环境：Windows 11 / Intel Arc Xe-LPG / Microsoft Edge（Chromium）/ Node.js 24.15。
 
+## 0. 关于"是否必须使用阶跃星辰模型"
+
+赛题原文写明：**「模型要求：自选可公开获取的开源 embedding 模型，不限定使用阶跃星辰模型」**。本作品据此选择
+`Xenova/bge-small-zh-v1.5`（BAAI，Apache-2.0，公开可获取，官方提供 ONNX 权重）。
+
+除题面允许之外，还有一条硬约束指向同一个结论：**题面禁止云端推理**（"禁止调用云端推理 API"、
+"实际计算必须发生在用户设备"）。我们核查了阶跃星辰在 Hugging Face 上的官方开源仓库 `stepfun-ai`：
+其公开模型集中在大语言、多模态、语音与图像方向（safetensors / GGUF 等），**没有任何
+feature-extraction / embedding 类、带 ONNX 权重的模型**；阶跃的 embedding 能力只以云端 API 形式提供。
+因此在"必须端侧运行"的前提下，不存在可直接在浏览器中运行的阶跃 embedding 模型。
+
+工程上我们把这件事做成了可扩展的：模型目录见 `web/src/embedder.js::MODEL_CATALOG`，可用 `?model=<id>` 切换
+（切换后若向量维度变化，服务端会自动按新维度重建集合）。若阶跃星辰后续发布带 ONNX 权重的 embedding 模型，
+加入目录即可，其余流程无需改动。
+
 ## 1. 模型与量化
 
 | 项 | 内容 |

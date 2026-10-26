@@ -93,6 +93,19 @@ export async function resetCollection(client, { name, dimension }) {
   return { client, collection };
 }
 /**
+ * 维度一致性：换了模型（维度不同）时重建集合，保证索引与向量维度匹配。
+ */
+export async function ensureDimension(client, { name, dimension }) {
+  try {
+    const collection = await client.getCollection({ name });
+    if (collection.dimension === dimension) return { client, collection };
+  } catch {
+    /* 集合不存在，走重建 */
+  }
+  return resetCollection(client, { name, dimension });
+}
+
+/**
  * 取得（必要时创建）集合。
  * @returns {{client: import('seekdb').SeekdbClient, collection: import('seekdb').Collection}}
  */

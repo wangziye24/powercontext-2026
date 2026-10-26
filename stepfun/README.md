@@ -11,7 +11,8 @@
 | 可运行的 Web 应用 | 浏览器直接运行 ESM（零构建）：`npm run setup && npm start` → http://127.0.0.1:5178 | `web/` 目录；`bench/smoke.mjs` 端到端自测 |
 | 导入文本 → 本地向量化 → 写入 seekdb → 混合检索 → 展示原文与排序 | 前端切块后批量 embedding，随请求把向量传给后端写入集合；查询时本地生成查询向量，调 `collection.hybridSearch()` | `bench/smoke.mjs` 输出、界面检索结果区 |
 | 端侧推理（禁云端推理、禁服务端预计算回放） | Transformers.js 在浏览器里跑 ONNX；后端注册"端侧占位 embedding 函数"，一旦服务端试图代算向量就抛错 | `server/src/seekdb-store.mjs` 的 `ClientSideEmbeddingFunction` |
-| 模型须公开开源并注明来源与版本 | `Xenova/bge-small-zh-v1.5`（BAAI，Apache-2.0），revision `main`，512 维 | `web/public/models/.../manifest.json`（含 sha256） |
+| 模型须公开开源并注明来源与版本 | `Xenova/bge-small-zh-v1.5`（BAAI，Apache-2.0），revision `main`，512 维；模型目录可切换（`?model=`），换维度时服务端自动重建集合 | `web/public/models/.../manifest.json`（含 sha256）、`TECH-NOTE.md` §0 |
+| 用阶跃星辰生态（题面不强制用阶跃模型） | 题面明确"自选可公开获取的开源 embedding 模型，不限定使用阶跃星辰模型"；且官方 `stepfun-ai` 开源仓库里没有带 ONNX 权重的 embedding 模型（云端 API 又被题面禁止），故选可端侧运行的开源权重 | `TECH-NOTE.md` §0 的核查结论 |
 | INT8 / FP16 量化并报告体积、压缩比、质量变化 | 同权重三种精度（FP32 / FP16 / INT8-q8）本地可切换 | `bench/results/bench.md`、`bench/results/bench.json` |
 | 优先 WebGPU，不支持时自动降级 WASM 并明确提示 | 启动即探测 `navigator.gpu.requestAdapter()`，不可用则 WASM；界面顶部常驻显示当前后端 | 界面右上角徽标；`bench/results/bench.md` 中 WebGPU 与 WASM 两组数据 |
 | 用 seekdb 存取向量 + 原文 + 元数据 | 集合 `knowledge_base`：`ik` 中文全文索引 + HNSW 向量索引（cosine，512 维） | `GET /api/schema` 返回真实 DDL |
