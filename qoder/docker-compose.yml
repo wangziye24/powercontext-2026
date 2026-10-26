@@ -11,7 +11,8 @@ services:
     environment:
       OB_ROOT_PASSWORD: ""
     ports:
-      - "2881:2881"
+      # 宿主机端口可覆盖（默认 2881）；容器内固定 2881
+      - "${SEEKDB_HOST_PORT:-2881}:2881"
     volumes:
       - coursenote-seekdb-data:/var/lib/ob
     healthcheck:
@@ -41,7 +42,7 @@ services:
       POWCONTEXT_BASE_URL: "${POWCONTEXT_BASE_URL:-}"
       POWCONTEXT_API_KEY: "${POWCONTEXT_API_KEY:-}"
     ports:
-      - "8080:8080"
+      - "${APP_HOST_PORT:-8080}:8080"
     volumes:
       - .:/app
 
