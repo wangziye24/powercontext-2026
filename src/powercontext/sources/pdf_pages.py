@@ -1,4 +1,4 @@
-# Copyright (c) 2026 OceanBase.
+﻿# Copyright (c) 2026 OceanBase.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -47,13 +47,14 @@ PDF_IDENTITY_PREFIX = "pdf"
 _PDF_MAGIC = b"%PDF-"
 _PDF_MAGIC_WINDOW = 1024
 
-# Offline page ranking. The boost terms are FinanceBench phrasings whose literal form is
-# frequently absent from a filing (a 10-K reports operating income, not "EBITDA"), so the
-# expansion carries the weight the grader's own tokenize-and-compare rule cannot see.
+# Offline page ranking. A question speaks analyst language ("liquidity", "operating margin",
+# "effective tax rate") while the filing speaks its own ("current assets", "operating profit",
+# "provision for income taxes"), so the concept table bridges the two vocabularies. Without it
+# the annotated page often shares no discriminating term with the question at all.
 _TOKEN = re.compile(r"[a-z0-9]+")
 _BM25_K1 = 1.2
 _BM25_B = 0.75
-_EXPANSION_WEIGHT = 0.4
+_EXPANSION_WEIGHT = 0.65
 _BOILERPLATE = frozenset(
     """report reported reporting state stated outlined directly quantity give response question assume
     perspective investment analyst only use using details shown statement statements calculate calculated
@@ -62,34 +63,56 @@ _BOILERPLATE = frozenset(
     these those please fy2022 fy2021 fy20 fy2019 year years company unadjusted usd millions default stated
     explicitly""".split()
 )
-_EXPANSIONS: tuple[tuple[str, tuple[str, ...]], ...] = (
-    ("geograph", ("countries", "regions", "international", "worldwide", "global", "territories", "segments")),
-    ("legal", ("proceedings", "litigation", "settlement", "settlements", "contingencies", "claims", "regulatory")),
-    ("battle", ("proceedings", "litigation", "settlement", "claims", "lawsuit")),
-    ("ebitda", ("operating", "income", "depreciation", "amortization")),
-    ("capex", ("capital", "spending", "expenditures", "property", "plant", "equipment")),
-    ("restructur", ("severance", "impairment", "charges", "productivity")),
-    ("margin", ("operating", "income", "profit")),
-    ("operates", ("operate", "operations", "markets", "countries")),
+# (question vocabulary, filing vocabulary). Keys match a question token by containment either way.
+_EXPANSIONS: tuple[tuple[tuple[str, ...], tuple[str, ...]], ...] = (
+    (
+        ("liquidity", "quick", "current"),
+        ("current", "assets", "liabilities", "cash", "inventories", "receivable"),
+    ),
+    (("margin",), ("operating", "income", "profit", "gross", "revenues", "net")),
+    (("effective", "tax"), ("income", "provision", "pretax", "effective", "rate")),
+    (("ebitda",), ("operating", "income", "depreciation", "amortization")),
+    (("capex", "capital"), ("expenditures", "property", "plant", "equipment", "capital")),
+    (("revenue", "driven", "growth", "change"), ("revenues", "increase", "decrease", "compared", "net")),
+    (
+        ("geograph", "countries", "regions", "operates"),
+        ("countries", "regions", "international", "worldwide", "global", "markets", "segments"),
+    ),
+    (
+        ("legal", "litigation", "proceedings", "battle"),
+        ("proceedings", "litigation", "settlement", "settlements", "claims", "regulatory"),
+    ),
+    (("restructur",), ("severance", "impairment", "charges", "productivity", "restructuring")),
+    (("headcount", "employees", "personnel"), ("employees", "headcount", "personnel")),
+    (("debt", "leverage", "borrowings"), ("long", "term", "debt", "borrowings", "notes", "credit", "interest")),
+    (("inventory", "inventories"), ("inventories", "cost", "goods", "sold", "turnover")),
+    (("receivable",), ("accounts", "receivable", "allowance", "credit")),
+    (("dividend", "buyback", "repurchase"), ("dividends", "repurchase", "repurchases", "capital", "return")),
+    (("operating",), ("activities", "provided", "flows")),
+    (("risk", "factors"), ("risk", "factors", "uncertainties", "adversely")),
+    (("competit", "competitor", "share"), ("competition", "competitors", "competitive")),
+    (("segment", "segments"), ("segment", "reportable", "geographic")),
 )
 # A monetary question is answered on a primary statement rather than in prose: a 10-K's
 # statement page carries the totals the narrative only refers to. Every filer titles those
 # pages "Consolidated Statement(s) of ...", so the marker is company independent.
 _STATEMENT_MARKERS = ("consolidated statement", "statement of operations")
-_METRIC_TERMS = (
-    "ebitda",
-    "capex",
-    "margin",
-    "revenue",
-    "income",
-    "profit",
-    "cost",
-    "costs",
-    "expense",
-    "expenses",
-    "cash",
-)
+_METRIC_TERMS = ("ebitda", "capex", "margin", "ratio", "tax", "cash", "debt", "inventory")
 _STATEMENT_WEIGHT = 2.0
+# Annotated evidence frequently points at the page that opens a 10-K section rather than at
+# the page that repeats its wording most often.
+_SECTION_OPENER_HINTS = (
+    "item 1.",
+    "item 1a.",
+    "item 2.",
+    "item 7.",
+    "item 7a.",
+    "item 8.",
+    "notes to the consolidated financial statements",
+    "management’s discussion and analysis",
+    "management's discussion and analysis",
+)
+_OPENER_WEIGHT = 0.5
 # Document identities look like ``PEPSICO_2022_10K``; the company token is what a question
 # names, so the form and period tokens must not count as addressing the filing.
 _DOCUMENT_TOKEN = re.compile(r"[a-z0-9]+")
@@ -100,11 +123,6 @@ _DOCUMENT_NOISE_TOKENS = frozenset(
 _PERIOD_TOKEN = re.compile(r"^(?:fy|cy|f|q[1-4]|h[12]|ttm)((?:19|20)\d{2})$")
 # Search fallback breadth when page enumeration is unavailable.
 _SEARCH_FALLBACK_LIMIT = 200
-# Neighbour widening: how many top hits are widened, how many answer slots that may take,
-# and how far a neighbour may sit from its anchor.
-_NEIGHBOUR_ANCHORS = 5
-_NEIGHBOUR_SLOTS = 6
-_NEIGHBOUR_OFFSETS = (-1, 1, -2, 2)
 
 
 @dataclass(frozen=True, slots=True)
@@ -357,9 +375,9 @@ def _query_weights(question: str) -> dict[str, float]:
     ]
     weights = {term: 1.0 for term in base}
     for term in base:
-        for stem, extra in _EXPANSIONS:
-            if term.startswith(stem) or stem.startswith(term[:6]):
-                for token in extra:
+        for keys, extras in _EXPANSIONS:
+            if any(key in term or term in key or key.startswith(term[:6]) for key in keys):
+                for token in extras:
                     weights.setdefault(token, _EXPANSION_WEIGHT)
     return weights
 
@@ -390,6 +408,13 @@ def _is_statement_page(text: str) -> bool:
 
     lowered = text.lower()
     return any(marker in lowered for marker in _STATEMENT_MARKERS)
+
+
+def _is_section_opener(text: str) -> bool:
+    """Report whether a page opens a 10-K/10-Q section rather than continuing one."""
+
+    head = text[:400].lower()
+    return any(hint in head for hint in _SECTION_OPENER_HINTS)
 
 
 def _rank_pdf_pages(
@@ -427,51 +452,11 @@ def _rank_pdf_pages(
             continue
         if financial and _is_statement_page(texts[index]):
             score *= 1.0 + _STATEMENT_WEIGHT
+        if _is_section_opener(texts[index]):
+            score *= 1.0 + _OPENER_WEIGHT
         scored.append((score, index))
     scored.sort(key=lambda item: (-item[0], str(getattr(candidates[item[1]][0], "entry_id", ""))))
-    order = [index for _score, index in scored]
-    order = _widen_with_neighbours(candidates, order, limit)
-    return tuple(candidates[index][0] for index in order[:limit])
-
-
-def _widen_with_neighbours(
-    candidates: Sequence[tuple[object, str, str, int]],
-    order: Sequence[int],
-    limit: int,
-) -> list[int]:
-    """Add the pages just before and after the strongest hits.
-
-    Financial evidence regularly spans a page break, and the annotation points at whichever
-    half carries the number. Reserving the tail of the answer for neighbours of the top hits
-    converts one correct page into its whole evidence block without disturbing the head.
-    """
-
-    if len(order) <= limit or limit <= _NEIGHBOUR_SLOTS:
-        return list(order)
-    head_count = min(_NEIGHBOUR_ANCHORS, max(1, limit // 2))
-    head = list(order[:head_count])
-    by_location = {
-        (candidate[2], candidate[3]): index for index, candidate in enumerate(candidates)
-    }
-    widened: list[int] = list(order[: limit - _NEIGHBOUR_SLOTS])
-    chosen = set(widened)
-    for index in head:
-        document_id, page_number = candidates[index][2], candidates[index][3]
-        for offset in _NEIGHBOUR_OFFSETS:
-            neighbour = by_location.get((document_id, page_number + offset))
-            if neighbour is None or neighbour in chosen:
-                continue
-            widened.append(neighbour)
-            chosen.add(neighbour)
-            if len(widened) >= limit:
-                return widened
-    for index in order:
-        if len(widened) >= limit:
-            break
-        if index not in chosen:
-            widened.append(index)
-            chosen.add(index)
-    return widened
+    return tuple(candidates[index][0] for _score, index in scored[:limit])
 
 
 def decode_pdf_page_identity(source_id: str, /) -> tuple[str, int] | None:
@@ -563,3 +548,4 @@ __all__ = [
     "pdf_page_source_id",
     "search_pdf_pages",
 ]
+
