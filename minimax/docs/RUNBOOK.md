@@ -12,7 +12,7 @@
 | MiniMax API | `MiniMax-M3.1-Flash`（`https://api.minimaxi.com/v1`） | 需要 `MINIMAX_API_KEY` |
 | 磁盘 | 约 200 MB | seekDB 数据目录与虚拟环境 |
 
-依赖由 `minimax/pyproject.toml` 固定：
+依赖由 `minimax/pyproject.toml` 固定，钉版清单另见 `minimax/requirements.txt`：
 
 ```
 powercontext[cli,server,seekdb]==1.4.0
@@ -20,6 +20,17 @@ sqlalchemy>=2.0
 httpx>=0.27
 pyyaml>=6.0
 ```
+
+若评审环境无法访问 PyPI 镜像，可用官方仓库的同版本源码替代安装：
+
+```bash
+git clone --depth 1 --branch 2026-competition https://github.com/oceanbase/powercontext.git /tmp/powercontext
+pip install -e "/tmp/powercontext[cli,server,seekdb]"
+pip install -e .   # 本作品
+```
+
+> 注意：`pylibseekdb` 的运行库本身来自 PyPI（manylinux wheel，约 54 MB），离线环境需要事先缓存该 wheel；
+> 完全离线时请改用 OceanBase 实例，并把 `POWERCONTEXT_SERVER_DATABASE_KIND` 与上下文模块的存储后端一并切换。
 
 ## 2. 配置步骤
 
