@@ -561,12 +561,15 @@ def _reserve_statement_seats(
     lowered_heads = [_leading_lines(text) for text in texts]
     reserved: list[int] = []
     for markers in _RESERVED_STATEMENT_KINDS[:seats]:
+        # Markers are ordered most specific first: "financial condition" appears in many
+        # narrative titles, so it is only used when no page really titles itself a balance sheet.
         best = None
-        for index, head in enumerate(lowered_heads):
-            if not any(marker in head for marker in markers):
+        for marker in markers:
+            matching = [index for index, head in enumerate(lowered_heads) if marker in head]
+            if not matching:
                 continue
-            if best is None or scores.get(index, 0.0) > scores.get(best, 0.0):
-                best = index
+            best = max(matching, key=lambda index: (scores.get(index, 0.0), -index))
+            break
         if best is not None and best not in reserved:
             reserved.append(best)
     if not reserved:
