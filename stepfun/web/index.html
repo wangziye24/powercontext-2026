@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>端侧迷你知识库 · seekdb 混合检索</title>
+    <!--
+      前端零构建：import map 把依赖指向本地 vendor 目录，
+      onnxruntime-web 的 wasm 运行时也放在 /ort/，不依赖任何 CDN。
+    -->
+    <script type="importmap">
+      {
+        "imports": {
+          "@huggingface/transformers": "/vendor/transformers.web.js",
+          "onnxruntime-web": "/vendor/ort/ort.webgpu.bundle.min.mjs",
+          "onnxruntime-common": "/vendor/ort-common/index.js"
+        }
+      }
+    </script>
+    <style>
+      :root { color-scheme: light; }
+      body { font-family: system-ui, -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif; margin: 0; background: #f6f7f9; color: #1f2328; }
+      header { padding: 18px 24px; background: #fff; border-bottom: 1px solid #e3e6ea; }
+      h1 { margin: 0 0 8px; font-size: 19px; }
+      .meta { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; font-size: 13px; color: #57606a; }
+      .badge { padding: 2px 9px; border-radius: 999px; background: #eef2ff; color: #3538cd; font-weight: 600; }
+      main { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; padding: 16px 24px 32px; align-items: start; }
+      section { background: #fff; border: 1px solid #e3e6ea; border-radius: 10px; padding: 16px; }
+      h2 { margin: 0 0 10px; font-size: 15px; }
+      input[type="file"] { font-size: 13px; }
+      select, input[type="text"] { padding: 6px 8px; border: 1px solid #d0d7de; border-radius: 6px; font-size: 13px; }
+      input[type="text"] { width: 100%; margin-bottom: 8px; }
+      button { padding: 7px 14px; border-radius: 6px; border: 1px solid #d0d7de; background: #f6f8fa; cursor: pointer; font-size: 13px; }
+      button:hover { background: #eef1f4; }
+      progress { width: 100%; height: 10px; }
+      .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 10px; }
+      .muted { color: #6b7280; font-size: 12px; }
+      .result { border: 1px solid #e6e9ed; border-radius: 8px; padding: 10px 12px; margin-bottom: 8px; }
+      .result-head { display: flex; gap: 10px; align-items: baseline; font-size: 13px; }
+      .rank { color: #8b949e; }
+      .name { font-weight: 600; }
+      .score { color: #6b7280; font-size: 12px; margin-left: auto; }
+      .snippet { margin-top: 6px; font-size: 13px; line-height: 1.6; color: #33383d; white-space: pre-wrap; }
+      #log { max-height: 300px; overflow: auto; font-family: ui-monospace, Consolas, monospace; font-size: 12px; }
+      .log { padding: 3px 0; border-bottom: 1px dashed #eef0f2; }
+      .log.ok { color: #1a7f37; }
+      .log.err { color: #cf222e; }
+      @media (max-width: 900px) { main { grid-template-columns: 1fr; } }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>端侧迷你知识库 · seekdb 向量 + 全文混合检索</h1>
+      <div class="meta">
+        <span class="badge" id="backendBadge">检测中…</span>
+        <span id="modelInfo">模型加载中…</span>
+        <span class="muted">embedding 全部在浏览器本地计算，不调用云端推理</span>
+      </div>
+    </header>
+
+    <main>
+      <section>
+        <h2>1. 导入文档</h2>
+        <div class="row">
+          <input id="fileInput" type="file" multiple accept=".txt,.md,.markdown" />
+        </div>
+        <div class="row">
+          <label class="muted" for="dtype">端侧精度</label>
+          <select id="dtype">
+            <option value="q8" selected>INT8 (q8)</option>
+            <option value="fp16">FP16</option>
+            <option value="fp32">FP32（未量化基线）</option>
+          </select>
+        </div>
+        <progress id="progress" value="0" max="100"></progress>
+        <div class="muted" id="progressText"></div>
+        <h2 style="margin-top: 18px">2. 检索</h2>
+        <input id="query" type="text" placeholder="输入查询，例如：向量索引和全文检索怎么结合" />
+        <div class="row">
+          <button id="queryBtn">混合检索</button>
+          <button id="resetBtn">清空知识库</button>
+        </div>
+      </section>
+
+      <section>
+        <h2>检索结果</h2>
+        <div id="results"></div>
+        <h2 style="margin-top: 18px">运行日志</h2>
+        <div id="log"></div>
+      </section>
+    </main>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

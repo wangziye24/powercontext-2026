@@ -1,0 +1,4223 @@
+{
+  "generatedAt": "2026-10-26T14:14:58.435Z",
+  "app": "http://127.0.0.1:5178",
+  "browser": "Microsoft Edge (系统自带, Playwright 驱动)",
+  "k": 5,
+  "repeats": 3,
+  "modelFiles": {
+    "fp32": {
+      "totalBytes": 95292210,
+      "manifestBytes": 95292210,
+      "detail": [
+        {
+          "file": "config.json",
+          "label": "模型配置",
+          "bytes": 716,
+          "sha256": "d4193ead3a810fd694fa8a31d7fc72fbaebc0668b603e398734bf2f6538ff42f"
+        },
+        {
+          "file": "tokenizer.json",
+          "label": "分词器",
+          "bytes": 439125,
+          "sha256": "48cea5d44424912a6fd1ea647bf4fe50b55ab8b1e5879c3275f80e339e8fae26"
+        },
+        {
+          "file": "tokenizer_config.json",
+          "label": "分词器配置",
+          "bytes": 367,
+          "sha256": "e6f3b96db926a37d4039995fbf5ad17de158dfb8f6343d607e4dbaad18d75f5a"
+        },
+        {
+          "file": "special_tokens_map.json",
+          "label": "特殊 token",
+          "bytes": 125,
+          "sha256": "b6d346be366a7d1d48332dbc9fdf3bf8960b5d879522b7799ddba59e76237ee3"
+        },
+        {
+          "file": "onnx/model.onnx",
+          "label": "权重 FP32",
+          "bytes": 94851877,
+          "sha256": "69a0b846f4f116b5e6aabf9546ea6754d02264f3211a13a1bd69b31b8040749a"
+        }
+      ]
+    },
+    "fp16": {
+      "totalBytes": 47937760,
+      "manifestBytes": 47937760,
+      "detail": [
+        {
+          "file": "config.json",
+          "label": "模型配置",
+          "bytes": 716,
+          "sha256": "d4193ead3a810fd694fa8a31d7fc72fbaebc0668b603e398734bf2f6538ff42f"
+        },
+        {
+          "file": "tokenizer.json",
+          "label": "分词器",
+          "bytes": 439125,
+          "sha256": "48cea5d44424912a6fd1ea647bf4fe50b55ab8b1e5879c3275f80e339e8fae26"
+        },
+        {
+          "file": "tokenizer_config.json",
+          "label": "分词器配置",
+          "bytes": 367,
+          "sha256": "e6f3b96db926a37d4039995fbf5ad17de158dfb8f6343d607e4dbaad18d75f5a"
+        },
+        {
+          "file": "special_tokens_map.json",
+          "label": "特殊 token",
+          "bytes": 125,
+          "sha256": "b6d346be366a7d1d48332dbc9fdf3bf8960b5d879522b7799ddba59e76237ee3"
+        },
+        {
+          "file": "onnx/model_fp16.onnx",
+          "label": "权重 FP16",
+          "bytes": 47497427,
+          "sha256": "60d0fe5eb8d4e251d4b24dff010a2625c10a013503f0d09f625e8a9b0311315f"
+        }
+      ]
+    },
+    "q8": {
+      "totalBytes": 24451175,
+      "manifestBytes": 24451175,
+      "detail": [
+        {
+          "file": "config.json",
+          "label": "模型配置",
+          "bytes": 716,
+          "sha256": "d4193ead3a810fd694fa8a31d7fc72fbaebc0668b603e398734bf2f6538ff42f"
+        },
+        {
+          "file": "tokenizer.json",
+          "label": "分词器",
+          "bytes": 439125,
+          "sha256": "48cea5d44424912a6fd1ea647bf4fe50b55ab8b1e5879c3275f80e339e8fae26"
+        },
+        {
+          "file": "tokenizer_config.json",
+          "label": "分词器配置",
+          "bytes": 367,
+          "sha256": "e6f3b96db926a37d4039995fbf5ad17de158dfb8f6343d607e4dbaad18d75f5a"
+        },
+        {
+          "file": "special_tokens_map.json",
+          "label": "特殊 token",
+          "bytes": 125,
+          "sha256": "b6d346be366a7d1d48332dbc9fdf3bf8960b5d879522b7799ddba59e76237ee3"
+        },
+        {
+          "file": "onnx/model_quantized.onnx",
+          "label": "权重 INT8(q8)",
+          "bytes": 24010842,
+          "sha256": "15b717c382bcb518ba457b93ea6850ede7f4f1cd8937454aa06972366cd19bcc"
+        }
+      ]
+    }
+  },
+  "compression": {
+    "fp32ToFp16": 1.9878319304030894,
+    "fp32ToInt8": 3.897244610944055
+  },
+  "cases": [
+    {
+      "dtype": "fp32",
+      "requestedBackend": "auto",
+      "backend": "webgpu",
+      "adapter": "intel xe-lpg",
+      "model": {
+        "model": "Xenova/bge-small-zh-v1.5",
+        "revision": "main",
+        "dtype": "fp32",
+        "dimension": 512,
+        "backend": "webgpu",
+        "adapter": "intel xe-lpg",
+        "loadMs": 769
+      },
+      "import": {
+        "files": 9,
+        "chunks": 27,
+        "embedMs": 686.4000000059605,
+        "writeMs": 789.1999999880791,
+        "embedThroughput": 39.33566433532276
+      },
+      "queries": [
+        {
+          "query": "混合检索为什么要由数据库完成融合排序",
+          "relevant": [
+            "seekdb-hybrid.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 27.599999994039536,
+            "searchMs": 14,
+            "endToEndMs": 41.599999994039536
+          },
+          "warmMedian": {
+            "queryEmbedMs": 21.100000008940697,
+            "searchMs": 10,
+            "endToEndMs": 31.100000008940697
+          },
+          "sources": [
+            "seekdb-hybrid.md",
+            "oceanbase-search.md",
+            "oceanbase-search.md",
+            "seekdb-hybrid.md",
+            "seekdb-hybrid.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 1
+        },
+        {
+          "query": "中文全文索引用哪个分词器",
+          "relevant": [
+            "seekdb-hybrid.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 13.799999982118607,
+            "searchMs": 5,
+            "endToEndMs": 18.799999982118607
+          },
+          "warmMedian": {
+            "queryEmbedMs": 14.199999988079071,
+            "searchMs": 5,
+            "endToEndMs": 19.19999998807907
+          },
+          "sources": [
+            "seekdb-hybrid.md",
+            "seekdb-hybrid.md",
+            "seekdb-schema.md",
+            "seekdb-schema.md",
+            "powercontext-memory.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 1
+        },
+        {
+          "query": "写入向量后为什么还要刷新索引",
+          "relevant": [
+            "seekdb-hybrid.md",
+            "oceanbase-arch.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 13.599999994039536,
+            "searchMs": 6,
+            "endToEndMs": 19.599999994039536
+          },
+          "warmMedian": {
+            "queryEmbedMs": 13.75,
+            "searchMs": 5.5,
+            "endToEndMs": 19.25
+          },
+          "sources": [
+            "seekdb-hybrid.md",
+            "oceanbase-arch.md",
+            "oceanbase-search.md",
+            "edge-pipeline.md",
+            "seekdb-hybrid.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 2
+        },
+        {
+          "query": "增量写入怎么减少索引构建开销",
+          "relevant": [
+            "seekdb-hybrid.md",
+            "oceanbase-arch.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 13.599999994039536,
+            "searchMs": 6,
+            "endToEndMs": 19.599999994039536
+          },
+          "warmMedian": {
+            "queryEmbedMs": 13.75,
+            "searchMs": 5.5,
+            "endToEndMs": 19.25
+          },
+          "sources": [
+            "oceanbase-arch.md",
+            "seekdb-hybrid.md",
+            "edge-pipeline.md",
+            "seekdb-hybrid.md",
+            "oceanbase-search.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 2
+        },
+        {
+          "query": "集合可以同时建哪几种索引",
+          "relevant": [
+            "seekdb-schema.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 13.900000005960464,
+            "searchMs": 6,
+            "endToEndMs": 19.900000005960464
+          },
+          "warmMedian": {
+            "queryEmbedMs": 14,
+            "searchMs": 6,
+            "endToEndMs": 20
+          },
+          "sources": [
+            "seekdb-schema.md",
+            "seekdb-hybrid.md",
+            "oceanbase-search.md",
+            "seekdb-schema.md",
+            "seekdb-hybrid.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 1
+        },
+        {
+          "query": "向量维度在什么时候确定",
+          "relevant": [
+            "seekdb-schema.md",
+            "oceanbase-arch.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 13.699999988079071,
+            "searchMs": 5,
+            "endToEndMs": 18.69999998807907
+          },
+          "warmMedian": {
+            "queryEmbedMs": 14.249999985098839,
+            "searchMs": 5,
+            "endToEndMs": 19.24999998509884
+          },
+          "sources": [
+            "oceanbase-arch.md",
+            "seekdb-schema.md",
+            "seekdb-schema.md",
+            "seekdb-schema.md",
+            "oceanbase-search.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 2
+        },
+        {
+          "query": "距离度量有哪些选项",
+          "relevant": [
+            "seekdb-schema.md",
+            "oceanbase-arch.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 13.800000011920929,
+            "searchMs": 5,
+            "endToEndMs": 18.80000001192093
+          },
+          "warmMedian": {
+            "queryEmbedMs": 14,
+            "searchMs": 5.5,
+            "endToEndMs": 19.5
+          },
+          "sources": [
+            "seekdb-schema.md",
+            "seekdb-schema.md",
+            "oceanbase-arch.md",
+            "powercontext-memory.md",
+            "seekdb-schema.md"
+          ],
+          "recall": 1,
+          "ndcg": 0.9197207891481876,
+          "hitCount": 2
+        },
+        {
+          "query": "本地部署 seekdb 有哪两种形态",
+          "relevant": [
+            "seekdb-operations.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 14.199999988079071,
+            "searchMs": 5,
+            "endToEndMs": 19.19999998807907
+          },
+          "warmMedian": {
+            "queryEmbedMs": 14.399999991059303,
+            "searchMs": 5,
+            "endToEndMs": 19.399999991059303
+          },
+          "sources": [
+            "seekdb-operations.md",
+            "oceanbase-arch.md",
+            "seekdb-hybrid.md",
+            "seekdb-schema.md",
+            "seekdb-schema.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 1
+        },
+        {
+          "query": "为什么路径里不能有中文",
+          "relevant": [
+            "seekdb-operations.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 17.80000001192093,
+            "searchMs": 5,
+            "endToEndMs": 22.80000001192093
+          },
+          "warmMedian": {
+            "queryEmbedMs": 16.05000001192093,
+            "searchMs": 5,
+            "endToEndMs": 21.05000001192093
+          },
+          "sources": [
+            "seekdb-hybrid.md",
+            "edge-inference.md",
+            "seekdb-operations.md",
+            "seekdb-hybrid.md",
+            "seekdb-schema.md"
+          ],
+          "recall": 1,
+          "ndcg": 0.5,
+          "hitCount": 1
+        },
+        {
+          "query": "端口冲突要怎么避免",
+          "relevant": [
+            "seekdb-operations.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 14.900000005960464,
+            "searchMs": 5,
+            "endToEndMs": 19.900000005960464
+          },
+          "warmMedian": {
+            "queryEmbedMs": 14.650000005960464,
+            "searchMs": 5,
+            "endToEndMs": 19.650000005960464
+          },
+          "sources": [
+            "seekdb-operations.md",
+            "edge-pipeline.md",
+            "seekdb-operations.md",
+            "edge-inference.md",
+            "edge-pipeline.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 1
+        },
+        {
+          "query": "浏览器里跑模型有什么好处",
+          "relevant": [
+            "edge-inference.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 13.900000005960464,
+            "searchMs": 5,
+            "endToEndMs": 18.900000005960464
+          },
+          "warmMedian": {
+            "queryEmbedMs": 13.950000002980232,
+            "searchMs": 5,
+            "endToEndMs": 18.950000002980232
+          },
+          "sources": [
+            "edge-inference.md",
+            "edge-inference.md",
+            "edge-inference.md",
+            "seekdb-schema.md",
+            "powercontext-retrieval.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 1
+        },
+        {
+          "query": "WebGPU 不可用时怎么办",
+          "relevant": [
+            "edge-inference.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 14.699999988079071,
+            "searchMs": 5,
+            "endToEndMs": 19.69999998807907
+          },
+          "warmMedian": {
+            "queryEmbedMs": 14.5,
+            "searchMs": 5,
+            "endToEndMs": 19.5
+          },
+          "sources": [
+            "edge-inference.md",
+            "seekdb-operations.md",
+            "seekdb-operations.md",
+            "powercontext-memory.md",
+            "powercontext-memory.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 1
+        },
+        {
+          "query": "INT8 量化的代价是什么",
+          "relevant": [
+            "edge-inference.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 13.900000005960464,
+            "searchMs": 5,
+            "endToEndMs": 18.900000005960464
+          },
+          "warmMedian": {
+            "queryEmbedMs": 14.100000008940697,
+            "searchMs": 5,
+            "endToEndMs": 19.100000008940697
+          },
+          "sources": [
+            "edge-inference.md",
+            "powercontext-retrieval.md",
+            "edge-inference.md",
+            "powercontext-retrieval.md",
+            "powercontext-memory.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 1
+        },
+        {
+          "query": "怎么评估量化前后的检索质量",
+          "relevant": [
+            "edge-inference.md",
+            "powercontext-retrieval.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 14.099999994039536,
+            "searchMs": 5,
+            "endToEndMs": 19.099999994039536
+          },
+          "warmMedian": {
+            "queryEmbedMs": 14.299999997019768,
+            "searchMs": 5,
+            "endToEndMs": 19.299999997019768
+          },
+          "sources": [
+            "edge-inference.md",
+            "powercontext-retrieval.md",
+            "seekdb-hybrid.md",
+            "powercontext-retrieval.md",
+            "powercontext-retrieval.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 2
+        },
+        {
+          "query": "批量推理对吞吐有什么影响",
+          "relevant": [
+            "edge-inference.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 14.600000023841858,
+            "searchMs": 5,
+            "endToEndMs": 19.600000023841858
+          },
+          "warmMedian": {
+            "queryEmbedMs": 14.550000011920929,
+            "searchMs": 5,
+            "endToEndMs": 19.55000001192093
+          },
+          "sources": [
+            "edge-inference.md",
+            "edge-inference.md",
+            "edge-inference.md",
+            "edge-inference.md",
+            "seekdb-hybrid.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 1
+        },
+        {
+          "query": "端侧模型从哪里获取更稳妥",
+          "relevant": [
+            "edge-inference.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 14.300000011920929,
+            "searchMs": 5,
+            "endToEndMs": 19.30000001192093
+          },
+          "warmMedian": {
+            "queryEmbedMs": 14.450000002980232,
+            "searchMs": 5.5,
+            "endToEndMs": 19.950000002980232
+          },
+          "sources": [
+            "edge-inference.md",
+            "edge-pipeline.md",
+            "edge-inference.md",
+            "edge-inference.md",
+            "powercontext-retrieval.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 1
+        },
+        {
+          "query": "切块粒度为什么重要",
+          "relevant": [
+            "edge-pipeline.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 13.5,
+            "searchMs": 5,
+            "endToEndMs": 18.5
+          },
+          "warmMedian": {
+            "queryEmbedMs": 14.150000005960464,
+            "searchMs": 5,
+            "endToEndMs": 19.150000005960464
+          },
+          "sources": [
+            "edge-pipeline.md",
+            "edge-inference.md",
+            "edge-inference.md",
+            "seekdb-schema.md",
+            "oceanbase-arch.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 1
+        },
+        {
+          "query": "索引刷新应该放在什么时机",
+          "relevant": [
+            "edge-pipeline.md",
+            "oceanbase-search.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 15.400000005960464,
+            "searchMs": 5,
+            "endToEndMs": 20.400000005960464
+          },
+          "warmMedian": {
+            "queryEmbedMs": 15.400000005960464,
+            "searchMs": 5,
+            "endToEndMs": 20.400000005960464
+          },
+          "sources": [
+            "oceanbase-search.md",
+            "seekdb-hybrid.md",
+            "oceanbase-arch.md",
+            "edge-pipeline.md",
+            "seekdb-hybrid.md"
+          ],
+          "recall": 1,
+          "ndcg": 0.8772153153380493,
+          "hitCount": 2
+        },
+        {
+          "query": "查询耗时要怎么拆开测",
+          "relevant": [
+            "edge-pipeline.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 13.300000011920929,
+            "searchMs": 5,
+            "endToEndMs": 18.30000001192093
+          },
+          "warmMedian": {
+            "queryEmbedMs": 14,
+            "searchMs": 5,
+            "endToEndMs": 19
+          },
+          "sources": [
+            "edge-pipeline.md",
+            "edge-pipeline.md",
+            "powercontext-retrieval.md",
+            "seekdb-operations.md",
+            "powercontext-retrieval.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 1
+        },
+        {
+          "query": "PowerContext 如何隔离不同任务的记忆",
+          "relevant": [
+            "powercontext-memory.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 13.799999982118607,
+            "searchMs": 5,
+            "endToEndMs": 18.799999982118607
+          },
+          "warmMedian": {
+            "queryEmbedMs": 14.149999991059303,
+            "searchMs": 5,
+            "endToEndMs": 19.149999991059303
+          },
+          "sources": [
+            "powercontext-memory.md",
+            "oceanbase-arch.md",
+            "powercontext-memory.md",
+            "seekdb-schema.md",
+            "seekdb-hybrid.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 1
+        },
+        {
+          "query": "上下文的预算约束是什么意思",
+          "relevant": [
+            "powercontext-memory.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 16.200000017881393,
+            "searchMs": 5,
+            "endToEndMs": 21.200000017881393
+          },
+          "warmMedian": {
+            "queryEmbedMs": 16.200000017881393,
+            "searchMs": 5,
+            "endToEndMs": 21.200000017881393
+          },
+          "sources": [
+            "powercontext-memory.md",
+            "powercontext-memory.md",
+            "powercontext-retrieval.md",
+            "seekdb-hybrid.md",
+            "edge-inference.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 1
+        },
+        {
+          "query": "跨会话交接需要保存哪些状态",
+          "relevant": [
+            "powercontext-memory.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 14.799999982118607,
+            "searchMs": 6,
+            "endToEndMs": 20.799999982118607
+          },
+          "warmMedian": {
+            "queryEmbedMs": 14.849999994039536,
+            "searchMs": 5.5,
+            "endToEndMs": 20.349999994039536
+          },
+          "sources": [
+            "powercontext-memory.md",
+            "powercontext-memory.md",
+            "seekdb-operations.md",
+            "seekdb-schema.md",
+            "seekdb-schema.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 1
+        },
+        {
+          "query": "Recall@K 和 nDCG@K 有什么区别",
+          "relevant": [
+            "powercontext-retrieval.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 16.30000001192093,
+            "searchMs": 6,
+            "endToEndMs": 22.30000001192093
+          },
+          "warmMedian": {
+            "queryEmbedMs": 15.049999997019768,
+            "searchMs": 5.5,
+            "endToEndMs": 20.549999997019768
+          },
+          "sources": [
+            "powercontext-retrieval.md",
+            "edge-inference.md",
+            "seekdb-schema.md",
+            "powercontext-retrieval.md",
+            "oceanbase-arch.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 1
+        },
+        {
+          "query": "评测集应该怎么设计",
+          "relevant": [
+            "powercontext-retrieval.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 14.099999994039536,
+            "searchMs": 5,
+            "endToEndMs": 19.099999994039536
+          },
+          "warmMedian": {
+            "queryEmbedMs": 15.849999994039536,
+            "searchMs": 4.5,
+            "endToEndMs": 20.349999994039536
+          },
+          "sources": [
+            "powercontext-retrieval.md",
+            "powercontext-retrieval.md",
+            "powercontext-retrieval.md",
+            "edge-inference.md",
+            "seekdb-schema.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 1
+        },
+        {
+          "query": "量化对比要保证什么一致",
+          "relevant": [
+            "powercontext-retrieval.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 13.700000017881393,
+            "searchMs": 4,
+            "endToEndMs": 17.700000017881393
+          },
+          "warmMedian": {
+            "queryEmbedMs": 14.450000017881393,
+            "searchMs": 4.5,
+            "endToEndMs": 18.950000017881393
+          },
+          "sources": [
+            "powercontext-retrieval.md",
+            "powercontext-retrieval.md",
+            "powercontext-retrieval.md",
+            "edge-inference.md",
+            "oceanbase-arch.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 1
+        },
+        {
+          "query": "seekdb 和 OceanBase 是什么关系",
+          "relevant": [
+            "oceanbase-arch.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 13.900000005960464,
+            "searchMs": 5,
+            "endToEndMs": 18.900000005960464
+          },
+          "warmMedian": {
+            "queryEmbedMs": 14.299999997019768,
+            "searchMs": 4.5,
+            "endToEndMs": 18.799999997019768
+          },
+          "sources": [
+            "oceanbase-arch.md",
+            "seekdb-schema.md",
+            "seekdb-hybrid.md",
+            "seekdb-operations.md",
+            "powercontext-memory.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 1
+        },
+        {
+          "query": "多租户下访问需要带什么",
+          "relevant": [
+            "oceanbase-arch.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 14.800000011920929,
+            "searchMs": 5,
+            "endToEndMs": 19.80000001192093
+          },
+          "warmMedian": {
+            "queryEmbedMs": 14.600000008940697,
+            "searchMs": 5,
+            "endToEndMs": 19.600000008940697
+          },
+          "sources": [
+            "oceanbase-arch.md",
+            "seekdb-schema.md",
+            "oceanbase-search.md",
+            "seekdb-operations.md",
+            "edge-pipeline.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 1
+        },
+        {
+          "query": "倒排索引和图索引分别适合什么",
+          "relevant": [
+            "oceanbase-search.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 13.700000017881393,
+            "searchMs": 5,
+            "endToEndMs": 18.700000017881393
+          },
+          "warmMedian": {
+            "queryEmbedMs": 14.299999997019768,
+            "searchMs": 5,
+            "endToEndMs": 19.299999997019768
+          },
+          "sources": [
+            "oceanbase-search.md",
+            "oceanbase-arch.md",
+            "seekdb-hybrid.md",
+            "seekdb-hybrid.md",
+            "edge-pipeline.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 1
+        },
+        {
+          "query": "融合排序有哪些做法",
+          "relevant": [
+            "oceanbase-search.md",
+            "seekdb-hybrid.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 14.900000005960464,
+            "searchMs": 5,
+            "endToEndMs": 19.900000005960464
+          },
+          "warmMedian": {
+            "queryEmbedMs": 14.549999997019768,
+            "searchMs": 5,
+            "endToEndMs": 19.549999997019768
+          },
+          "sources": [
+            "oceanbase-search.md",
+            "seekdb-hybrid.md",
+            "oceanbase-search.md",
+            "seekdb-schema.md",
+            "powercontext-memory.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 2
+        },
+        {
+          "query": "写入和刷新之间的窗口期是什么",
+          "relevant": [
+            "oceanbase-search.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 14.400000005960464,
+            "searchMs": 6,
+            "endToEndMs": 20.400000005960464
+          },
+          "warmMedian": {
+            "queryEmbedMs": 14.550000011920929,
+            "searchMs": 5.5,
+            "endToEndMs": 20.05000001192093
+          },
+          "sources": [
+            "oceanbase-search.md",
+            "seekdb-hybrid.md",
+            "oceanbase-arch.md",
+            "powercontext-retrieval.md",
+            "edge-pipeline.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 1
+        }
+      ],
+      "consoleErrors": [],
+      "summary": {
+        "recallAtK": 1,
+        "ndcgAtK": 0.9765645368162078,
+        "coldEndToEndMs": 19.450000002980232,
+        "warmEndToEndMs": 19.5,
+        "warmQueryEmbedMs": 14.424999997019768,
+        "warmSearchMs": 5
+      }
+    },
+    {
+      "dtype": "fp32",
+      "requestedBackend": "wasm",
+      "backend": "wasm",
+      "adapter": "WASM（强制）",
+      "model": {
+        "model": "Xenova/bge-small-zh-v1.5",
+        "revision": "main",
+        "dtype": "fp32",
+        "dimension": 512,
+        "backend": "wasm",
+        "adapter": "WASM（强制）",
+        "loadMs": 685.0999999940395
+      },
+      "import": {
+        "files": 9,
+        "chunks": 27,
+        "embedMs": 2706.0999999940395,
+        "writeMs": 477.30000001192093,
+        "embedThroughput": 9.97745833489504
+      },
+      "queries": [
+        {
+          "query": "混合检索为什么要由数据库完成融合排序",
+          "relevant": [
+            "seekdb-hybrid.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 16.700000017881393,
+            "searchMs": 13,
+            "endToEndMs": 29.700000017881393
+          },
+          "warmMedian": {
+            "queryEmbedMs": 16.150000005960464,
+            "searchMs": 9,
+            "endToEndMs": 25.150000005960464
+          },
+          "sources": [
+            "seekdb-hybrid.md",
+            "oceanbase-search.md",
+            "oceanbase-search.md",
+            "seekdb-hybrid.md",
+            "seekdb-hybrid.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 1
+        },
+        {
+          "query": "中文全文索引用哪个分词器",
+          "relevant": [
+            "seekdb-hybrid.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 14.599999994039536,
+            "searchMs": 4,
+            "endToEndMs": 18.599999994039536
+          },
+          "warmMedian": {
+            "queryEmbedMs": 14.599999994039536,
+            "searchMs": 4.5,
+            "endToEndMs": 19.099999994039536
+          },
+          "sources": [
+            "seekdb-hybrid.md",
+            "seekdb-hybrid.md",
+            "seekdb-schema.md",
+            "seekdb-schema.md",
+            "powercontext-memory.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 1
+        },
+        {
+          "query": "写入向量后为什么还要刷新索引",
+          "relevant": [
+            "seekdb-hybrid.md",
+            "oceanbase-arch.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 13.400000005960464,
+            "searchMs": 5,
+            "endToEndMs": 18.400000005960464
+          },
+          "warmMedian": {
+            "queryEmbedMs": 13.700000002980232,
+            "searchMs": 5,
+            "endToEndMs": 18.700000002980232
+          },
+          "sources": [
+            "seekdb-hybrid.md",
+            "oceanbase-arch.md",
+            "oceanbase-search.md",
+            "edge-pipeline.md",
+            "seekdb-hybrid.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 2
+        },
+        {
+          "query": "增量写入怎么减少索引构建开销",
+          "relevant": [
+            "seekdb-hybrid.md",
+            "oceanbase-arch.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 13.899999976158142,
+            "searchMs": 5,
+            "endToEndMs": 18.899999976158142
+          },
+          "warmMedian": {
+            "queryEmbedMs": 14.149999991059303,
+            "searchMs": 5.5,
+            "endToEndMs": 19.649999991059303
+          },
+          "sources": [
+            "oceanbase-arch.md",
+            "seekdb-hybrid.md",
+            "edge-pipeline.md",
+            "seekdb-hybrid.md",
+            "oceanbase-search.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 2
+        },
+        {
+          "query": "集合可以同时建哪几种索引",
+          "relevant": [
+            "seekdb-schema.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 14.5,
+            "searchMs": 5,
+            "endToEndMs": 19.5
+          },
+          "warmMedian": {
+            "queryEmbedMs": 14.25,
+            "searchMs": 5.5,
+            "endToEndMs": 19.75
+          },
+          "sources": [
+            "seekdb-schema.md",
+            "seekdb-hybrid.md",
+            "oceanbase-search.md",
+            "seekdb-schema.md",
+            "seekdb-hybrid.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 1
+        },
+        {
+          "query": "向量维度在什么时候确定",
+          "relevant": [
+            "seekdb-schema.md",
+            "oceanbase-arch.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 14.400000005960464,
+            "searchMs": 5,
+            "endToEndMs": 19.400000005960464
+          },
+          "warmMedian": {
+            "queryEmbedMs": 14.350000008940697,
+            "searchMs": 5,
+            "endToEndMs": 19.350000008940697
+          },
+          "sources": [
+            "oceanbase-arch.md",
+            "seekdb-schema.md",
+            "seekdb-schema.md",
+            "seekdb-schema.md",
+            "oceanbase-search.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 2
+        },
+        {
+          "query": "距离度量有哪些选项",
+          "relevant": [
+            "seekdb-schema.md",
+            "oceanbase-arch.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 14.200000017881393,
+            "searchMs": 5,
+            "endToEndMs": 19.200000017881393
+          },
+          "warmMedian": {
+            "queryEmbedMs": 14.050000011920929,
+            "searchMs": 5.5,
+            "endToEndMs": 19.55000001192093
+          },
+          "sources": [
+            "seekdb-schema.md",
+            "seekdb-schema.md",
+            "oceanbase-arch.md",
+            "powercontext-memory.md",
+            "seekdb-schema.md"
+          ],
+          "recall": 1,
+          "ndcg": 0.9197207891481876,
+          "hitCount": 2
+        },
+        {
+          "query": "本地部署 seekdb 有哪两种形态",
+          "relevant": [
+            "seekdb-operations.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 14.099999994039536,
+            "searchMs": 5,
+            "endToEndMs": 19.099999994039536
+          },
+          "warmMedian": {
+            "queryEmbedMs": 14.049999997019768,
+            "searchMs": 5,
+            "endToEndMs": 19.049999997019768
+          },
+          "sources": [
+            "seekdb-operations.md",
+            "oceanbase-arch.md",
+            "seekdb-hybrid.md",
+            "seekdb-schema.md",
+            "seekdb-schema.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 1
+        },
+        {
+          "query": "为什么路径里不能有中文",
+          "relevant": [
+            "seekdb-operations.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 14.700000017881393,
+            "searchMs": 5,
+            "endToEndMs": 19.700000017881393
+          },
+          "warmMedian": {
+            "queryEmbedMs": 14.450000002980232,
+            "searchMs": 5,
+            "endToEndMs": 19.450000002980232
+          },
+          "sources": [
+            "seekdb-hybrid.md",
+            "edge-inference.md",
+            "seekdb-operations.md",
+            "seekdb-hybrid.md",
+            "seekdb-schema.md"
+          ],
+          "recall": 1,
+          "ndcg": 0.5,
+          "hitCount": 1
+        },
+        {
+          "query": "端口冲突要怎么避免",
+          "relevant": [
+            "seekdb-operations.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 9.900000005960464,
+            "searchMs": 5,
+            "endToEndMs": 14.900000005960464
+          },
+          "warmMedian": {
+            "queryEmbedMs": 12.200000002980232,
+            "searchMs": 5,
+            "endToEndMs": 17.200000002980232
+          },
+          "sources": [
+            "seekdb-operations.md",
+            "edge-pipeline.md",
+            "seekdb-operations.md",
+            "edge-inference.md",
+            "edge-pipeline.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 1
+        },
+        {
+          "query": "浏览器里跑模型有什么好处",
+          "relevant": [
+            "edge-inference.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 14.5,
+            "searchMs": 5,
+            "endToEndMs": 19.5
+          },
+          "warmMedian": {
+            "queryEmbedMs": 14.450000002980232,
+            "searchMs": 5,
+            "endToEndMs": 19.450000002980232
+          },
+          "sources": [
+            "edge-inference.md",
+            "edge-inference.md",
+            "edge-inference.md",
+            "seekdb-schema.md",
+            "powercontext-retrieval.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 1
+        },
+        {
+          "query": "WebGPU 不可用时怎么办",
+          "relevant": [
+            "edge-inference.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 14.300000011920929,
+            "searchMs": 5,
+            "endToEndMs": 19.30000001192093
+          },
+          "warmMedian": {
+            "queryEmbedMs": 14.25,
+            "searchMs": 5,
+            "endToEndMs": 19.25
+          },
+          "sources": [
+            "edge-inference.md",
+            "seekdb-operations.md",
+            "seekdb-operations.md",
+            "powercontext-memory.md",
+            "powercontext-memory.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 1
+        },
+        {
+          "query": "INT8 量化的代价是什么",
+          "relevant": [
+            "edge-inference.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 14.599999994039536,
+            "searchMs": 5,
+            "endToEndMs": 19.599999994039536
+          },
+          "warmMedian": {
+            "queryEmbedMs": 14.549999997019768,
+            "searchMs": 5.5,
+            "endToEndMs": 20.049999997019768
+          },
+          "sources": [
+            "edge-inference.md",
+            "powercontext-retrieval.md",
+            "edge-inference.md",
+            "powercontext-retrieval.md",
+            "powercontext-memory.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 1
+        },
+        {
+          "query": "怎么评估量化前后的检索质量",
+          "relevant": [
+            "edge-inference.md",
+            "powercontext-retrieval.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 14.799999982118607,
+            "searchMs": 6,
+            "endToEndMs": 20.799999982118607
+          },
+          "warmMedian": {
+            "queryEmbedMs": 14.399999991059303,
+            "searchMs": 6,
+            "endToEndMs": 20.399999991059303
+          },
+          "sources": [
+            "edge-inference.md",
+            "powercontext-retrieval.md",
+            "seekdb-hybrid.md",
+            "powercontext-retrieval.md",
+            "powercontext-retrieval.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 2
+        },
+        {
+          "query": "批量推理对吞吐有什么影响",
+          "relevant": [
+            "edge-inference.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 14.800000011920929,
+            "searchMs": 13,
+            "endToEndMs": 27.80000001192093
+          },
+          "warmMedian": {
+            "queryEmbedMs": 13.400000005960464,
+            "searchMs": 9,
+            "endToEndMs": 22.400000005960464
+          },
+          "sources": [
+            "edge-inference.md",
+            "edge-inference.md",
+            "edge-inference.md",
+            "edge-inference.md",
+            "seekdb-hybrid.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 1
+        },
+        {
+          "query": "端侧模型从哪里获取更稳妥",
+          "relevant": [
+            "edge-inference.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 14.5,
+            "searchMs": 5,
+            "endToEndMs": 19.5
+          },
+          "warmMedian": {
+            "queryEmbedMs": 14.549999997019768,
+            "searchMs": 5,
+            "endToEndMs": 19.549999997019768
+          },
+          "sources": [
+            "edge-inference.md",
+            "edge-pipeline.md",
+            "edge-inference.md",
+            "edge-inference.md",
+            "powercontext-retrieval.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 1
+        },
+        {
+          "query": "切块粒度为什么重要",
+          "relevant": [
+            "edge-pipeline.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 14.299999982118607,
+            "searchMs": 5,
+            "endToEndMs": 19.299999982118607
+          },
+          "warmMedian": {
+            "queryEmbedMs": 14.299999982118607,
+            "searchMs": 5,
+            "endToEndMs": 19.299999982118607
+          },
+          "sources": [
+            "edge-pipeline.md",
+            "edge-inference.md",
+            "edge-inference.md",
+            "seekdb-schema.md",
+            "oceanbase-arch.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 1
+        },
+        {
+          "query": "索引刷新应该放在什么时机",
+          "relevant": [
+            "edge-pipeline.md",
+            "oceanbase-search.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 14.5,
+            "searchMs": 5,
+            "endToEndMs": 19.5
+          },
+          "warmMedian": {
+            "queryEmbedMs": 14.299999997019768,
+            "searchMs": 5,
+            "endToEndMs": 19.299999997019768
+          },
+          "sources": [
+            "oceanbase-search.md",
+            "seekdb-hybrid.md",
+            "oceanbase-arch.md",
+            "edge-pipeline.md",
+            "seekdb-hybrid.md"
+          ],
+          "recall": 1,
+          "ndcg": 0.8772153153380493,
+          "hitCount": 2
+        },
+        {
+          "query": "查询耗时要怎么拆开测",
+          "relevant": [
+            "edge-pipeline.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 14.199999988079071,
+            "searchMs": 5,
+            "endToEndMs": 19.19999998807907
+          },
+          "warmMedian": {
+            "queryEmbedMs": 14.499999985098839,
+            "searchMs": 5.5,
+            "endToEndMs": 19.99999998509884
+          },
+          "sources": [
+            "edge-pipeline.md",
+            "edge-pipeline.md",
+            "powercontext-retrieval.md",
+            "seekdb-operations.md",
+            "powercontext-retrieval.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 1
+        },
+        {
+          "query": "PowerContext 如何隔离不同任务的记忆",
+          "relevant": [
+            "powercontext-memory.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 14,
+            "searchMs": 6,
+            "endToEndMs": 20
+          },
+          "warmMedian": {
+            "queryEmbedMs": 14.100000008940697,
+            "searchMs": 5.5,
+            "endToEndMs": 19.600000008940697
+          },
+          "sources": [
+            "powercontext-memory.md",
+            "oceanbase-arch.md",
+            "powercontext-memory.md",
+            "seekdb-schema.md",
+            "seekdb-hybrid.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 1
+        },
+        {
+          "query": "上下文的预算约束是什么意思",
+          "relevant": [
+            "powercontext-memory.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 14.400000005960464,
+            "searchMs": 5,
+            "endToEndMs": 19.400000005960464
+          },
+          "warmMedian": {
+            "queryEmbedMs": 14.150000005960464,
+            "searchMs": 5.5,
+            "endToEndMs": 19.650000005960464
+          },
+          "sources": [
+            "powercontext-memory.md",
+            "powercontext-memory.md",
+            "powercontext-retrieval.md",
+            "seekdb-hybrid.md",
+            "edge-inference.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 1
+        },
+        {
+          "query": "跨会话交接需要保存哪些状态",
+          "relevant": [
+            "powercontext-memory.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 14.599999994039536,
+            "searchMs": 5,
+            "endToEndMs": 19.599999994039536
+          },
+          "warmMedian": {
+            "queryEmbedMs": 14.249999985098839,
+            "searchMs": 5,
+            "endToEndMs": 19.24999998509884
+          },
+          "sources": [
+            "powercontext-memory.md",
+            "powercontext-memory.md",
+            "seekdb-operations.md",
+            "seekdb-schema.md",
+            "seekdb-schema.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 1
+        },
+        {
+          "query": "Recall@K 和 nDCG@K 有什么区别",
+          "relevant": [
+            "powercontext-retrieval.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 14.5,
+            "searchMs": 5,
+            "endToEndMs": 19.5
+          },
+          "warmMedian": {
+            "queryEmbedMs": 14.150000005960464,
+            "searchMs": 5,
+            "endToEndMs": 19.150000005960464
+          },
+          "sources": [
+            "powercontext-retrieval.md",
+            "edge-inference.md",
+            "seekdb-schema.md",
+            "powercontext-retrieval.md",
+            "oceanbase-arch.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 1
+        },
+        {
+          "query": "评测集应该怎么设计",
+          "relevant": [
+            "powercontext-retrieval.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 14,
+            "searchMs": 5,
+            "endToEndMs": 19
+          },
+          "warmMedian": {
+            "queryEmbedMs": 14.349999994039536,
+            "searchMs": 5.5,
+            "endToEndMs": 19.849999994039536
+          },
+          "sources": [
+            "powercontext-retrieval.md",
+            "powercontext-retrieval.md",
+            "powercontext-retrieval.md",
+            "edge-inference.md",
+            "seekdb-schema.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 1
+        },
+        {
+          "query": "量化对比要保证什么一致",
+          "relevant": [
+            "powercontext-retrieval.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 14.400000005960464,
+            "searchMs": 5,
+            "endToEndMs": 19.400000005960464
+          },
+          "warmMedian": {
+            "queryEmbedMs": 14.300000011920929,
+            "searchMs": 5,
+            "endToEndMs": 19.30000001192093
+          },
+          "sources": [
+            "powercontext-retrieval.md",
+            "powercontext-retrieval.md",
+            "powercontext-retrieval.md",
+            "edge-inference.md",
+            "oceanbase-arch.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 1
+        },
+        {
+          "query": "seekdb 和 OceanBase 是什么关系",
+          "relevant": [
+            "oceanbase-arch.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 14.299999982118607,
+            "searchMs": 5,
+            "endToEndMs": 19.299999982118607
+          },
+          "warmMedian": {
+            "queryEmbedMs": 14.099999994039536,
+            "searchMs": 5,
+            "endToEndMs": 19.099999994039536
+          },
+          "sources": [
+            "oceanbase-arch.md",
+            "seekdb-schema.md",
+            "seekdb-hybrid.md",
+            "seekdb-operations.md",
+            "powercontext-memory.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 1
+        },
+        {
+          "query": "多租户下访问需要带什么",
+          "relevant": [
+            "oceanbase-arch.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 14,
+            "searchMs": 4,
+            "endToEndMs": 18
+          },
+          "warmMedian": {
+            "queryEmbedMs": 14.300000011920929,
+            "searchMs": 4.5,
+            "endToEndMs": 18.80000001192093
+          },
+          "sources": [
+            "oceanbase-arch.md",
+            "seekdb-schema.md",
+            "oceanbase-search.md",
+            "seekdb-operations.md",
+            "edge-pipeline.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 1
+        },
+        {
+          "query": "倒排索引和图索引分别适合什么",
+          "relevant": [
+            "oceanbase-search.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 13.900000005960464,
+            "searchMs": 5,
+            "endToEndMs": 18.900000005960464
+          },
+          "warmMedian": {
+            "queryEmbedMs": 14,
+            "searchMs": 5,
+            "endToEndMs": 19
+          },
+          "sources": [
+            "oceanbase-search.md",
+            "oceanbase-arch.md",
+            "seekdb-hybrid.md",
+            "seekdb-hybrid.md",
+            "edge-pipeline.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 1
+        },
+        {
+          "query": "融合排序有哪些做法",
+          "relevant": [
+            "oceanbase-search.md",
+            "seekdb-hybrid.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 14.799999982118607,
+            "searchMs": 5,
+            "endToEndMs": 19.799999982118607
+          },
+          "warmMedian": {
+            "queryEmbedMs": 14.699999988079071,
+            "searchMs": 5,
+            "endToEndMs": 19.69999998807907
+          },
+          "sources": [
+            "oceanbase-search.md",
+            "seekdb-hybrid.md",
+            "oceanbase-search.md",
+            "seekdb-schema.md",
+            "powercontext-memory.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 2
+        },
+        {
+          "query": "写入和刷新之间的窗口期是什么",
+          "relevant": [
+            "oceanbase-search.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 14.099999994039536,
+            "searchMs": 5,
+            "endToEndMs": 19.099999994039536
+          },
+          "warmMedian": {
+            "queryEmbedMs": 13.899999991059303,
+            "searchMs": 5,
+            "endToEndMs": 18.899999991059303
+          },
+          "sources": [
+            "oceanbase-search.md",
+            "seekdb-hybrid.md",
+            "oceanbase-arch.md",
+            "powercontext-retrieval.md",
+            "edge-pipeline.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 1
+        }
+      ],
+      "consoleErrors": [],
+      "summary": {
+        "recallAtK": 1,
+        "ndcgAtK": 0.9765645368162078,
+        "coldEndToEndMs": 19.400000005960464,
+        "warmEndToEndMs": 19.400000005960464,
+        "warmQueryEmbedMs": 14.274999991059303,
+        "warmSearchMs": 5
+      }
+    },
+    {
+      "dtype": "fp16",
+      "requestedBackend": "auto",
+      "backend": "webgpu",
+      "adapter": "intel xe-lpg",
+      "model": {
+        "model": "Xenova/bge-small-zh-v1.5",
+        "revision": "main",
+        "dtype": "fp16",
+        "dimension": 512,
+        "backend": "webgpu",
+        "adapter": "intel xe-lpg",
+        "loadMs": 603.8000000119209
+      },
+      "import": {
+        "files": 9,
+        "chunks": 27,
+        "embedMs": 606.6999999880791,
+        "writeMs": 786.5,
+        "embedThroughput": 44.503049283880856
+      },
+      "queries": [
+        {
+          "query": "混合检索为什么要由数据库完成融合排序",
+          "relevant": [
+            "seekdb-hybrid.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 27.599999994039536,
+            "searchMs": 13,
+            "endToEndMs": 40.599999994039536
+          },
+          "warmMedian": {
+            "queryEmbedMs": 20.849999994039536,
+            "searchMs": 8.5,
+            "endToEndMs": 29.349999994039536
+          },
+          "sources": [
+            "seekdb-hybrid.md",
+            "oceanbase-search.md",
+            "oceanbase-search.md",
+            "seekdb-hybrid.md",
+            "seekdb-hybrid.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 1
+        },
+        {
+          "query": "中文全文索引用哪个分词器",
+          "relevant": [
+            "seekdb-hybrid.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 14.400000005960464,
+            "searchMs": 5,
+            "endToEndMs": 19.400000005960464
+          },
+          "warmMedian": {
+            "queryEmbedMs": 14.25,
+            "searchMs": 5,
+            "endToEndMs": 19.25
+          },
+          "sources": [
+            "seekdb-hybrid.md",
+            "seekdb-hybrid.md",
+            "seekdb-schema.md",
+            "seekdb-schema.md",
+            "powercontext-memory.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 1
+        },
+        {
+          "query": "写入向量后为什么还要刷新索引",
+          "relevant": [
+            "seekdb-hybrid.md",
+            "oceanbase-arch.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 14.400000005960464,
+            "searchMs": 5,
+            "endToEndMs": 19.400000005960464
+          },
+          "warmMedian": {
+            "queryEmbedMs": 14.650000005960464,
+            "searchMs": 5,
+            "endToEndMs": 19.650000005960464
+          },
+          "sources": [
+            "seekdb-hybrid.md",
+            "oceanbase-arch.md",
+            "oceanbase-search.md",
+            "edge-pipeline.md",
+            "seekdb-hybrid.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 2
+        },
+        {
+          "query": "增量写入怎么减少索引构建开销",
+          "relevant": [
+            "seekdb-hybrid.md",
+            "oceanbase-arch.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 12.199999988079071,
+            "searchMs": 5,
+            "endToEndMs": 17.19999998807907
+          },
+          "warmMedian": {
+            "queryEmbedMs": 13.400000005960464,
+            "searchMs": 5,
+            "endToEndMs": 18.400000005960464
+          },
+          "sources": [
+            "oceanbase-arch.md",
+            "seekdb-hybrid.md",
+            "edge-pipeline.md",
+            "seekdb-hybrid.md",
+            "oceanbase-search.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 2
+        },
+        {
+          "query": "集合可以同时建哪几种索引",
+          "relevant": [
+            "seekdb-schema.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 12.900000005960464,
+            "searchMs": 5,
+            "endToEndMs": 17.900000005960464
+          },
+          "warmMedian": {
+            "queryEmbedMs": 13.799999997019768,
+            "searchMs": 4.5,
+            "endToEndMs": 18.299999997019768
+          },
+          "sources": [
+            "seekdb-schema.md",
+            "seekdb-hybrid.md",
+            "oceanbase-search.md",
+            "seekdb-schema.md",
+            "seekdb-hybrid.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 1
+        },
+        {
+          "query": "向量维度在什么时候确定",
+          "relevant": [
+            "seekdb-schema.md",
+            "oceanbase-arch.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 13.199999988079071,
+            "searchMs": 5,
+            "endToEndMs": 18.19999998807907
+          },
+          "warmMedian": {
+            "queryEmbedMs": 13.949999988079071,
+            "searchMs": 5,
+            "endToEndMs": 18.94999998807907
+          },
+          "sources": [
+            "oceanbase-arch.md",
+            "seekdb-schema.md",
+            "seekdb-schema.md",
+            "seekdb-schema.md",
+            "oceanbase-search.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 2
+        },
+        {
+          "query": "距离度量有哪些选项",
+          "relevant": [
+            "seekdb-schema.md",
+            "oceanbase-arch.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 14,
+            "searchMs": 5,
+            "endToEndMs": 19
+          },
+          "warmMedian": {
+            "queryEmbedMs": 14.450000002980232,
+            "searchMs": 5,
+            "endToEndMs": 19.450000002980232
+          },
+          "sources": [
+            "seekdb-schema.md",
+            "seekdb-schema.md",
+            "oceanbase-arch.md",
+            "powercontext-memory.md",
+            "seekdb-schema.md"
+          ],
+          "recall": 1,
+          "ndcg": 0.9197207891481876,
+          "hitCount": 2
+        },
+        {
+          "query": "本地部署 seekdb 有哪两种形态",
+          "relevant": [
+            "seekdb-operations.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 15.200000017881393,
+            "searchMs": 5,
+            "endToEndMs": 20.200000017881393
+          },
+          "warmMedian": {
+            "queryEmbedMs": 15.050000011920929,
+            "searchMs": 5,
+            "endToEndMs": 20.05000001192093
+          },
+          "sources": [
+            "seekdb-operations.md",
+            "oceanbase-arch.md",
+            "seekdb-hybrid.md",
+            "seekdb-schema.md",
+            "seekdb-schema.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 1
+        },
+        {
+          "query": "为什么路径里不能有中文",
+          "relevant": [
+            "seekdb-operations.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 16,
+            "searchMs": 7,
+            "endToEndMs": 23
+          },
+          "warmMedian": {
+            "queryEmbedMs": 15.400000005960464,
+            "searchMs": 6,
+            "endToEndMs": 21.400000005960464
+          },
+          "sources": [
+            "seekdb-hybrid.md",
+            "edge-inference.md",
+            "seekdb-operations.md",
+            "seekdb-hybrid.md",
+            "seekdb-schema.md"
+          ],
+          "recall": 1,
+          "ndcg": 0.5,
+          "hitCount": 1
+        },
+        {
+          "query": "端口冲突要怎么避免",
+          "relevant": [
+            "seekdb-operations.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 14.699999988079071,
+            "searchMs": 5,
+            "endToEndMs": 19.69999998807907
+          },
+          "warmMedian": {
+            "queryEmbedMs": 15.049999997019768,
+            "searchMs": 5,
+            "endToEndMs": 20.049999997019768
+          },
+          "sources": [
+            "seekdb-operations.md",
+            "edge-pipeline.md",
+            "seekdb-operations.md",
+            "edge-inference.md",
+            "edge-pipeline.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 1
+        },
+        {
+          "query": "浏览器里跑模型有什么好处",
+          "relevant": [
+            "edge-inference.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 14.299999982118607,
+            "searchMs": 5,
+            "endToEndMs": 19.299999982118607
+          },
+          "warmMedian": {
+            "queryEmbedMs": 14.5,
+            "searchMs": 5,
+            "endToEndMs": 19.5
+          },
+          "sources": [
+            "edge-inference.md",
+            "edge-inference.md",
+            "edge-inference.md",
+            "seekdb-schema.md",
+            "powercontext-retrieval.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 1
+        },
+        {
+          "query": "WebGPU 不可用时怎么办",
+          "relevant": [
+            "edge-inference.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 15,
+            "searchMs": 5,
+            "endToEndMs": 20
+          },
+          "warmMedian": {
+            "queryEmbedMs": 15.199999988079071,
+            "searchMs": 4.5,
+            "endToEndMs": 19.69999998807907
+          },
+          "sources": [
+            "edge-inference.md",
+            "seekdb-operations.md",
+            "seekdb-operations.md",
+            "powercontext-memory.md",
+            "powercontext-memory.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 1
+        },
+        {
+          "query": "INT8 量化的代价是什么",
+          "relevant": [
+            "edge-inference.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 14.800000011920929,
+            "searchMs": 4,
+            "endToEndMs": 18.80000001192093
+          },
+          "warmMedian": {
+            "queryEmbedMs": 14.800000011920929,
+            "searchMs": 4.5,
+            "endToEndMs": 19.30000001192093
+          },
+          "sources": [
+            "edge-inference.md",
+            "powercontext-retrieval.md",
+            "edge-inference.md",
+            "powercontext-retrieval.md",
+            "powercontext-memory.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 1
+        },
+        {
+          "query": "怎么评估量化前后的检索质量",
+          "relevant": [
+            "edge-inference.md",
+            "powercontext-retrieval.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 15.099999994039536,
+            "searchMs": 5,
+            "endToEndMs": 20.099999994039536
+          },
+          "warmMedian": {
+            "queryEmbedMs": 15.25,
+            "searchMs": 5,
+            "endToEndMs": 20.25
+          },
+          "sources": [
+            "edge-inference.md",
+            "powercontext-retrieval.md",
+            "seekdb-hybrid.md",
+            "powercontext-retrieval.md",
+            "powercontext-retrieval.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 2
+        },
+        {
+          "query": "批量推理对吞吐有什么影响",
+          "relevant": [
+            "edge-inference.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 14.5,
+            "searchMs": 5,
+            "endToEndMs": 19.5
+          },
+          "warmMedian": {
+            "queryEmbedMs": 14.549999997019768,
+            "searchMs": 5,
+            "endToEndMs": 19.549999997019768
+          },
+          "sources": [
+            "edge-inference.md",
+            "edge-inference.md",
+            "edge-inference.md",
+            "edge-inference.md",
+            "seekdb-hybrid.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 1
+        },
+        {
+          "query": "端侧模型从哪里获取更稳妥",
+          "relevant": [
+            "edge-inference.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 16.599999994039536,
+            "searchMs": 6,
+            "endToEndMs": 22.599999994039536
+          },
+          "warmMedian": {
+            "queryEmbedMs": 16,
+            "searchMs": 5.5,
+            "endToEndMs": 21.5
+          },
+          "sources": [
+            "edge-inference.md",
+            "edge-pipeline.md",
+            "edge-inference.md",
+            "edge-inference.md",
+            "powercontext-retrieval.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 1
+        },
+        {
+          "query": "切块粒度为什么重要",
+          "relevant": [
+            "edge-pipeline.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 15.300000011920929,
+            "searchMs": 5,
+            "endToEndMs": 20.30000001192093
+          },
+          "warmMedian": {
+            "queryEmbedMs": 15.400000005960464,
+            "searchMs": 4.5,
+            "endToEndMs": 19.900000005960464
+          },
+          "sources": [
+            "edge-pipeline.md",
+            "edge-inference.md",
+            "edge-inference.md",
+            "seekdb-schema.md",
+            "oceanbase-arch.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 1
+        },
+        {
+          "query": "索引刷新应该放在什么时机",
+          "relevant": [
+            "edge-pipeline.md",
+            "oceanbase-search.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 16.5,
+            "searchMs": 5,
+            "endToEndMs": 21.5
+          },
+          "warmMedian": {
+            "queryEmbedMs": 16,
+            "searchMs": 5,
+            "endToEndMs": 21
+          },
+          "sources": [
+            "oceanbase-search.md",
+            "seekdb-hybrid.md",
+            "oceanbase-arch.md",
+            "edge-pipeline.md",
+            "seekdb-hybrid.md"
+          ],
+          "recall": 1,
+          "ndcg": 0.8772153153380493,
+          "hitCount": 2
+        },
+        {
+          "query": "查询耗时要怎么拆开测",
+          "relevant": [
+            "edge-pipeline.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 15.099999994039536,
+            "searchMs": 5,
+            "endToEndMs": 20.099999994039536
+          },
+          "warmMedian": {
+            "queryEmbedMs": 15.299999997019768,
+            "searchMs": 5.5,
+            "endToEndMs": 20.799999997019768
+          },
+          "sources": [
+            "edge-pipeline.md",
+            "edge-pipeline.md",
+            "powercontext-retrieval.md",
+            "seekdb-operations.md",
+            "powercontext-retrieval.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 1
+        },
+        {
+          "query": "PowerContext 如何隔离不同任务的记忆",
+          "relevant": [
+            "powercontext-memory.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 15.599999994039536,
+            "searchMs": 5,
+            "endToEndMs": 20.599999994039536
+          },
+          "warmMedian": {
+            "queryEmbedMs": 15.650000005960464,
+            "searchMs": 5,
+            "endToEndMs": 20.650000005960464
+          },
+          "sources": [
+            "powercontext-memory.md",
+            "oceanbase-arch.md",
+            "powercontext-memory.md",
+            "seekdb-schema.md",
+            "seekdb-hybrid.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 1
+        },
+        {
+          "query": "上下文的预算约束是什么意思",
+          "relevant": [
+            "powercontext-memory.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 14.600000023841858,
+            "searchMs": 5,
+            "endToEndMs": 19.600000023841858
+          },
+          "warmMedian": {
+            "queryEmbedMs": 15.100000008940697,
+            "searchMs": 5,
+            "endToEndMs": 20.100000008940697
+          },
+          "sources": [
+            "powercontext-memory.md",
+            "powercontext-memory.md",
+            "powercontext-retrieval.md",
+            "seekdb-hybrid.md",
+            "edge-inference.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 1
+        },
+        {
+          "query": "跨会话交接需要保存哪些状态",
+          "relevant": [
+            "powercontext-memory.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 17.700000017881393,
+            "searchMs": 5,
+            "endToEndMs": 22.700000017881393
+          },
+          "warmMedian": {
+            "queryEmbedMs": 16.600000008940697,
+            "searchMs": 5,
+            "endToEndMs": 21.600000008940697
+          },
+          "sources": [
+            "powercontext-memory.md",
+            "powercontext-memory.md",
+            "seekdb-operations.md",
+            "seekdb-schema.md",
+            "seekdb-schema.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 1
+        },
+        {
+          "query": "Recall@K 和 nDCG@K 有什么区别",
+          "relevant": [
+            "powercontext-retrieval.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 15.200000017881393,
+            "searchMs": 5,
+            "endToEndMs": 20.200000017881393
+          },
+          "warmMedian": {
+            "queryEmbedMs": 15.350000008940697,
+            "searchMs": 5,
+            "endToEndMs": 20.350000008940697
+          },
+          "sources": [
+            "powercontext-retrieval.md",
+            "edge-inference.md",
+            "seekdb-schema.md",
+            "powercontext-retrieval.md",
+            "oceanbase-arch.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 1
+        },
+        {
+          "query": "评测集应该怎么设计",
+          "relevant": [
+            "powercontext-retrieval.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 15.100000023841858,
+            "searchMs": 5,
+            "endToEndMs": 20.100000023841858
+          },
+          "warmMedian": {
+            "queryEmbedMs": 15.300000011920929,
+            "searchMs": 4.5,
+            "endToEndMs": 19.80000001192093
+          },
+          "sources": [
+            "powercontext-retrieval.md",
+            "powercontext-retrieval.md",
+            "powercontext-retrieval.md",
+            "edge-inference.md",
+            "seekdb-schema.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 1
+        },
+        {
+          "query": "量化对比要保证什么一致",
+          "relevant": [
+            "powercontext-retrieval.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 15.099999994039536,
+            "searchMs": 5,
+            "endToEndMs": 20.099999994039536
+          },
+          "warmMedian": {
+            "queryEmbedMs": 15.049999997019768,
+            "searchMs": 5,
+            "endToEndMs": 20.049999997019768
+          },
+          "sources": [
+            "powercontext-retrieval.md",
+            "powercontext-retrieval.md",
+            "powercontext-retrieval.md",
+            "edge-inference.md",
+            "oceanbase-arch.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 1
+        },
+        {
+          "query": "seekdb 和 OceanBase 是什么关系",
+          "relevant": [
+            "oceanbase-arch.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 14.5,
+            "searchMs": 5,
+            "endToEndMs": 19.5
+          },
+          "warmMedian": {
+            "queryEmbedMs": 14.949999988079071,
+            "searchMs": 5,
+            "endToEndMs": 19.94999998807907
+          },
+          "sources": [
+            "oceanbase-arch.md",
+            "seekdb-schema.md",
+            "seekdb-hybrid.md",
+            "seekdb-operations.md",
+            "powercontext-memory.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 1
+        },
+        {
+          "query": "多租户下访问需要带什么",
+          "relevant": [
+            "oceanbase-arch.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 16,
+            "searchMs": 5,
+            "endToEndMs": 21
+          },
+          "warmMedian": {
+            "queryEmbedMs": 15.899999991059303,
+            "searchMs": 4.5,
+            "endToEndMs": 20.399999991059303
+          },
+          "sources": [
+            "oceanbase-arch.md",
+            "seekdb-schema.md",
+            "oceanbase-search.md",
+            "seekdb-operations.md",
+            "edge-pipeline.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 1
+        },
+        {
+          "query": "倒排索引和图索引分别适合什么",
+          "relevant": [
+            "oceanbase-search.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 16.200000017881393,
+            "searchMs": 5,
+            "endToEndMs": 21.200000017881393
+          },
+          "warmMedian": {
+            "queryEmbedMs": 15.900000005960464,
+            "searchMs": 5,
+            "endToEndMs": 20.900000005960464
+          },
+          "sources": [
+            "oceanbase-search.md",
+            "oceanbase-arch.md",
+            "seekdb-hybrid.md",
+            "seekdb-hybrid.md",
+            "edge-pipeline.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 1
+        },
+        {
+          "query": "融合排序有哪些做法",
+          "relevant": [
+            "oceanbase-search.md",
+            "seekdb-hybrid.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 14.800000011920929,
+            "searchMs": 5,
+            "endToEndMs": 19.80000001192093
+          },
+          "warmMedian": {
+            "queryEmbedMs": 15.250000014901161,
+            "searchMs": 5,
+            "endToEndMs": 20.25000001490116
+          },
+          "sources": [
+            "oceanbase-search.md",
+            "seekdb-hybrid.md",
+            "oceanbase-search.md",
+            "seekdb-schema.md",
+            "powercontext-memory.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 2
+        },
+        {
+          "query": "写入和刷新之间的窗口期是什么",
+          "relevant": [
+            "oceanbase-search.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 17.099999994039536,
+            "searchMs": 5,
+            "endToEndMs": 22.099999994039536
+          },
+          "warmMedian": {
+            "queryEmbedMs": 17.099999994039536,
+            "searchMs": 5,
+            "endToEndMs": 22.099999994039536
+          },
+          "sources": [
+            "oceanbase-search.md",
+            "seekdb-hybrid.md",
+            "oceanbase-arch.md",
+            "powercontext-retrieval.md",
+            "edge-pipeline.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 1
+        }
+      ],
+      "consoleErrors": [],
+      "summary": {
+        "recallAtK": 1,
+        "ndcgAtK": 0.9765645368162078,
+        "coldEndToEndMs": 20.099999994039536,
+        "warmEndToEndMs": 20.05000000447035,
+        "warmQueryEmbedMs": 15.224999994039536,
+        "warmSearchMs": 5
+      }
+    },
+    {
+      "dtype": "q8",
+      "requestedBackend": "auto",
+      "backend": "webgpu",
+      "adapter": "intel xe-lpg",
+      "model": {
+        "model": "Xenova/bge-small-zh-v1.5",
+        "revision": "main",
+        "dtype": "q8",
+        "dimension": 512,
+        "backend": "webgpu",
+        "adapter": "intel xe-lpg",
+        "loadMs": 539.1999999880791
+      },
+      "import": {
+        "files": 9,
+        "chunks": 27,
+        "embedMs": 2501,
+        "writeMs": 584.0999999940395,
+        "embedThroughput": 10.795681727309077
+      },
+      "queries": [
+        {
+          "query": "混合检索为什么要由数据库完成融合排序",
+          "relevant": [
+            "seekdb-hybrid.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 89.89999997615814,
+            "searchMs": 13,
+            "endToEndMs": 102.89999997615814
+          },
+          "warmMedian": {
+            "queryEmbedMs": 89.89999997615814,
+            "searchMs": 13,
+            "endToEndMs": 102.89999997615814
+          },
+          "sources": [
+            "seekdb-hybrid.md",
+            "oceanbase-search.md",
+            "oceanbase-search.md",
+            "seekdb-hybrid.md",
+            "seekdb-hybrid.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 1
+        },
+        {
+          "query": "中文全文索引用哪个分词器",
+          "relevant": [
+            "seekdb-hybrid.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 172.39999997615814,
+            "searchMs": 4,
+            "endToEndMs": 176.39999997615814
+          },
+          "warmMedian": {
+            "queryEmbedMs": 172.39999997615814,
+            "searchMs": 4,
+            "endToEndMs": 176.39999997615814
+          },
+          "sources": [
+            "seekdb-hybrid.md",
+            "seekdb-hybrid.md",
+            "seekdb-schema.md",
+            "seekdb-operations.md",
+            "powercontext-memory.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 1
+        },
+        {
+          "query": "写入向量后为什么还要刷新索引",
+          "relevant": [
+            "seekdb-hybrid.md",
+            "oceanbase-arch.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 158,
+            "searchMs": 5,
+            "endToEndMs": 163
+          },
+          "warmMedian": {
+            "queryEmbedMs": 158,
+            "searchMs": 5,
+            "endToEndMs": 163
+          },
+          "sources": [
+            "oceanbase-search.md",
+            "seekdb-hybrid.md",
+            "oceanbase-arch.md",
+            "seekdb-schema.md",
+            "oceanbase-search.md"
+          ],
+          "recall": 1,
+          "ndcg": 0.6934264036172708,
+          "hitCount": 2
+        },
+        {
+          "query": "增量写入怎么减少索引构建开销",
+          "relevant": [
+            "seekdb-hybrid.md",
+            "oceanbase-arch.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 159.59999999403954,
+            "searchMs": 5,
+            "endToEndMs": 164.59999999403954
+          },
+          "warmMedian": {
+            "queryEmbedMs": 159.59999999403954,
+            "searchMs": 5,
+            "endToEndMs": 164.59999999403954
+          },
+          "sources": [
+            "oceanbase-arch.md",
+            "seekdb-hybrid.md",
+            "seekdb-schema.md",
+            "seekdb-hybrid.md",
+            "edge-pipeline.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 2
+        },
+        {
+          "query": "集合可以同时建哪几种索引",
+          "relevant": [
+            "seekdb-schema.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 173.30000001192093,
+            "searchMs": 5,
+            "endToEndMs": 178.30000001192093
+          },
+          "warmMedian": {
+            "queryEmbedMs": 173.30000001192093,
+            "searchMs": 5,
+            "endToEndMs": 178.30000001192093
+          },
+          "sources": [
+            "seekdb-hybrid.md",
+            "seekdb-schema.md",
+            "oceanbase-search.md",
+            "seekdb-schema.md",
+            "edge-inference.md"
+          ],
+          "recall": 1,
+          "ndcg": 0.6309297535714575,
+          "hitCount": 1
+        },
+        {
+          "query": "向量维度在什么时候确定",
+          "relevant": [
+            "seekdb-schema.md",
+            "oceanbase-arch.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 163,
+            "searchMs": 5,
+            "endToEndMs": 168
+          },
+          "warmMedian": {
+            "queryEmbedMs": 163,
+            "searchMs": 5,
+            "endToEndMs": 168
+          },
+          "sources": [
+            "seekdb-schema.md",
+            "oceanbase-arch.md",
+            "seekdb-schema.md",
+            "edge-inference.md",
+            "oceanbase-search.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 2
+        },
+        {
+          "query": "距离度量有哪些选项",
+          "relevant": [
+            "seekdb-schema.md",
+            "oceanbase-arch.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 169,
+            "searchMs": 6,
+            "endToEndMs": 175
+          },
+          "warmMedian": {
+            "queryEmbedMs": 169,
+            "searchMs": 6,
+            "endToEndMs": 175
+          },
+          "sources": [
+            "seekdb-schema.md",
+            "powercontext-memory.md",
+            "seekdb-schema.md",
+            "oceanbase-arch.md",
+            "seekdb-schema.md"
+          ],
+          "recall": 1,
+          "ndcg": 0.8772153153380493,
+          "hitCount": 2
+        },
+        {
+          "query": "本地部署 seekdb 有哪两种形态",
+          "relevant": [
+            "seekdb-operations.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 163.5,
+            "searchMs": 6,
+            "endToEndMs": 169.5
+          },
+          "warmMedian": {
+            "queryEmbedMs": 163.5,
+            "searchMs": 6,
+            "endToEndMs": 169.5
+          },
+          "sources": [
+            "seekdb-operations.md",
+            "seekdb-hybrid.md",
+            "oceanbase-arch.md",
+            "edge-inference.md",
+            "edge-inference.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 1
+        },
+        {
+          "query": "为什么路径里不能有中文",
+          "relevant": [
+            "seekdb-operations.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 164.7999999821186,
+            "searchMs": 5,
+            "endToEndMs": 169.7999999821186
+          },
+          "warmMedian": {
+            "queryEmbedMs": 164.7999999821186,
+            "searchMs": 5,
+            "endToEndMs": 169.7999999821186
+          },
+          "sources": [
+            "edge-inference.md",
+            "seekdb-operations.md",
+            "seekdb-hybrid.md",
+            "oceanbase-search.md",
+            "powercontext-retrieval.md"
+          ],
+          "recall": 1,
+          "ndcg": 0.6309297535714575,
+          "hitCount": 1
+        },
+        {
+          "query": "端口冲突要怎么避免",
+          "relevant": [
+            "seekdb-operations.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 168.2000000178814,
+            "searchMs": 5,
+            "endToEndMs": 173.2000000178814
+          },
+          "warmMedian": {
+            "queryEmbedMs": 168.2000000178814,
+            "searchMs": 5,
+            "endToEndMs": 173.2000000178814
+          },
+          "sources": [
+            "seekdb-operations.md",
+            "seekdb-operations.md",
+            "edge-inference.md",
+            "edge-pipeline.md",
+            "seekdb-hybrid.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 1
+        },
+        {
+          "query": "浏览器里跑模型有什么好处",
+          "relevant": [
+            "edge-inference.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 159.10000002384186,
+            "searchMs": 5,
+            "endToEndMs": 164.10000002384186
+          },
+          "warmMedian": {
+            "queryEmbedMs": 159.10000002384186,
+            "searchMs": 5,
+            "endToEndMs": 164.10000002384186
+          },
+          "sources": [
+            "edge-inference.md",
+            "edge-inference.md",
+            "seekdb-operations.md",
+            "edge-pipeline.md",
+            "seekdb-schema.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 1
+        },
+        {
+          "query": "WebGPU 不可用时怎么办",
+          "relevant": [
+            "edge-inference.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 170.69999998807907,
+            "searchMs": 4,
+            "endToEndMs": 174.69999998807907
+          },
+          "warmMedian": {
+            "queryEmbedMs": 170.69999998807907,
+            "searchMs": 4,
+            "endToEndMs": 174.69999998807907
+          },
+          "sources": [
+            "edge-inference.md",
+            "edge-pipeline.md",
+            "seekdb-operations.md",
+            "seekdb-schema.md",
+            "edge-inference.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 1
+        },
+        {
+          "query": "INT8 量化的代价是什么",
+          "relevant": [
+            "edge-inference.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 162.59999999403954,
+            "searchMs": 5,
+            "endToEndMs": 167.59999999403954
+          },
+          "warmMedian": {
+            "queryEmbedMs": 162.59999999403954,
+            "searchMs": 5,
+            "endToEndMs": 167.59999999403954
+          },
+          "sources": [
+            "edge-inference.md",
+            "oceanbase-search.md",
+            "powercontext-retrieval.md",
+            "edge-inference.md",
+            "seekdb-hybrid.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 1
+        },
+        {
+          "query": "怎么评估量化前后的检索质量",
+          "relevant": [
+            "edge-inference.md",
+            "powercontext-retrieval.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 180.2000000178814,
+            "searchMs": 5,
+            "endToEndMs": 185.2000000178814
+          },
+          "warmMedian": {
+            "queryEmbedMs": 180.2000000178814,
+            "searchMs": 5,
+            "endToEndMs": 185.2000000178814
+          },
+          "sources": [
+            "edge-inference.md",
+            "seekdb-hybrid.md",
+            "edge-pipeline.md",
+            "powercontext-retrieval.md",
+            "oceanbase-search.md"
+          ],
+          "recall": 1,
+          "ndcg": 0.8772153153380493,
+          "hitCount": 2
+        },
+        {
+          "query": "批量推理对吞吐有什么影响",
+          "relevant": [
+            "edge-inference.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 174.80000001192093,
+            "searchMs": 5,
+            "endToEndMs": 179.80000001192093
+          },
+          "warmMedian": {
+            "queryEmbedMs": 174.80000001192093,
+            "searchMs": 5,
+            "endToEndMs": 179.80000001192093
+          },
+          "sources": [
+            "edge-inference.md",
+            "edge-inference.md",
+            "edge-inference.md",
+            "edge-inference.md",
+            "edge-pipeline.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 1
+        },
+        {
+          "query": "端侧模型从哪里获取更稳妥",
+          "relevant": [
+            "edge-inference.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 172,
+            "searchMs": 6,
+            "endToEndMs": 178
+          },
+          "warmMedian": {
+            "queryEmbedMs": 172,
+            "searchMs": 6,
+            "endToEndMs": 178
+          },
+          "sources": [
+            "edge-inference.md",
+            "edge-pipeline.md",
+            "edge-inference.md",
+            "powercontext-memory.md",
+            "edge-inference.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 1
+        },
+        {
+          "query": "切块粒度为什么重要",
+          "relevant": [
+            "edge-pipeline.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 163.2999999821186,
+            "searchMs": 5,
+            "endToEndMs": 168.2999999821186
+          },
+          "warmMedian": {
+            "queryEmbedMs": 163.2999999821186,
+            "searchMs": 5,
+            "endToEndMs": 168.2999999821186
+          },
+          "sources": [
+            "edge-pipeline.md",
+            "edge-inference.md",
+            "seekdb-schema.md",
+            "seekdb-operations.md",
+            "seekdb-hybrid.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 1
+        },
+        {
+          "query": "索引刷新应该放在什么时机",
+          "relevant": [
+            "edge-pipeline.md",
+            "oceanbase-search.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 167,
+            "searchMs": 5,
+            "endToEndMs": 172
+          },
+          "warmMedian": {
+            "queryEmbedMs": 167,
+            "searchMs": 5,
+            "endToEndMs": 172
+          },
+          "sources": [
+            "oceanbase-search.md",
+            "seekdb-hybrid.md",
+            "oceanbase-arch.md",
+            "edge-pipeline.md",
+            "oceanbase-search.md"
+          ],
+          "recall": 1,
+          "ndcg": 0.8772153153380493,
+          "hitCount": 2
+        },
+        {
+          "query": "查询耗时要怎么拆开测",
+          "relevant": [
+            "edge-pipeline.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 162,
+            "searchMs": 5,
+            "endToEndMs": 167
+          },
+          "warmMedian": {
+            "queryEmbedMs": 162,
+            "searchMs": 5,
+            "endToEndMs": 167
+          },
+          "sources": [
+            "edge-pipeline.md",
+            "edge-pipeline.md",
+            "seekdb-operations.md",
+            "oceanbase-search.md",
+            "powercontext-retrieval.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 1
+        },
+        {
+          "query": "PowerContext 如何隔离不同任务的记忆",
+          "relevant": [
+            "powercontext-memory.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 167.09999999403954,
+            "searchMs": 5,
+            "endToEndMs": 172.09999999403954
+          },
+          "warmMedian": {
+            "queryEmbedMs": 167.09999999403954,
+            "searchMs": 5,
+            "endToEndMs": 172.09999999403954
+          },
+          "sources": [
+            "powercontext-memory.md",
+            "oceanbase-arch.md",
+            "powercontext-retrieval.md",
+            "powercontext-memory.md",
+            "oceanbase-search.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 1
+        },
+        {
+          "query": "上下文的预算约束是什么意思",
+          "relevant": [
+            "powercontext-memory.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 176.80000001192093,
+            "searchMs": 5,
+            "endToEndMs": 181.80000001192093
+          },
+          "warmMedian": {
+            "queryEmbedMs": 176.80000001192093,
+            "searchMs": 5,
+            "endToEndMs": 181.80000001192093
+          },
+          "sources": [
+            "powercontext-memory.md",
+            "powercontext-memory.md",
+            "oceanbase-search.md",
+            "powercontext-retrieval.md",
+            "edge-inference.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 1
+        },
+        {
+          "query": "跨会话交接需要保存哪些状态",
+          "relevant": [
+            "powercontext-memory.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 175.7999999821186,
+            "searchMs": 5,
+            "endToEndMs": 180.7999999821186
+          },
+          "warmMedian": {
+            "queryEmbedMs": 175.7999999821186,
+            "searchMs": 5,
+            "endToEndMs": 180.7999999821186
+          },
+          "sources": [
+            "powercontext-memory.md",
+            "powercontext-memory.md",
+            "edge-pipeline.md",
+            "powercontext-memory.md",
+            "seekdb-operations.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 1
+        },
+        {
+          "query": "Recall@K 和 nDCG@K 有什么区别",
+          "relevant": [
+            "powercontext-retrieval.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 133,
+            "searchMs": 5,
+            "endToEndMs": 138
+          },
+          "warmMedian": {
+            "queryEmbedMs": 133,
+            "searchMs": 5,
+            "endToEndMs": 138
+          },
+          "sources": [
+            "powercontext-retrieval.md",
+            "edge-inference.md",
+            "seekdb-schema.md",
+            "edge-pipeline.md",
+            "seekdb-schema.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 1
+        },
+        {
+          "query": "评测集应该怎么设计",
+          "relevant": [
+            "powercontext-retrieval.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 167.69999998807907,
+            "searchMs": 5,
+            "endToEndMs": 172.69999998807907
+          },
+          "warmMedian": {
+            "queryEmbedMs": 167.69999998807907,
+            "searchMs": 5,
+            "endToEndMs": 172.69999998807907
+          },
+          "sources": [
+            "powercontext-retrieval.md",
+            "seekdb-hybrid.md",
+            "powercontext-retrieval.md",
+            "powercontext-retrieval.md",
+            "edge-pipeline.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 1
+        },
+        {
+          "query": "量化对比要保证什么一致",
+          "relevant": [
+            "powercontext-retrieval.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 156.2999999821186,
+            "searchMs": 5,
+            "endToEndMs": 161.2999999821186
+          },
+          "warmMedian": {
+            "queryEmbedMs": 156.2999999821186,
+            "searchMs": 5,
+            "endToEndMs": 161.2999999821186
+          },
+          "sources": [
+            "powercontext-retrieval.md",
+            "powercontext-retrieval.md",
+            "powercontext-retrieval.md",
+            "edge-inference.md",
+            "seekdb-operations.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 1
+        },
+        {
+          "query": "seekdb 和 OceanBase 是什么关系",
+          "relevant": [
+            "oceanbase-arch.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 161.5,
+            "searchMs": 5,
+            "endToEndMs": 166.5
+          },
+          "warmMedian": {
+            "queryEmbedMs": 161.5,
+            "searchMs": 5,
+            "endToEndMs": 166.5
+          },
+          "sources": [
+            "oceanbase-arch.md",
+            "seekdb-hybrid.md",
+            "seekdb-operations.md",
+            "powercontext-memory.md",
+            "seekdb-schema.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 1
+        },
+        {
+          "query": "多租户下访问需要带什么",
+          "relevant": [
+            "oceanbase-arch.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 159.80000001192093,
+            "searchMs": 5,
+            "endToEndMs": 164.80000001192093
+          },
+          "warmMedian": {
+            "queryEmbedMs": 159.80000001192093,
+            "searchMs": 5,
+            "endToEndMs": 164.80000001192093
+          },
+          "sources": [
+            "oceanbase-arch.md",
+            "seekdb-operations.md",
+            "seekdb-hybrid.md",
+            "edge-pipeline.md",
+            "edge-inference.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 1
+        },
+        {
+          "query": "倒排索引和图索引分别适合什么",
+          "relevant": [
+            "oceanbase-search.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 165.80000001192093,
+            "searchMs": 5,
+            "endToEndMs": 170.80000001192093
+          },
+          "warmMedian": {
+            "queryEmbedMs": 165.80000001192093,
+            "searchMs": 5,
+            "endToEndMs": 170.80000001192093
+          },
+          "sources": [
+            "oceanbase-search.md",
+            "seekdb-schema.md",
+            "seekdb-hybrid.md",
+            "oceanbase-arch.md",
+            "seekdb-hybrid.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 1
+        },
+        {
+          "query": "融合排序有哪些做法",
+          "relevant": [
+            "oceanbase-search.md",
+            "seekdb-hybrid.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 169.30000001192093,
+            "searchMs": 5,
+            "endToEndMs": 174.30000001192093
+          },
+          "warmMedian": {
+            "queryEmbedMs": 169.30000001192093,
+            "searchMs": 5,
+            "endToEndMs": 174.30000001192093
+          },
+          "sources": [
+            "oceanbase-search.md",
+            "oceanbase-search.md",
+            "powercontext-memory.md",
+            "seekdb-hybrid.md",
+            "seekdb-schema.md"
+          ],
+          "recall": 1,
+          "ndcg": 0.8772153153380493,
+          "hitCount": 2
+        },
+        {
+          "query": "写入和刷新之间的窗口期是什么",
+          "relevant": [
+            "oceanbase-search.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 180.90000000596046,
+            "searchMs": 5,
+            "endToEndMs": 185.90000000596046
+          },
+          "warmMedian": {
+            "queryEmbedMs": 180.90000000596046,
+            "searchMs": 5,
+            "endToEndMs": 185.90000000596046
+          },
+          "sources": [
+            "oceanbase-search.md",
+            "seekdb-hybrid.md",
+            "oceanbase-arch.md",
+            "powercontext-retrieval.md",
+            "powercontext-retrieval.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 1
+        }
+      ],
+      "consoleErrors": [],
+      "summary": {
+        "recallAtK": 1,
+        "ndcgAtK": 0.9488049057370794,
+        "coldEndToEndMs": 171.40000000596046,
+        "warmEndToEndMs": 171.40000000596046,
+        "warmQueryEmbedMs": 166.40000000596046,
+        "warmSearchMs": 5
+      }
+    },
+    {
+      "dtype": "q8",
+      "requestedBackend": "wasm",
+      "backend": "wasm",
+      "adapter": "WASM（强制）",
+      "model": {
+        "model": "Xenova/bge-small-zh-v1.5",
+        "revision": "main",
+        "dtype": "q8",
+        "dimension": 512,
+        "backend": "wasm",
+        "adapter": "WASM（强制）",
+        "loadMs": 468.59999999403954
+      },
+      "import": {
+        "files": 9,
+        "chunks": 27,
+        "embedMs": 1985.4000000059605,
+        "writeMs": 682.3000000119209,
+        "embedThroughput": 13.599274705308222
+      },
+      "queries": [
+        {
+          "query": "混合检索为什么要由数据库完成融合排序",
+          "relevant": [
+            "seekdb-hybrid.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 12.199999988079071,
+            "searchMs": 13,
+            "endToEndMs": 25.19999998807907
+          },
+          "warmMedian": {
+            "queryEmbedMs": 13.049999997019768,
+            "searchMs": 9,
+            "endToEndMs": 22.049999997019768
+          },
+          "sources": [
+            "seekdb-hybrid.md",
+            "oceanbase-search.md",
+            "oceanbase-search.md",
+            "seekdb-hybrid.md",
+            "seekdb-hybrid.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 1
+        },
+        {
+          "query": "中文全文索引用哪个分词器",
+          "relevant": [
+            "seekdb-hybrid.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 14.199999988079071,
+            "searchMs": 4,
+            "endToEndMs": 18.19999998807907
+          },
+          "warmMedian": {
+            "queryEmbedMs": 14.25,
+            "searchMs": 4.5,
+            "endToEndMs": 18.75
+          },
+          "sources": [
+            "seekdb-hybrid.md",
+            "seekdb-hybrid.md",
+            "seekdb-schema.md",
+            "seekdb-schema.md",
+            "powercontext-memory.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 1
+        },
+        {
+          "query": "写入向量后为什么还要刷新索引",
+          "relevant": [
+            "seekdb-hybrid.md",
+            "oceanbase-arch.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 14.199999988079071,
+            "searchMs": 4,
+            "endToEndMs": 18.19999998807907
+          },
+          "warmMedian": {
+            "queryEmbedMs": 14.399999991059303,
+            "searchMs": 5,
+            "endToEndMs": 19.399999991059303
+          },
+          "sources": [
+            "seekdb-hybrid.md",
+            "oceanbase-arch.md",
+            "oceanbase-search.md",
+            "edge-pipeline.md",
+            "seekdb-hybrid.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 2
+        },
+        {
+          "query": "增量写入怎么减少索引构建开销",
+          "relevant": [
+            "seekdb-hybrid.md",
+            "oceanbase-arch.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 14.100000023841858,
+            "searchMs": 5,
+            "endToEndMs": 19.100000023841858
+          },
+          "warmMedian": {
+            "queryEmbedMs": 14.200000017881393,
+            "searchMs": 5,
+            "endToEndMs": 19.200000017881393
+          },
+          "sources": [
+            "oceanbase-arch.md",
+            "seekdb-hybrid.md",
+            "edge-pipeline.md",
+            "seekdb-hybrid.md",
+            "oceanbase-search.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 2
+        },
+        {
+          "query": "集合可以同时建哪几种索引",
+          "relevant": [
+            "seekdb-schema.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 14.299999982118607,
+            "searchMs": 5,
+            "endToEndMs": 19.299999982118607
+          },
+          "warmMedian": {
+            "queryEmbedMs": 14.049999997019768,
+            "searchMs": 5,
+            "endToEndMs": 19.049999997019768
+          },
+          "sources": [
+            "seekdb-schema.md",
+            "seekdb-hybrid.md",
+            "oceanbase-search.md",
+            "seekdb-schema.md",
+            "seekdb-hybrid.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 1
+        },
+        {
+          "query": "向量维度在什么时候确定",
+          "relevant": [
+            "seekdb-schema.md",
+            "oceanbase-arch.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 14.5,
+            "searchMs": 5,
+            "endToEndMs": 19.5
+          },
+          "warmMedian": {
+            "queryEmbedMs": 14.5,
+            "searchMs": 5,
+            "endToEndMs": 19.5
+          },
+          "sources": [
+            "oceanbase-arch.md",
+            "seekdb-schema.md",
+            "seekdb-schema.md",
+            "seekdb-schema.md",
+            "oceanbase-search.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 2
+        },
+        {
+          "query": "距离度量有哪些选项",
+          "relevant": [
+            "seekdb-schema.md",
+            "oceanbase-arch.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 14.599999994039536,
+            "searchMs": 5,
+            "endToEndMs": 19.599999994039536
+          },
+          "warmMedian": {
+            "queryEmbedMs": 14.349999994039536,
+            "searchMs": 5,
+            "endToEndMs": 19.349999994039536
+          },
+          "sources": [
+            "seekdb-schema.md",
+            "seekdb-schema.md",
+            "oceanbase-arch.md",
+            "powercontext-memory.md",
+            "seekdb-schema.md"
+          ],
+          "recall": 1,
+          "ndcg": 0.9197207891481876,
+          "hitCount": 2
+        },
+        {
+          "query": "本地部署 seekdb 有哪两种形态",
+          "relevant": [
+            "seekdb-operations.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 14.199999988079071,
+            "searchMs": 5,
+            "endToEndMs": 19.19999998807907
+          },
+          "warmMedian": {
+            "queryEmbedMs": 14.399999991059303,
+            "searchMs": 6,
+            "endToEndMs": 20.399999991059303
+          },
+          "sources": [
+            "seekdb-operations.md",
+            "oceanbase-arch.md",
+            "seekdb-hybrid.md",
+            "seekdb-schema.md",
+            "seekdb-schema.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 1
+        },
+        {
+          "query": "为什么路径里不能有中文",
+          "relevant": [
+            "seekdb-operations.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 13.400000005960464,
+            "searchMs": 5,
+            "endToEndMs": 18.400000005960464
+          },
+          "warmMedian": {
+            "queryEmbedMs": 13.75,
+            "searchMs": 4.5,
+            "endToEndMs": 18.25
+          },
+          "sources": [
+            "seekdb-hybrid.md",
+            "edge-inference.md",
+            "seekdb-operations.md",
+            "seekdb-hybrid.md",
+            "seekdb-schema.md"
+          ],
+          "recall": 1,
+          "ndcg": 0.5,
+          "hitCount": 1
+        },
+        {
+          "query": "端口冲突要怎么避免",
+          "relevant": [
+            "seekdb-operations.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 8.099999994039536,
+            "searchMs": 5,
+            "endToEndMs": 13.099999994039536
+          },
+          "warmMedian": {
+            "queryEmbedMs": 11.099999994039536,
+            "searchMs": 5,
+            "endToEndMs": 16.099999994039536
+          },
+          "sources": [
+            "seekdb-operations.md",
+            "edge-pipeline.md",
+            "seekdb-operations.md",
+            "edge-inference.md",
+            "edge-pipeline.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 1
+        },
+        {
+          "query": "浏览器里跑模型有什么好处",
+          "relevant": [
+            "edge-inference.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 14.799999982118607,
+            "searchMs": 5,
+            "endToEndMs": 19.799999982118607
+          },
+          "warmMedian": {
+            "queryEmbedMs": 14.399999991059303,
+            "searchMs": 5,
+            "endToEndMs": 19.399999991059303
+          },
+          "sources": [
+            "edge-inference.md",
+            "edge-inference.md",
+            "edge-inference.md",
+            "powercontext-retrieval.md",
+            "edge-pipeline.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 1
+        },
+        {
+          "query": "WebGPU 不可用时怎么办",
+          "relevant": [
+            "edge-inference.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 13.699999988079071,
+            "searchMs": 5,
+            "endToEndMs": 18.69999998807907
+          },
+          "warmMedian": {
+            "queryEmbedMs": 13.849999994039536,
+            "searchMs": 5.5,
+            "endToEndMs": 19.349999994039536
+          },
+          "sources": [
+            "edge-inference.md",
+            "seekdb-operations.md",
+            "seekdb-operations.md",
+            "powercontext-memory.md",
+            "powercontext-memory.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 1
+        },
+        {
+          "query": "INT8 量化的代价是什么",
+          "relevant": [
+            "edge-inference.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 13.900000005960464,
+            "searchMs": 5,
+            "endToEndMs": 18.900000005960464
+          },
+          "warmMedian": {
+            "queryEmbedMs": 13.950000002980232,
+            "searchMs": 5.5,
+            "endToEndMs": 19.450000002980232
+          },
+          "sources": [
+            "edge-inference.md",
+            "powercontext-retrieval.md",
+            "edge-inference.md",
+            "powercontext-retrieval.md",
+            "powercontext-memory.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 1
+        },
+        {
+          "query": "怎么评估量化前后的检索质量",
+          "relevant": [
+            "edge-inference.md",
+            "powercontext-retrieval.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 14.5,
+            "searchMs": 5,
+            "endToEndMs": 19.5
+          },
+          "warmMedian": {
+            "queryEmbedMs": 14.349999994039536,
+            "searchMs": 5.5,
+            "endToEndMs": 19.849999994039536
+          },
+          "sources": [
+            "edge-inference.md",
+            "seekdb-hybrid.md",
+            "powercontext-retrieval.md",
+            "powercontext-retrieval.md",
+            "powercontext-retrieval.md"
+          ],
+          "recall": 1,
+          "ndcg": 0.9197207891481876,
+          "hitCount": 2
+        },
+        {
+          "query": "批量推理对吞吐有什么影响",
+          "relevant": [
+            "edge-inference.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 14,
+            "searchMs": 4,
+            "endToEndMs": 18
+          },
+          "warmMedian": {
+            "queryEmbedMs": 14,
+            "searchMs": 4.5,
+            "endToEndMs": 18.5
+          },
+          "sources": [
+            "edge-inference.md",
+            "edge-inference.md",
+            "edge-inference.md",
+            "edge-inference.md",
+            "seekdb-hybrid.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 1
+        },
+        {
+          "query": "端侧模型从哪里获取更稳妥",
+          "relevant": [
+            "edge-inference.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 14.199999988079071,
+            "searchMs": 5,
+            "endToEndMs": 19.19999998807907
+          },
+          "warmMedian": {
+            "queryEmbedMs": 14.149999991059303,
+            "searchMs": 5.5,
+            "endToEndMs": 19.649999991059303
+          },
+          "sources": [
+            "edge-inference.md",
+            "edge-pipeline.md",
+            "edge-inference.md",
+            "edge-inference.md",
+            "powercontext-retrieval.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 1
+        },
+        {
+          "query": "切块粒度为什么重要",
+          "relevant": [
+            "edge-pipeline.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 14.200000017881393,
+            "searchMs": 5,
+            "endToEndMs": 19.200000017881393
+          },
+          "warmMedian": {
+            "queryEmbedMs": 14.049999997019768,
+            "searchMs": 5,
+            "endToEndMs": 19.049999997019768
+          },
+          "sources": [
+            "edge-pipeline.md",
+            "edge-inference.md",
+            "edge-inference.md",
+            "seekdb-schema.md",
+            "oceanbase-arch.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 1
+        },
+        {
+          "query": "索引刷新应该放在什么时机",
+          "relevant": [
+            "edge-pipeline.md",
+            "oceanbase-search.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 13.800000011920929,
+            "searchMs": 5,
+            "endToEndMs": 18.80000001192093
+          },
+          "warmMedian": {
+            "queryEmbedMs": 13.950000002980232,
+            "searchMs": 5.5,
+            "endToEndMs": 19.450000002980232
+          },
+          "sources": [
+            "oceanbase-search.md",
+            "seekdb-hybrid.md",
+            "oceanbase-arch.md",
+            "edge-pipeline.md",
+            "seekdb-hybrid.md"
+          ],
+          "recall": 1,
+          "ndcg": 0.8772153153380493,
+          "hitCount": 2
+        },
+        {
+          "query": "查询耗时要怎么拆开测",
+          "relevant": [
+            "edge-pipeline.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 14.599999994039536,
+            "searchMs": 6,
+            "endToEndMs": 20.599999994039536
+          },
+          "warmMedian": {
+            "queryEmbedMs": 14.399999991059303,
+            "searchMs": 5.5,
+            "endToEndMs": 19.899999991059303
+          },
+          "sources": [
+            "edge-pipeline.md",
+            "edge-pipeline.md",
+            "powercontext-retrieval.md",
+            "seekdb-operations.md",
+            "powercontext-retrieval.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 1
+        },
+        {
+          "query": "PowerContext 如何隔离不同任务的记忆",
+          "relevant": [
+            "powercontext-memory.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 14.700000017881393,
+            "searchMs": 5,
+            "endToEndMs": 19.700000017881393
+          },
+          "warmMedian": {
+            "queryEmbedMs": 14.450000002980232,
+            "searchMs": 5,
+            "endToEndMs": 19.450000002980232
+          },
+          "sources": [
+            "powercontext-memory.md",
+            "oceanbase-arch.md",
+            "powercontext-memory.md",
+            "seekdb-schema.md",
+            "seekdb-hybrid.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 1
+        },
+        {
+          "query": "上下文的预算约束是什么意思",
+          "relevant": [
+            "powercontext-memory.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 14.599999994039536,
+            "searchMs": 4,
+            "endToEndMs": 18.599999994039536
+          },
+          "warmMedian": {
+            "queryEmbedMs": 14.700000002980232,
+            "searchMs": 5,
+            "endToEndMs": 19.700000002980232
+          },
+          "sources": [
+            "powercontext-memory.md",
+            "powercontext-memory.md",
+            "powercontext-retrieval.md",
+            "seekdb-hybrid.md",
+            "edge-inference.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 1
+        },
+        {
+          "query": "跨会话交接需要保存哪些状态",
+          "relevant": [
+            "powercontext-memory.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 14.599999994039536,
+            "searchMs": 5,
+            "endToEndMs": 19.599999994039536
+          },
+          "warmMedian": {
+            "queryEmbedMs": 14.899999991059303,
+            "searchMs": 5,
+            "endToEndMs": 19.899999991059303
+          },
+          "sources": [
+            "powercontext-memory.md",
+            "powercontext-memory.md",
+            "seekdb-operations.md",
+            "seekdb-schema.md",
+            "seekdb-schema.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 1
+        },
+        {
+          "query": "Recall@K 和 nDCG@K 有什么区别",
+          "relevant": [
+            "powercontext-retrieval.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 14.700000017881393,
+            "searchMs": 5,
+            "endToEndMs": 19.700000017881393
+          },
+          "warmMedian": {
+            "queryEmbedMs": 15.150000005960464,
+            "searchMs": 5,
+            "endToEndMs": 20.150000005960464
+          },
+          "sources": [
+            "powercontext-retrieval.md",
+            "edge-inference.md",
+            "seekdb-schema.md",
+            "powercontext-retrieval.md",
+            "oceanbase-arch.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 1
+        },
+        {
+          "query": "评测集应该怎么设计",
+          "relevant": [
+            "powercontext-retrieval.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 14.599999994039536,
+            "searchMs": 4,
+            "endToEndMs": 18.599999994039536
+          },
+          "warmMedian": {
+            "queryEmbedMs": 14.799999997019768,
+            "searchMs": 4.5,
+            "endToEndMs": 19.299999997019768
+          },
+          "sources": [
+            "powercontext-retrieval.md",
+            "powercontext-retrieval.md",
+            "powercontext-retrieval.md",
+            "edge-inference.md",
+            "seekdb-schema.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 1
+        },
+        {
+          "query": "量化对比要保证什么一致",
+          "relevant": [
+            "powercontext-retrieval.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 14.799999982118607,
+            "searchMs": 5,
+            "endToEndMs": 19.799999982118607
+          },
+          "warmMedian": {
+            "queryEmbedMs": 14.999999985098839,
+            "searchMs": 5,
+            "endToEndMs": 19.99999998509884
+          },
+          "sources": [
+            "powercontext-retrieval.md",
+            "powercontext-retrieval.md",
+            "powercontext-retrieval.md",
+            "edge-inference.md",
+            "oceanbase-arch.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 1
+        },
+        {
+          "query": "seekdb 和 OceanBase 是什么关系",
+          "relevant": [
+            "oceanbase-arch.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 14.800000011920929,
+            "searchMs": 5,
+            "endToEndMs": 19.80000001192093
+          },
+          "warmMedian": {
+            "queryEmbedMs": 14.950000002980232,
+            "searchMs": 4.5,
+            "endToEndMs": 19.450000002980232
+          },
+          "sources": [
+            "oceanbase-arch.md",
+            "seekdb-schema.md",
+            "seekdb-hybrid.md",
+            "seekdb-operations.md",
+            "powercontext-memory.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 1
+        },
+        {
+          "query": "多租户下访问需要带什么",
+          "relevant": [
+            "oceanbase-arch.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 9.700000017881393,
+            "searchMs": 5,
+            "endToEndMs": 14.700000017881393
+          },
+          "warmMedian": {
+            "queryEmbedMs": 12.400000005960464,
+            "searchMs": 5,
+            "endToEndMs": 17.400000005960464
+          },
+          "sources": [
+            "oceanbase-arch.md",
+            "seekdb-schema.md",
+            "oceanbase-search.md",
+            "seekdb-operations.md",
+            "edge-pipeline.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 1
+        },
+        {
+          "query": "倒排索引和图索引分别适合什么",
+          "relevant": [
+            "oceanbase-search.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 10,
+            "searchMs": 5,
+            "endToEndMs": 15
+          },
+          "warmMedian": {
+            "queryEmbedMs": 12.25,
+            "searchMs": 5,
+            "endToEndMs": 17.25
+          },
+          "sources": [
+            "oceanbase-search.md",
+            "oceanbase-arch.md",
+            "seekdb-hybrid.md",
+            "seekdb-hybrid.md",
+            "edge-pipeline.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 1
+        },
+        {
+          "query": "融合排序有哪些做法",
+          "relevant": [
+            "oceanbase-search.md",
+            "seekdb-hybrid.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 14.800000011920929,
+            "searchMs": 5,
+            "endToEndMs": 19.80000001192093
+          },
+          "warmMedian": {
+            "queryEmbedMs": 14.900000005960464,
+            "searchMs": 5,
+            "endToEndMs": 19.900000005960464
+          },
+          "sources": [
+            "oceanbase-search.md",
+            "seekdb-hybrid.md",
+            "oceanbase-search.md",
+            "seekdb-schema.md",
+            "powercontext-memory.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 2
+        },
+        {
+          "query": "写入和刷新之间的窗口期是什么",
+          "relevant": [
+            "oceanbase-search.md"
+          ],
+          "cold": {
+            "queryEmbedMs": 14.700000017881393,
+            "searchMs": 5,
+            "endToEndMs": 19.700000017881393
+          },
+          "warmMedian": {
+            "queryEmbedMs": 14.650000020861626,
+            "searchMs": 5,
+            "endToEndMs": 19.650000020861626
+          },
+          "sources": [
+            "oceanbase-search.md",
+            "seekdb-hybrid.md",
+            "oceanbase-arch.md",
+            "powercontext-retrieval.md",
+            "edge-pipeline.md"
+          ],
+          "recall": 1,
+          "ndcg": 1,
+          "hitCount": 1
+        }
+      ],
+      "consoleErrors": [],
+      "summary": {
+        "recallAtK": 1,
+        "ndcgAtK": 0.9738885631211474,
+        "coldEndToEndMs": 19.200000002980232,
+        "warmEndToEndMs": 19.450000002980232,
+        "warmQueryEmbedMs": 14.349999994039536,
+        "warmSearchMs": 5
+      }
+    }
+  ]
+}
