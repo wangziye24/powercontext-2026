@@ -226,3 +226,34 @@ Response: {"vectors": [[...1536维...], ...], "total_tokens": N, "base_resp": {.
 技术约束：Python 3.11 + FastAPI + PyMySQL + 原生前端；数据库使用 seekdb（MySQL 协议），
 向量列使用 VECTOR(1536) 与 MiniMax embo-01 对齐；全文索引用于关键词匹配；查询同时使用三者并混合打分。
 ```
+
+---
+
+## 步骤 10：踩坑清单（已在本机实测确认，请严格遵守）
+
+1. **MiniMax embedding 不是 OpenAI 兼容格式**：请求体必须是 `{"model":"embo-01","texts":[...],"type":"db"|"query"}`；
+   用 `input` 会报 `2013 invalid params ... expr_path=texts`。返回 `{"vectors": [[...1536维...]], "total_tokens": N}`。
+2. **向量化写入 seekdb 必须带方括号**：`VALUES (..., '[0.012,-0.03,...]', ...)`；
+   写成 `'0.012,-0.03'` 会报 `1210 Invalid argument`。
+3. **中文全文索引必须 `WITH PARSER ngram`**：`FULLTEXT INDEX idx(content) WITH PARSER ngram`；
+   默认分词器对中文不切词，`MATCH ... AGAINST` 永远查不到东西。
+4. **向量索引语法**：`VECTOR INDEX idx (embedding) WITH (distance=cosine, type=hnsw)`；
+   写成普通 `CREATE INDEX` 会报 `create index on vector or array column is not supported`。
+5. **一个 SQL 同时用三种能力**（已验证）：
+   ```sql
+   SELECT c.chunk_id, c.heading, d.title,
+          VECTOR_DISTANCE(c.embedding, %s) AS vdist,
+          MATCH(c.content) AGAINST (%s IN NATURAL LANGUAGE MODE) AS kw
+   FROM chunks c JOIN docs d ON d.doc_id = c.doc_id
+   WHERE c.course = %s
+   ORDER BY (0.7*(1-VECTOR_DISTANCE(c.embedding,%s)) + 0.3*MATCH(c.content) AGAINST (%s IN NATURAL LANGUAGE MODE)) DESC
+   LIMIT 10;
+   ```
+   实测（course=机器学习, query=如何缓解模型过拟合）：
+   `vdist=0.1518 kw=1.4089`（正确命中"过拟合与正则化"）、`vdist=0.6077 kw=1.5558`（Dropout）。
+6. **`load_dotenv()` 在某些运行方式下会抛 AssertionError**（find_dotenv 找不到调用文件）：
+   请显式指定路径，例如 `load_dotenv(Path(__file__).resolve().parent.parent / ".env")`，
+   并在 config.py 中对所有变量给出默认值，避免缺 env 时启动崩溃。
+7. **可用模型**：chat 用 `MiniMax-M2.5`（`MiniMax-M2`/`M2.1` 已下线）；embedding 只有 `embo-01`（1536 维）。
+8. **本地实例地址**（开发自测用）：seekdb `127.0.0.1:2882`（MySQL 协议，root 空密码，库 `coursenote` 已建好表与 3 篇示例文档/7 个 chunk）；
+   venv 已在 `qoder/.venv`（Python 3.11，依赖已装好），激活方式：`source qoder/.venv/bin/activate`。
