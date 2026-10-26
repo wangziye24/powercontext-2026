@@ -1,0 +1,14 @@
+{
+  "summary": {
+    "run_id": "run-20261026T071317",
+    "root": "/mnt/d/HuaweiMoveData/Users/wzy20/Desktop/项目/OceanBase数据库大赛/code/minimax-repo/minimax/sample-project",
+    "documents": 8,
+    "specs": 7,
+    "code_symbols": 8,
+    "tests": 21,
+    "changed_files": [
+      "specs/filtering.md#SPEC-004"
+    ]
+  },
+  "sql_transcript": "/mnt/d/HuaweiMoveData/Users/wzy20/Desktop/项目/OceanBase数据库大赛/code/minimax-repo/minimax/artifacts/db/ingest-20261026T071317.sql.txt"
+}
