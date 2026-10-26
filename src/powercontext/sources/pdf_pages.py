@@ -1,4 +1,4 @@
-# Copyright (c) 2026 OceanBase.
+﻿# Copyright (c) 2026 OceanBase.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -110,7 +110,7 @@ _RESERVED_STATEMENT_MARKERS = (
     "statements of cash flows",
     "statement of financial position",
 )
-_RESERVED_STATEMENT_SEATS = 5
+_RESERVED_STATEMENT_SEATS = 6
 # One seat per primary statement, because a filing names each of them differently and a metric
 # question is answered on whichever statement carries the figure.
 _RESERVED_STATEMENT_KINDS = (
@@ -145,6 +145,13 @@ _METRIC_TERMS = (
     "growth",
     "statement",
     "financial",
+    "working",
+    "liquidity",
+    "solvency",
+    "turnover",
+    "payable",
+    "receivable",
+    "days",
 )
 _STATEMENT_WEIGHT = 2.0
 # Annotated evidence frequently points at the page that opens a 10-K section rather than at
@@ -615,32 +622,37 @@ def _reserve_statement_seats(
     narrative pages that merely repeat the question's wording.
     """
 
-    seats = min(_RESERVED_STATEMENT_SEATS, max(0, limit // 4))
-    if seats <= 0:
+    budget = min(_RESERVED_STATEMENT_SEATS, max(0, limit // 3))
+    if budget <= 0:
         return list(order)
     lowered_heads = [_leading_lines(text) for text in texts]
     reserved: list[int] = []
-    for markers in _RESERVED_STATEMENT_KINDS[:seats]:
-        # A statement is titled by a short heading. A narrative page that merely mentions
-        # "balance sheet" or "financial condition" in a sentence is not the statement.
-        best = None
+    for markers in _RESERVED_STATEMENT_KINDS:
+        if len(reserved) >= budget:
+            break
+        # Markers are ordered most specific first: a filing's own statement is titled
+        # "Consolidated ...", a note that merely discusses it is not the statement.
         for marker in markers:
-            matching = [index for index, head in enumerate(lowered_heads) if _titles_a_statement(head, marker)]
+            matching = [
+                index for index, head in enumerate(lowered_heads) if _titles_a_statement(head, marker)
+            ]
             if not matching:
                 continue
-            # A filing's own statement is titled "Consolidated ..."; a note that merely
-            # discusses the same balance sheet is not the statement itself.
-            consolidated = [
-                index for index in matching if "consolidated" in lowered_heads[index]
-            ]
+            consolidated = [index for index in matching if "consolidated" in lowered_heads[index]]
             pool = consolidated or matching
-            best = max(pool, key=lambda index: (scores.get(index, 0.0), -index))
+            pool.sort(key=lambda index: (-scores.get(index, 0.0), index))
+            # A statement often spans two pages and the question may name either half,
+            # so both pages of the statement earn a seat.
+            for index in pool[:2]:
+                if index in reserved:
+                    continue
+                if len(reserved) >= budget:
+                    break
+                reserved.append(index)
             break
-        if best is not None and best not in reserved:
-            reserved.append(best)
     if not reserved:
         return list(order)
-    head = list(order[: limit - len(reserved)])
+    head = list(order[: max(0, limit - len(reserved))])
     chosen = set(head)
     for index in reserved:
         if index not in chosen:
@@ -655,6 +667,29 @@ def _reserve_statement_seats(
     return head
 
 
+def _marker_of(title: str, markers: Sequence[str]) -> str:
+    """Return the marker the title was found with, for the continuation check."""
+
+    for marker in markers:
+        if marker in title:
+            return marker
+    return markers[0] if markers else ""
+
+
+def _statement_title(head: str, marker: str) -> str | None:
+    """Return the heading line of a page that titles the statement, if it has one."""
+
+    lines = head.splitlines()
+    for line in lines:
+        if marker in line and len(line.split()) <= 8 and len(line) <= 70:
+            return line
+    for index in range(len(lines) - 1):
+        joined = f"{lines[index]} {lines[index + 1]}"
+        if marker in joined and len(joined.split()) <= 12 and len(joined) <= 90:
+            return joined
+    return None
+
+
 def _titles_a_statement(head: str, marker: str) -> bool:
     """Report whether one of the page's leading lines titles the statement itself.
 
@@ -664,15 +699,7 @@ def _titles_a_statement(head: str, marker: str) -> bool:
     split over two lines ("CONSOLIDATED STATEMENTS OF" / "OPERATIONS") still counts.
     """
 
-    lines = head.splitlines()
-    for line in lines:
-        if marker in line and len(line.split()) <= 8 and len(line) <= 70:
-            return True
-    for index in range(len(lines) - 1):
-        joined = f"{lines[index]} {lines[index + 1]}"
-        if marker in joined and len(joined.split()) <= 12 and len(joined) <= 90:
-            return True
-    return False
+    return _statement_title(head, marker) is not None
 
 
 def _leading_lines(text: str) -> str:
@@ -796,4 +823,6 @@ __all__ = [
     "pdf_page_source_id",
     "search_pdf_pages",
 ]
+
+
 
