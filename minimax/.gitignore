@@ -1,0 +1,10 @@
+__pycache__/
+*.py[cod]
+.venv/
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+
+# 模型的推理轨迹仅保留在本地，不进入提交材料。
+*.reasoning.txt
