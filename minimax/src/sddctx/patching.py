@@ -166,8 +166,12 @@ def _apply_with_python(root: Path, patches: list[FilePatch]) -> list[dict[str, o
         for position, old_block, new_block in sorted(located, key=lambda item: -item[0]):
             result[position : position + len(old_block)] = new_block
 
-        added = sum(len(new) - len(old) for _, old, new in located)
-        removed = sum(len(old) - len(new) for _, old, new in located)
+        added = sum(
+            len([text for kind, text in hunk.lines if kind == "+"]) for hunk in patch.hunks
+        )
+        removed = sum(
+            len([text for kind, text in hunk.lines if kind == "-"]) for hunk in patch.hunks
+        )
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text("\n".join(result) + "\n", encoding="utf-8")
         summary.append(

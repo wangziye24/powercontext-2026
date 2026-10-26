@@ -134,7 +134,7 @@ def _git_revision(root: Path) -> str:
 
 def _git_diff(root: Path, name: str) -> Path | None:
     completed = subprocess.run(
-        ["git", "-C", str(root), "diff"],
+        ["git", "-C", str(root), "diff", "--", "."],
         capture_output=True,
         text=True,
         check=False,

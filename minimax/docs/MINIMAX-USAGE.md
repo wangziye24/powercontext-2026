@@ -36,7 +36,7 @@
 
 ## 3. 模型产出与代码差异的对应
 
-模型返回的补丁保存在 `artifacts/diff/minimax-20261026T071003.patch`，模块应用后实际产生的差异保存在 `artifacts/diff/after-20261026T071003.patch`（即工作区相对提交基线的 `git diff`）。
+模型返回的补丁保存在 `artifacts/diff/minimax-20261026T071003.patch`，模块应用后提交的代码差异保存在 `artifacts/diff/committed-before-to-after.diff`（即修改前提交与修改后提交之间的 `git diff`）。
 
 | 模型产出的改动 | 位置 | 对应规格 |
 | --- | --- | --- |
@@ -53,13 +53,18 @@
 - SPEC-001 / 002 / 003 / 005 / 006 / 007 描述的既有行为；
 - `src/orders/errors.py` 中既有的错误类型。
 
-提交中的代码差异与模型产出的补丁一致，可以直接比对：
+提交中的代码差异与模型产出的补丁一致，可以直接核对：
 
 ```bash
+# 提交之间的代码差异（与 artifacts/diff/committed-before-to-after.diff 相同）
 git diff <修改前提交> <修改后提交> -- minimax/sample-project
-diff <(git diff <修改前提交> <修改后提交> -- minimax/sample-project) \
-     minimax/artifacts/diff/after-20261026T071003.patch
+
+# 自动核对：把模型补丁应用到修改前快照，再与修改后快照逐字节比较
+bash scripts/verify_patch_equivalence.sh <修改前提交> <修改后提交> \
+     minimax/artifacts/diff/minimax-20261026T071003.patch
 ```
+
+实际执行结果：补丁应用后与修改后提交**逐字节完全一致**（脚本输出 `IDENTICAL`），说明提交的代码差异正是本次 MiniMax 调用产出的结果。
 
 ## 4. 迭代过程
 
