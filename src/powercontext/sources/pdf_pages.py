@@ -110,7 +110,7 @@ _RESERVED_STATEMENT_MARKERS = (
     "statements of cash flows",
     "statement of financial position",
 )
-_RESERVED_STATEMENT_SEATS = 4
+_RESERVED_STATEMENT_SEATS = 5
 # One seat per primary statement, because a filing names each of them differently and a metric
 # question is answered on whichever statement carries the figure.
 _RESERVED_STATEMENT_KINDS = (
@@ -118,6 +118,7 @@ _RESERVED_STATEMENT_KINDS = (
     ("statement of operations", "statements of operations", "statement of income", "statements of income"),
     ("statement of cash flows", "statements of cash flows", "statement of cash flow"),
     ("notes to the consolidated financial statements", "notes to financial statements"),
+    ("summary of financial performance", "selected financial data", "financial highlights"),
 )
 _METRIC_TERMS = (
     "ebitda",
@@ -569,7 +570,13 @@ def _reserve_statement_seats(
             matching = [index for index, head in enumerate(lowered_heads) if _titles_a_statement(head, marker)]
             if not matching:
                 continue
-            best = max(matching, key=lambda index: (scores.get(index, 0.0), -index))
+            # A filing's own statement is titled "Consolidated ..."; a note that merely
+            # discusses the same balance sheet is not the statement itself.
+            consolidated = [
+                index for index in matching if "consolidated" in lowered_heads[index]
+            ]
+            pool = consolidated or matching
+            best = max(pool, key=lambda index: (scores.get(index, 0.0), -index))
             break
         if best is not None and best not in reserved:
             reserved.append(best)
