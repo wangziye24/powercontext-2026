@@ -29,6 +29,7 @@ import re
 from collections import Counter
 from collections.abc import Sequence
 from dataclasses import dataclass
+from types import SimpleNamespace
 from urllib.parse import quote
 
 from pydantic import BaseModel, ConfigDict
@@ -95,6 +96,15 @@ _DOCUMENT_TOKEN = re.compile(r"[a-z0-9]+")
 _DOCUMENT_NOISE_TOKENS = frozenset(
     {"10k", "10q", "8k", "pdf", "annual", "report", "reports", "form", "fy", "q1", "q2", "q3", "q4"}
 )
+# Period prefixes glued to the year by question writers ("FY2022", "CY2021", "Q4 2022").
+_PERIOD_TOKEN = re.compile(r"^(?:fy|cy|f|q[1-4]|h[12]|ttm)((?:19|20)\d{2})$")
+# Search fallback breadth when page enumeration is unavailable.
+_SEARCH_FALLBACK_LIMIT = 200
+# Neighbour widening: how many top hits are widened, how many answer slots that may take,
+# and how far a neighbour may sit from its anchor.
+_NEIGHBOUR_ANCHORS = 5
+_NEIGHBOUR_SLOTS = 6
+_NEIGHBOUR_OFFSETS = (-1, 1, -2, 2)
 
 
 @dataclass(frozen=True, slots=True)
@@ -198,14 +208,16 @@ async def search_pdf_pages(memory: object, question: str, limit: int = 10) -> tu
     if not isinstance(question, str) or not question.strip():
         raise ValueError("question must be a non-empty string")
     candidates = await _pdf_page_candidates(memory)
+    if not candidates:
+        candidates = await _searched_page_candidates(memory, question)
     scoped = _question_document_candidates(candidates, question)
     return _rank_pdf_pages(scoped, question, limit)
 
 
 def _question_document_candidates(
-    candidates: Sequence[tuple[object, str, str]],
+    candidates: Sequence[tuple[object, str, str, int]],
     question: str,
-) -> Sequence[tuple[object, str, str]]:
+) -> Sequence[tuple[object, str, str, int]]:
     """Narrow to the filing the question names, so one report cannot crowd out another.
 
     A document set may hold several filings, and a page of the wrong company competes for
@@ -214,9 +226,9 @@ def _question_document_candidates(
     questions keep the whole set.
     """
 
-    documents: dict[str, set[str]] = {}
-    for _citation, _text, document_id in candidates:
-        documents.setdefault(document_id, set())
+    documents: set[str] = set()
+    for candidate in candidates:
+        documents.add(candidate[2])
     if len(documents) < 2:
         return candidates
     asked = set(_DOCUMENT_TOKEN.findall(question.lower()))
@@ -230,15 +242,82 @@ def _question_document_candidates(
     return tuple(candidate for candidate in candidates if candidate[2] == addressed[0])
 
 
-async def _pdf_page_candidates(memory: object) -> list[tuple[object, str, str]]:
-    """Enumerate one entry per stored PDF page through the scoped Memory API."""
+async def _pdf_page_candidates(memory: object) -> list[tuple[object, str, str, int]]:
+    """Enumerate one entry per stored PDF page through the scoped Memory API.
+
+    Enumeration is preferred because offline ranking needs the whole page set. A Memory
+    surface that does not offer it at all falls back to ranked search instead of failing.
+    """
+
+    listing = getattr(memory, "list", None)
+    if listing is None:
+        return []
+    try:
+        page = await listing()
+    except Exception:  # noqa: BLE001 - an unavailable listing degrades to search
+        return []
+    return _page_candidates(getattr(page, "entries", ()))
+
+
+async def _searched_page_candidates(memory: object, question: str) -> list[tuple[object, str, str, int]]:
+    """Fallback retrieval through ``memory.search`` when page enumeration is unavailable."""
+
+    from powercontext.builtin.runtime import GetMemoryEntryRequest, SearchMemoryRequest
+
+    search = getattr(memory, "search", None)
+    fetch = getattr(memory, "get", None)
+    if search is None or fetch is None:
+        return []
+    try:
+        result = await search(SearchMemoryRequest(query=question, mode="fts", limit=_SEARCH_FALLBACK_LIMIT))
+    except Exception:  # noqa: BLE001 - no ranked candidates is an empty answer, not a crash
+        return []
+    entries = []
+    seen: set[tuple[str, str, str]] = set()
+    for hit in getattr(result, "hits", ()):
+        key = (hit.entry_id, hit.entry_version_id, hit.memory_ref.artifact_id)
+        if key in seen:
+            continue
+        seen.add(key)
+        citation = _search_citation(hit)
+        entries.append(
+            {
+                "memory_ref": hit.memory_ref,
+                "entry_id": hit.entry_id,
+                "entry_version_id": hit.entry_version_id,
+                "citation": citation,
+            }
+        )
+    resolved: list[tuple[object, str, str, int]] = []
+    for entry in entries:
+        try:
+            record = await fetch(GetMemoryEntryRequest(citation=entry["citation"]))
+        except Exception:  # noqa: BLE001 - one unreadable hit must not fail the whole answer
+            continue
+        resolved.extend(
+            _page_candidates((SimpleNamespace(memory_ref=entry["memory_ref"], entry=record.entry),))
+        )
+    return resolved
+
+
+def _search_citation(hit: object) -> object:
+    from powercontext.artifacts import MemoryCitation
+
+    return MemoryCitation(
+        memory_ref=hit.memory_ref,
+        entry_id=hit.entry_id,
+        entry_version_id=hit.entry_version_id,
+    )
+
+
+def _page_candidates(records: object) -> list[tuple[object, str, str, int]]:
+    """Turn Memory entries into (citation, text, document, page) page candidates."""
 
     from powercontext.artifacts import MemoryCitation
 
-    page = await memory.list()  # type: ignore[attr-defined]
-    candidates: list[tuple[object, str, str]] = []
+    candidates: list[tuple[object, str, str, int]] = []
     seen: set[tuple[str, int]] = set()
-    for record in getattr(page, "entries", ()):
+    for record in records:  # type: ignore[union-attr]
         location = None
         for reference in record.entry.sources:
             location = decode_pdf_page_identity(reference.source_id)
@@ -256,17 +335,24 @@ async def _pdf_page_candidates(memory: object) -> list[tuple[object, str, str]]:
                 ),
                 record.entry.text,
                 location[0],
+                location[1],
             )
         )
     return candidates
 
 
 def _query_weights(question: str) -> dict[str, float]:
-    """Weight the analyst question's own terms above their financial synonyms."""
+    """Weight the analyst question's own terms above their financial synonyms.
+
+    Question tokens are normalised first because a filing never spells a period the way a
+    question does: ``FY2022`` is one token to a tokenizer but the page says ``2022``, and
+    ``PepsiCo's`` loses its possessive. Without that, the strongest discriminating term of a
+    metrics question matches nothing at all.
+    """
 
     base = [
         term
-        for term in dict.fromkeys(_TOKEN.findall(question.lower()))
+        for term in dict.fromkeys(_normalized_terms(question))
         if term not in _BOILERPLATE and len(term) >= 3
     ]
     weights = {term: 1.0 for term in base}
@@ -278,6 +364,27 @@ def _query_weights(question: str) -> dict[str, float]:
     return weights
 
 
+def _normalized_terms(question: str) -> list[str]:
+    """Tokens plus the year and plural forms a filing actually uses."""
+
+    terms: list[str] = []
+    for token in _TOKEN.findall(question.lower()):
+        terms.append(token)
+        match = _PERIOD_TOKEN.match(token)
+        if match is not None:
+            terms.append(match.group(1))
+            continue
+        if token.endswith("ies") and len(token) > 4:
+            terms.append(f"{token[:-3]}y")
+        elif token.endswith("es") and len(token) > 4:
+            terms.append(token[:-2])
+        elif token.endswith("s") and not token.endswith("ss") and len(token) > 3:
+            terms.append(token[:-1])
+        if "-" in token:
+            terms.extend(part for part in token.split("-") if len(part) >= 3)
+    return terms
+
+
 def _is_statement_page(text: str) -> bool:
     """Report whether a page is one of the filer's primary financial statements."""
 
@@ -286,11 +393,11 @@ def _is_statement_page(text: str) -> bool:
 
 
 def _rank_pdf_pages(
-    candidates: Sequence[tuple[object, str, str]],
+    candidates: Sequence[tuple[object, str, str, int]],
     question: str,
     limit: int,
 ) -> tuple[object, ...]:
-    """Rank stored pages with BM25 plus a small financial synonym expansion."""
+    """Rank stored pages with BM25, then widen the strongest hits to their neighbours."""
 
     if not candidates:
         return ()
@@ -305,7 +412,7 @@ def _rank_pdf_pages(
     total = len(counts)
     weights = _query_weights(question)
     financial = any(term in question.lower() for term in _METRIC_TERMS)
-    scored: list[tuple[float, object]] = []
+    scored: list[tuple[float, int]] = []
     for index, counter in enumerate(counts):
         score = 0.0
         normalization = 1.0 - _BM25_B + _BM25_B * lengths[index] / average
@@ -320,9 +427,51 @@ def _rank_pdf_pages(
             continue
         if financial and _is_statement_page(texts[index]):
             score *= 1.0 + _STATEMENT_WEIGHT
-        scored.append((score, tokenized[index][1]))
-    scored.sort(key=lambda item: (-item[0], str(getattr(item[1], "entry_id", ""))))
-    return tuple(citation for _, citation in scored[:limit])
+        scored.append((score, index))
+    scored.sort(key=lambda item: (-item[0], str(getattr(candidates[item[1]][0], "entry_id", ""))))
+    order = [index for _score, index in scored]
+    order = _widen_with_neighbours(candidates, order, limit)
+    return tuple(candidates[index][0] for index in order[:limit])
+
+
+def _widen_with_neighbours(
+    candidates: Sequence[tuple[object, str, str, int]],
+    order: Sequence[int],
+    limit: int,
+) -> list[int]:
+    """Add the pages just before and after the strongest hits.
+
+    Financial evidence regularly spans a page break, and the annotation points at whichever
+    half carries the number. Reserving the tail of the answer for neighbours of the top hits
+    converts one correct page into its whole evidence block without disturbing the head.
+    """
+
+    if len(order) <= limit or limit <= _NEIGHBOUR_SLOTS:
+        return list(order)
+    head_count = min(_NEIGHBOUR_ANCHORS, max(1, limit // 2))
+    head = list(order[:head_count])
+    by_location = {
+        (candidate[2], candidate[3]): index for index, candidate in enumerate(candidates)
+    }
+    widened: list[int] = list(order[: limit - _NEIGHBOUR_SLOTS])
+    chosen = set(widened)
+    for index in head:
+        document_id, page_number = candidates[index][2], candidates[index][3]
+        for offset in _NEIGHBOUR_OFFSETS:
+            neighbour = by_location.get((document_id, page_number + offset))
+            if neighbour is None or neighbour in chosen:
+                continue
+            widened.append(neighbour)
+            chosen.add(neighbour)
+            if len(widened) >= limit:
+                return widened
+    for index in order:
+        if len(widened) >= limit:
+            break
+        if index not in chosen:
+            widened.append(index)
+            chosen.add(index)
+    return widened
 
 
 def decode_pdf_page_identity(source_id: str, /) -> tuple[str, int] | None:
