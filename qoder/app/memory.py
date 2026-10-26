@@ -35,6 +35,7 @@ class PowerContextMemory:
     ) -> None:
         self._base_url = base_url.rstrip("/")
         self._api_key = api_key
+        self._agent_id = "coursenote-agent"
         self._enabled = ENABLE_MEMORY and bool(base_url)
 
     @property
@@ -60,14 +61,24 @@ class PowerContextMemory:
             with httpx.Client(timeout=_TIMEOUT) as client:
                 headers = {}
                 if self._api_key:
-                    headers["Authorization"] = f"Bearer {self._api_key}"
+                    # PowerContext 通过 X-API-Key 头（或 api_key 查询参数）鉴权
+                    headers["X-API-Key"] = self._api_key
 
+                # PowerContext 真实接口：POST /api/v1/memories
+                # body: MemoryCreateRequest{content,user_id,agent_id,metadata,infer}
                 resp = client.post(
-                    f"{self._base_url}/api/memory",
+                    f"{self._base_url}/api/v1/memories",
                     json={
-                        "user_id": user_id,
-                        "kind": kind,
                         "content": content,
+                        "user_id": user_id,
+                        "agent_id": self._agent_id,
+                        "metadata": {
+                            "schema": "powermem.coding_agent_observation.v1",
+                            "scope": "coding_agent",
+                            "source": "coursenote",
+                            "record_kind": kind,
+                        },
+                        "infer": False,
                     },
                     headers=headers,
                 )
@@ -95,20 +106,41 @@ class PowerContextMemory:
             with httpx.Client(timeout=_TIMEOUT) as client:
                 headers = {}
                 if self._api_key:
-                    headers["Authorization"] = f"Bearer {self._api_key}"
+                    # PowerContext 通过 X-API-Key 头（或 api_key 查询参数）鉴权
+                    headers["X-API-Key"] = self._api_key
 
-                params = {"user_id": user_id, "limit": limit}
-                if kind:
-                    params["kind"] = kind
+                # PowerContext 真实接口：GET /api/v1/memories
+                # 查询参数：user_id / agent_id / limit / offset / sort_by / order
+                params = {
+                    "user_id": user_id,
+                    "agent_id": self._agent_id,
+                    "limit": limit,
+                    "offset": 0,
+                    "sort_by": "created_at",
+                    "order": "desc",
+                }
 
                 resp = client.get(
-                    f"{self._base_url}/api/memory",
+                    f"{self._base_url}/api/v1/memories",
                     params=params,
                     headers=headers,
                 )
                 resp.raise_for_status()
                 data = resp.json()
-                return data.get("memories", [])
+                # APIResponse 的业务数据在 data 字段里
+                items = data.get("data", []) if isinstance(data, dict) else []
+                memories = []
+                for item in items:
+                    if not isinstance(item, dict):
+                        continue
+                    memories.append({
+                        "memory_id": item.get("memory_id") or item.get("id"),
+                        "content": item.get("content", ""),
+                        "user_id": item.get("user_id"),
+                        "agent_id": item.get("agent_id"),
+                        "metadata": item.get("metadata") or {},
+                    })
+                return memories
         except Exception as exc:
             logger.warning("取回记忆失败: %s", exc)
             return []

@@ -313,6 +313,35 @@ ORDER BY (0.7 * (1 - dist) + 0.3 * kw_score) DESC
 LIMIT 3;
 ```
 
+## PowerContext 记忆（可选增强）
+
+项目同时接入了 **PowerContext**（OceanBase 生态的 AI Agent 上下文服务）作为长期记忆层：
+
+- 记录用户偏好（常用课程）、检索历史、薄弱知识点
+- 下次检索/问答时把相关记忆拼进上下文，实现"越用越懂你"
+- 接口对齐 PowerContext 真实 API：
+  - 写入：`POST {POWCONTEXT_BASE_URL}/api/v1/memories`
+    （body：`content` / `user_id` / `agent_id` / `metadata` / `infer`，鉴权头 `X-API-Key`）
+  - 读取：`GET {POWCONTEXT_BASE_URL}/api/v1/memories?user_id=...&agent_id=...&limit=...`
+
+启用方式（`.env`）：
+
+```bash
+ENABLE_MEMORY=true
+POWCONTEXT_BASE_URL=http://127.0.0.1:8000
+POWCONTEXT_API_KEY=<你的 PowerContext API Key>
+```
+
+未启用或服务不可用时**自动降级**（不影响检索与问答），并在 `/api/search`、`/api/ask` 响应的
+`used_memory` 字段中说明本次是否使用了记忆。
+
+本地启动 PowerContext（可选）：
+
+```bash
+git clone https://github.com/oceanbase/powercontext.git && cd powercontext
+# 按其 README 启动服务（默认 8000 端口），再把 POWCONTEXT_BASE_URL 指向它
+```
+
 ## 目录结构
 
 ```
