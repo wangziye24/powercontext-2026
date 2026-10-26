@@ -7,7 +7,9 @@ loudly instead of corrupting the working tree.
 
 from __future__ import annotations
 
+import ast
 import re
+import subprocess
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -116,59 +118,56 @@ def _same(left: str, right: str) -> bool:
     return _strip_eol(left) == _strip_eol(right)
 
 
-def _find_block(lines: list[str], block: list[str], start: int) -> int | None:
+def _find_block(lines: list[str], block: list[str], start: int, hint: int) -> int | None:
     """Locate a hunk block in the file, ignoring the line numbers of the diff.
 
     A generated patch rarely numbers its hunks exactly like the file on disk.
     Like ``patch(1)``, the context decides where a hunk belongs: the block is
-    searched for as a whole, starting at the position of the previous hunk.
+    searched for as a whole, and the position closest to the declared line
+    number wins when the block occurs more than once.
     """
 
     if not block:
         return start
     limit = len(lines) - len(block) + 1
-    for position in range(start, max(start, limit)):
-        if all(_same(lines[position + offset], block[offset]) for offset in range(len(block))):
-            return position
-    for position in range(0, max(0, limit)):
-        if all(_same(lines[position + offset], block[offset]) for offset in range(len(block))):
-            return position
-    return None
+    matches = [
+        position
+        for position in range(0, max(0, limit))
+        if all(_same(lines[position + offset], block[offset]) for offset in range(len(block)))
+    ]
+    if not matches:
+        return None
+    after_start = [position for position in matches if position >= start]
+    pool = after_start or matches
+    return min(pool, key=lambda position: (abs(position - hint), position))
 
 
-def apply_unified_diff(root: Path, diff: str) -> list[dict[str, object]]:
-    """Apply a unified diff under ``root`` and return a per file summary."""
-
-    root = Path(root)
-    patches = parse_unified_diff(diff)
-    if not patches:
-        raise PatchError("the unified diff does not contain any hunk")
+def _apply_with_python(root: Path, patches: list[FilePatch]) -> list[dict[str, object]]:
+    """Apply the patches with a pure Python applier."""
 
     summary: list[dict[str, object]] = []
     for patch in patches:
         target = root / patch.path
         existed = target.exists()
         original = target.read_text(encoding="utf-8").splitlines() if existed else []
-        result: list[str] = []
-        cursor = 0
-        added = 0
-        removed = 0
+        located: list[tuple[int, list[str], list[str]]] = []
         for hunk in patch.hunks:
             old_block = [text for kind, text in hunk.lines if kind in (" ", "-")]
             new_block = [text for kind, text in hunk.lines if kind in (" ", "+")]
-            position = _find_block(original, old_block, cursor)
+            position = _find_block(original, old_block, 0, max(hunk.old_start - 1, 0))
             if position is None:
                 expected = " / ".join(_strip_eol(text) for text in old_block[:3])
                 raise PatchError(
-                    f"the patch does not match {patch.path} after line {cursor + 1};"
-                    f" expected a block starting with: {expected}"
+                    f"the patch does not match {patch.path}; expected a block starting with: {expected}"
                 )
-            result.extend(original[cursor:position])
-            result.extend(new_block)
-            removed += len(old_block) - len([text for kind, text in hunk.lines if kind == " "])
-            added += len(new_block) - len([text for kind, text in hunk.lines if kind == " "])
-            cursor = position + len(old_block)
-        result.extend(original[cursor:])
+            located.append((position, old_block, new_block))
+
+        result = list(original)
+        for position, old_block, new_block in sorted(located, key=lambda item: -item[0]):
+            result[position : position + len(old_block)] = new_block
+
+        added = sum(len(new) - len(old) for _, old, new in located)
+        removed = sum(len(old) - len(new) for _, old, new in located)
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text("\n".join(result) + "\n", encoding="utf-8")
         summary.append(
@@ -180,4 +179,90 @@ def apply_unified_diff(root: Path, diff: str) -> list[dict[str, object]]:
                 "created": not existed,
             }
         )
+    return summary
+
+
+def _apply_with_git(root: Path, diff: str) -> list[dict[str, object]] | None:
+    """Apply the patch with ``git apply``, which understands shared context lines."""
+
+    completed = subprocess.run(
+        ["git", "apply", "--recount", "--whitespace=nowarn", "-"],
+        cwd=str(root),
+        input=diff,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    if completed.returncode != 0:
+        return None
+    summary: list[dict[str, object]] = []
+    for patch in parse_unified_diff(diff):
+        added = sum(
+            len([text for kind, text in hunk.lines if kind == "+"]) for hunk in patch.hunks
+        )
+        removed = sum(
+            len([text for kind, text in hunk.lines if kind == "-"]) for hunk in patch.hunks
+        )
+        summary.append(
+            {
+                "path": patch.path,
+                "added": added,
+                "removed": removed,
+                "hunks": len(patch.hunks),
+                "created": False,
+            }
+        )
+    return summary
+
+
+def _check_syntax(root: Path, paths: list[str]) -> None:
+    """Fail when the patched Python file cannot be parsed."""
+
+    for path in paths:
+        if not path.endswith(".py"):
+            continue
+        target = root / path
+        if not target.exists():
+            continue
+        try:
+            ast.parse(target.read_text(encoding="utf-8"))
+        except SyntaxError as error:
+            raise PatchError(f"the patched file {path} is not valid Python: {error}") from error
+
+
+def apply_unified_diff(root: Path, diff: str) -> list[dict[str, object]]:
+    """Apply a unified diff under ``root`` and return a per file summary.
+
+    ``git apply`` is used first because it understands hunks that share a
+    context line. The pure Python applier is the fallback for environments
+    without git. Either way the result is validated: the patched files must
+    still parse as Python, otherwise the change is rolled back.
+    """
+
+    root = Path(root)
+    patches = parse_unified_diff(diff)
+    if not patches:
+        raise PatchError("the unified diff does not contain any hunk")
+
+    backup: dict[str, str | None] = {}
+    for patch in patches:
+        target = root / patch.path
+        backup[patch.path] = target.read_text(encoding="utf-8") if target.exists() else None
+
+    def rollback() -> None:
+        for path, content in backup.items():
+            target = root / path
+            if content is None:
+                target.unlink(missing_ok=True)
+            else:
+                target.write_text(content, encoding="utf-8")
+
+    try:
+        summary = _apply_with_git(root, diff)
+        if summary is None:
+            summary = _apply_with_python(root, patches)
+        _check_syntax(root, [patch.path for patch in patches])
+    except PatchError:
+        rollback()
+        raise
     return summary

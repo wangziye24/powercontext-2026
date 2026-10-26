@@ -1,0 +1,72 @@
+diff --git a/minimax/artifacts/context/context.json b/minimax/artifacts/context/context.json
+index b880f563..b6dc3540 100644
+--- a/minimax/artifacts/context/context.json
++++ b/minimax/artifacts/context/context.json
+@@ -1,6 +1,6 @@
+ {
+   "schema_version": 1,
+-  "generated_at": "2026-10-26T15:07:42+08:00",
++  "generated_at": "2026-10-26T15:08:20+08:00",
+   "task": "在订单筛选中增加客户等级过滤（customer_tier），同时保持 SPEC-001 ~ SPEC-003、SPEC-005 ~ SPEC-007 描述的原有行为完全不变。",
+   "keywords": [
+     "spec-001",
+diff --git a/minimax/sample-project/src/orders/filter.py b/minimax/sample-project/src/orders/filter.py
+index b7c7fd20..8967a67b 100644
+--- a/minimax/sample-project/src/orders/filter.py
++++ b/minimax/sample-project/src/orders/filter.py
+@@ -9,12 +9,14 @@ from __future__ import annotations
+ 
+ from collections.abc import Iterable
+ 
+-from .errors import InvalidRangeError, InvalidStatusError
++from .errors import InvalidRangeError, InvalidStatusError, InvalidTierError
+ from .models import Order
+ 
+ VALID_STATUSES = ("paid", "pending", "cancelled")
++VALID_TIERS = ("VIP", "GOLD", "SILVER")
+ 
+ 
++def filter_orders(
+ def filter_orders(
+     orders: Iterable[Order],
+     *,
+@@ -22,16 +24,21 @@ def filter_orders(
+     min_amount: float | None = None,
+     max_amount: float | None = None,
+     keyword: str | None = None,
++    tier: str | None = None,
+ ) -> list[Order]:
+     """Return the orders that satisfy every provided condition.
+ 
+     Implements SPEC-001 (status), SPEC-002 (amount range), SPEC-003 (keyword),
+-    SPEC-005 (AND combination), SPEC-006 (no condition) and SPEC-007 (orders
+-    without an amount).
++    SPEC-004 (customer tier), SPEC-005 (AND combination), SPEC-006 (no
++    condition) and SPEC-007 (orders without an amount).
+     """
+ 
+     if status is not None and status not in VALID_STATUSES:
+         raise InvalidStatusError(f"unknown order status: {status!r}")
++    if tier is not None:
++        normalized_tier = tier.upper() if isinstance(tier, str) else ""
++        if normalized_tier not in VALID_TIERS and normalized_tier != "NONE":
++            raise InvalidTierError(f"unknown customer tier: {tier!r}")
+     if min_amount is not None and max_amount is not None and min_amount > max_amount:
+         raise InvalidRangeError(
+             f"min_amount {min_amount} is greater than max_amount {max_amount}"
+@@ -59,4 +66,15 @@ def filter_orders(
+             if needle in order.name.lower() or needle in order.customer_email.lower()
+         ]
+ 
++    if tier is not None:
++        if normalized_tier == "NONE":
++            selected = [order for order in selected if order.customer_tier is None]
++        else:
++            selected = [
++                order
++                for order in selected
++                if order.customer_tier is not None
++                and order.customer_tier.upper() == normalized_tier
++            ]
++
+     return selected

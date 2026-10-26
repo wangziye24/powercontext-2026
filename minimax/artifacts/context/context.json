@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-10-26T15:07:42+08:00",
+  "generated_at": "2026-10-26T15:11:21+08:00",
   "task": "在订单筛选中增加客户等级过滤（customer_tier），同时保持 SPEC-001 ~ SPEC-003、SPEC-005 ~ SPEC-007 描述的原有行为完全不变。",
   "keywords": [
     "spec-001",
