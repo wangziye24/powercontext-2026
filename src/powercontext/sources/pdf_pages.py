@@ -1,4 +1,4 @@
-﻿# Copyright (c) 2026 OceanBase.
+# Copyright (c) 2026 OceanBase.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -168,6 +168,71 @@ _SECTION_OPENER_HINTS = (
     "management's discussion and analysis",
 )
 _OPENER_WEIGHT = 0.5
+# A 10-K's structure is standardised across filers: Item 1 Business, Item 1A Risk Factors,
+# Item 3 Legal Proceedings, Item 7 MD&A, Item 8 Financial Statements. A narrative question
+# ("who are the primary customers") is answered inside one of those items, and the page that
+# carries the answer often shares no term with the question at all, so a section prior
+# recovers what pure lexical ranking cannot.
+_SECTION_TITLE_KINDS: tuple[tuple[str, str], ...] = (
+    ("business", "business"),
+    ("risk factors", "risk"),
+    ("legal proceedings", "legal"),
+    ("properties", "properties"),
+    ("management's discussion", "mda"),
+    ("management’s discussion", "mda"),
+    ("financial statements", "financial"),
+)
+# (section kind, question keywords) — company independent.
+_SECTION_QUESTION_KEYWORDS: tuple[tuple[str, tuple[str, ...]], ...] = (
+    (
+        "business",
+        (
+            "business",
+            "products",
+            "services",
+            "segments",
+            "customers",
+            "clients",
+            "suppliers",
+            "employees",
+            "headcount",
+            "competitors",
+            "competition",
+            "backlog",
+        ),
+    ),
+    (
+        "risk",
+        (
+            "risk",
+            "risks",
+            "cyclical",
+            "cyclicality",
+            "uncertainty",
+            "adverse",
+            "dependence",
+            "concentration",
+            "government",
+        ),
+    ),
+    ("legal", ("legal", "litigation", "lawsuits", "proceedings", "settlement")),
+    ("properties", ("properties", "facilities")),
+    ("mda", ("liquidity", "cash", "flows", "results", "operations", "capital", "margin", "outlook")),
+    ("financial", ("financial", "statements", "notes", "balance", "segment")),
+)
+# Customers and competition are written in Item 1 and again in Item 1A.
+_SECTION_KEYWORD_ALIASES: dict[str, tuple[str, ...]] = {
+    "customers": ("business", "risk"),
+    "customer": ("business", "risk"),
+    "clients": ("business", "risk"),
+    "competition": ("business", "risk"),
+    "competitors": ("business", "risk"),
+    "government": ("business", "risk"),
+}
+_SECTION_PRIOR_WEIGHT = 0.5
+_ITEM_HEADING = re.compile(r"^\s*item\s+(\d{1,2})\s*([a-z]?)\b[\s.:\-–]*", re.IGNORECASE)
+# Section maps are computed once per document, not once per question.
+_SECTION_CACHE: dict[tuple[str, int], dict[int, str]] = {}
 # Note pages and upper-case title pages carry the tables and headings an annotation names.
 _NOTES_MARKER = "notes to the consolidated"
 _NOTES_WEIGHT = 0.3
@@ -529,6 +594,93 @@ def _is_statement_page(text: str) -> bool:
     return any(marker in lowered for marker in _STATEMENT_MARKERS)
 
 
+def _section_kind(title: str) -> str | None:
+    """Return the section a heading names, if the heading names one."""
+
+    lowered = title.lower()
+    for marker, kind in _SECTION_TITLE_KINDS:
+        if marker in lowered:
+            return kind
+    return None
+
+
+def _detect_document_sections(texts: Sequence[str]) -> dict[int, str]:
+    """Map every physical page to the 10-K item that owns it.
+
+    An item heading is written in the SEC's own wording ("Item 1A. Risk Factors"), so the
+    boundary does not depend on the filer. The item number is only a hint because 10-Qs
+    reuse the numbering in their second part; the title decides which section a page is in.
+    A table of contents lists every item at once and is recognised by that, so it never
+    moves a boundary.
+    """
+
+    boundaries: list[tuple[int, str]] = []
+    for index, text in enumerate(texts):
+        lines = [line.strip() for line in text.splitlines() if line.strip()]
+        headings: list[str] = []
+        for position, line in enumerate(lines):
+            match = _ITEM_HEADING.match(line)
+            if match is None:
+                continue
+            title = line[match.end() :]
+            if not title:
+                title = lines[position + 1] if position + 1 < len(lines) else ""
+            kind = _section_kind(title)
+            if kind is not None:
+                headings.append(kind)
+        if len(headings) >= 5:
+            continue
+        for kind in headings:
+            boundaries.append((index, kind))
+    sections: dict[int, str] = {}
+    starts: list[tuple[int, str]] = []
+    current: str | None = None
+    for index, kind in boundaries:
+        if kind != current:
+            starts.append((index, kind))
+            current = kind
+    for position, (start, kind) in enumerate(starts):
+        end = starts[position + 1][0] if position + 1 < len(starts) else len(texts)
+        for page in range(start, end):
+            sections[page] = kind
+    return sections
+
+
+def _question_sections(question: str) -> set[str]:
+    """Map a question to the sections that can answer it.
+
+    A metric question is answered by a statement and already has reserved seats, so only a
+    narrative question uses the section prior.
+    """
+
+    if any(term in question.lower() for term in _METRIC_TERMS):
+        return set()
+    tokens = set(_normalized_terms(question.lower()))
+    sections: set[str] = set()
+    for kind, keywords in _SECTION_QUESTION_KEYWORDS:
+        if any(keyword in tokens for keyword in keywords):
+            sections.add(kind)
+    for token in tokens:
+        sections.update(_SECTION_KEYWORD_ALIASES.get(token, ()))
+    return sections
+
+
+def _document_sections(candidates: Sequence[tuple[object, str, str, int]]) -> dict[int, str]:
+    """Return the section map of a document, computed once per document."""
+
+    if not candidates:
+        return {}
+    document_id = candidates[0][2]
+    key = (document_id, len(candidates))
+    cached = _SECTION_CACHE.get(key)
+    if cached is None:
+        if len(_SECTION_CACHE) >= 8:
+            _SECTION_CACHE.clear()
+        cached = _detect_document_sections([candidate[1] for candidate in candidates])
+        _SECTION_CACHE[key] = cached
+    return cached
+
+
 def _is_section_opener(text: str) -> bool:
     """Report whether a page opens a 10-K/10-Q section rather than continuing one."""
 
@@ -568,6 +720,8 @@ def _rank_pdf_pages(
     total = len(counts)
     weights = _query_weights(question)
     financial = any(term in question.lower() for term in _METRIC_TERMS)
+    prior = _question_sections(question)
+    sections = _document_sections(candidates) if prior else {}
     saturation: list[float] = []
     coverage: list[float] = []
     for index, counter in enumerate(counts):
@@ -599,6 +753,8 @@ def _rank_pdf_pages(
             score *= 1.0 + _NOTES_WEIGHT
         if _is_title_page(texts[index]):
             score *= 1.0 + _TITLE_WEIGHT
+        if prior and sections.get(index) in prior:
+            score *= 1.0 + _SECTION_PRIOR_WEIGHT
         scored.append((score, index))
     scored.sort(key=lambda item: (-item[0], str(getattr(candidates[item[1]][0], "entry_id", ""))))
     order = [index for _score, index in scored]
