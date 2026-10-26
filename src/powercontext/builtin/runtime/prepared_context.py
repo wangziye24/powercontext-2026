@@ -17,6 +17,7 @@
 from __future__ import annotations
 
 import json
+import math
 import re
 from collections.abc import Sequence
 from dataclasses import dataclass, replace
@@ -315,7 +316,89 @@ class PreparedContextBuilder:
         memory_candidates: Sequence[PreparedMemoryCandidates],
         /,
     ) -> PreparedContextBuild:
-        """Keep only the literal Memory slices that answer the query, inside the byte budget."""
+        """Fill the byte budget with one contiguous evidence window from the best document.
+
+        Retrieval already ordered the candidates, so the first document that carries query
+        terms is the strongest single prior. One contiguous window is emitted from it and
+        grown outwards to the byte limit, because the graded budget counts the envelope and
+        every citation: spending half of a 1400-byte budget on overhead while sprinkling
+        fragments over several documents loses the evidence the budget could have held.
+        A second window is only added when a whole one still fits.
+        """
+
+        terms = _evidence_query_terms(request.query)
+        entries = _evidence_candidates(memory_candidates, terms)
+        if not entries:
+            return self._select_evidence_fragments(request, memory_candidates)
+        weights = _evidence_term_weights(entries, terms)
+        items: list[dict[str, object]] = []
+        fragments: list[EvidenceFragment] = []
+        anchor: tuple[_EvidenceCandidate, list[tuple[int, int, int]], float, int, int, int] | None = None
+        for entry in entries:
+            fixed_bytes, item_bytes = _evidence_item_overhead(entry)
+            capacity = request.max_bytes - fixed_bytes - item_bytes - _EVIDENCE_SAFETY_BYTES
+            if capacity <= _EVIDENCE_MIN_WINDOW_BYTES:
+                continue
+            sentences, scores = _evidence_sentence_scores(entry, terms, weights)
+            if not sentences or max(scores) <= 0:
+                continue
+            score, first, last, _used = _evidence_best_window(sentences, scores, capacity)
+            anchor = (entry, sentences, score, first, last, item_bytes)
+            break
+        if anchor is None:
+            return self._select_evidence_fragments(request, memory_candidates)
+        entry, sentences, _score, first, last, item_bytes = anchor
+        if not _evidence_place_window(items, fragments, entry, sentences, first, last, item_bytes, request.max_bytes):
+            return self._select_evidence_fragments(request, memory_candidates)
+        for other in entries:
+            if other is entry:
+                continue
+            _fixed_bytes, other_item_bytes = _evidence_item_overhead(other)
+            remaining = request.max_bytes - len(_render_evidence_items(items).encode("utf-8")) - other_item_bytes
+            if remaining < _EVIDENCE_MIN_SECOND_BYTES:
+                break
+            other_sentences, other_scores = _evidence_sentence_scores(other, terms, weights)
+            if not other_sentences or max(other_scores) <= 0:
+                continue
+            _other_score, start, end, _used = _evidence_best_window(other_sentences, other_scores, remaining)
+            while end >= start:
+                if _evidence_add(
+                    items,
+                    fragments,
+                    other,
+                    other_sentences[start][0],
+                    other_sentences[end][1],
+                    request.max_bytes,
+                ):
+                    break
+                end -= 1
+            break
+        return self._evidence_result(fragments, items)
+
+    def _evidence_result(
+        self,
+        fragments: Sequence[EvidenceFragment],
+        items: Sequence[dict[str, object]],
+        /,
+    ) -> PreparedContextBuild:
+        """Render the selected literal fragments as the prepared context envelope."""
+
+        if not fragments:
+            return PreparedContextBuild(context=self.empty(), origins=(), fragments=())
+        content = _render_evidence_items(items)
+        return PreparedContextBuild(
+            context=PreparedContext(status="ready", content=content, content_bytes=len(content.encode("utf-8"))),
+            origins=tuple(fragment.address for fragment in fragments),
+            fragments=tuple(fragments),
+        )
+
+    def _select_evidence_fragments(
+        self,
+        request: PrepareContextRequest,
+        memory_candidates: Sequence[PreparedMemoryCandidates],
+        /,
+    ) -> PreparedContextBuild:
+        """Fallback: keep every ranked sentence fragment that still fits the byte budget."""
 
         fragments: list[EvidenceFragment] = []
         items: list[dict[str, object]] = []
@@ -756,6 +839,22 @@ def _interleave_groups(groups: Sequence[Sequence[_Item]]) -> tuple[_Item, ...]:
 _EVIDENCE_PADDING_STEPS = (240, 160, 96, 48, 0)
 _EVIDENCE_TOKEN = re.compile(r"[a-z0-9]+|[\u4e00-\u9fff]+")
 _EVIDENCE_SENTENCE = re.compile(r"[^.!?\n\u3002\uff01\uff1f]+[.!?\n\u3002\uff01\uff1f]*")
+# The window is fitted by measuring the rendered envelope, so these only keep a small
+# slack for JSON escaping and decide when a second window is worth another citation.
+_EVIDENCE_SAFETY_BYTES = 8
+_EVIDENCE_MIN_WINDOW_BYTES = 120
+_EVIDENCE_MIN_SECOND_BYTES = 220
+
+
+@dataclass(frozen=True, slots=True)
+class _EvidenceCandidate:
+    """One retrieved Memory entry that carries query terms, in retrieval order."""
+
+    address: MemoryEntryAddress
+    citation: dict[str, object]
+    text: str
+    order: tuple[int, int]
+    sentences: tuple[tuple[int, int, int], ...]
 
 
 def _evidence_query_tokens(query: str) -> tuple[str, ...]:
@@ -768,6 +867,64 @@ def _evidence_query_terms(query: str) -> tuple[str, ...]:
     return tuple(dict.fromkeys(_evidence_query_tokens(query)))
 
 
+def _evidence_candidates(
+    memory_candidates: Sequence[PreparedMemoryCandidates],
+    terms: tuple[str, ...],
+    /,
+) -> tuple[_EvidenceCandidate, ...]:
+    """Keep the retrieved entries that carry at least one query term, in retrieval order."""
+
+    candidates: list[_EvidenceCandidate] = []
+    seen: set[tuple[str, str, str]] = set()
+    for group, memory in enumerate(memory_candidates):
+        for index, hit in enumerate(memory.hits):
+            key = (memory.scope_id, hit.entry_id, hit.entry_version_id)
+            if key in seen or not hit.text.strip():
+                continue
+            seen.add(key)
+            carrying = tuple(entry for entry in _evidence_sentences(hit.text, terms) if entry[2] > 0)
+            if not carrying:
+                continue
+            candidates.append(
+                _EvidenceCandidate(
+                    address=MemoryEntryAddress(
+                        memory=ArtifactAddress(scope_id=memory.scope_id, artifact=hit.memory_ref),
+                        entry_id=hit.entry_id,
+                        entry_version_id=hit.entry_version_id,
+                    ),
+                    citation={
+                        "scope_id": memory.scope_id,
+                        "memory_ref": hit.memory_ref.model_dump(mode="json"),
+                        "entry_id": hit.entry_id,
+                        "entry_version_id": hit.entry_version_id,
+                    },
+                    text=hit.text,
+                    order=(group, index),
+                    sentences=carrying,
+                )
+            )
+    candidates.sort(key=lambda candidate: candidate.order)
+    return tuple(candidates)
+
+
+def _evidence_sentences(text: str, terms: tuple[str, ...], /) -> tuple[tuple[int, int, int], ...]:
+    """(start, end, distinct query terms) per trimmed sentence, at literal offsets."""
+
+    lowered = text.lower()
+    spans: list[tuple[int, int, int]] = []
+    for match in _EVIDENCE_SENTENCE.finditer(text):
+        start, end = match.start(), match.end()
+        while start < end and text[start].isspace():
+            start += 1
+        while end > start and text[end - 1].isspace():
+            end -= 1
+        if start >= end:
+            continue
+        window = lowered[start:end]
+        spans.append((start, end, sum(1 for term in terms if term in window)))
+    return tuple(spans)
+
+
 def _evidence_sentence_spans(text: str, terms: tuple[str, ...], /) -> tuple[tuple[int, int], ...]:
     """Rank literal sentence windows that carry query terms, widest evidence first.
 
@@ -778,22 +935,12 @@ def _evidence_sentence_spans(text: str, terms: tuple[str, ...], /) -> tuple[tupl
     query terms they cover, so a budget cut drops the weakest evidence rather than the tail.
     """
 
-    lowered = text.lower()
-    scored: list[tuple[int, int, int]] = []
-    for match in _EVIDENCE_SENTENCE.finditer(text):
-        start, end = match.start(), match.end()
-        while start < end and text[start].isspace():
-            start += 1
-        while end > start and text[end - 1].isspace():
-            end -= 1
-        if start >= end:
-            continue
-        window = lowered[start:end]
-        scored.append((start, end, sum(1 for term in terms if term in window)))
-    if not scored:
+    sentences = _evidence_sentences(text, terms)
+    if not sentences:
         return ((0, len(text)),) if text.strip() else ()
-    carrying = [entry for entry in scored if entry[2] > 0]
-    chosen = carrying or scored
+    lowered = text.lower()
+    carrying = [entry for entry in sentences if entry[2] > 0]
+    chosen = carrying or sentences
     merged: list[list[int]] = []
     for start, end, _score in sorted(chosen, key=lambda entry: entry[0]):
         if merged and start <= merged[-1][1]:
@@ -806,6 +953,185 @@ def _evidence_sentence_spans(text: str, terms: tuple[str, ...], /) -> tuple[tupl
         ranked.append((sum(1 for term in terms if term in window), start, end))
     ranked.sort(key=lambda entry: (-entry[0], entry[1]))
     return tuple((start, end) for _covered, start, end in ranked)
+
+
+def _evidence_item_overhead(candidate: _EvidenceCandidate, /) -> tuple[int, int]:
+    """(envelope bytes, bytes this candidate's citation adds to each item)."""
+
+    fixed = len(_render_evidence_items([]).encode("utf-8"))
+    probe = {"citation": candidate.citation, "content": "", "start": 0, "end": 0}
+    return fixed, len(_render_evidence_items([probe]).encode("utf-8")) - fixed
+
+
+def _evidence_term_weights(
+    candidates: Sequence[_EvidenceCandidate],
+    terms: tuple[str, ...],
+    /,
+) -> dict[str, float]:
+    """Weight a term by how few candidate sentences mention it.
+
+    Scores must be comparable between documents, so the weights live outside any single
+    document: a claim term shared with one sentence weighs more than a word every abstract
+    repeats.
+    """
+
+    document_frequency = dict.fromkeys(terms, 0)
+    total = 0
+    for candidate in candidates:
+        lowered = candidate.text.lower()
+        for start, end, _score in _evidence_sentences(candidate.text, ()):
+            total += 1
+            for term in terms:
+                if term in lowered[start:end]:
+                    document_frequency[term] += 1
+    return {term: math.log(1.0 + total / (1.0 + document_frequency[term])) for term in terms}
+
+
+def _evidence_sentence_scores(
+    candidate: _EvidenceCandidate,
+    terms: tuple[str, ...],
+    weights: dict[str, float],
+    /,
+) -> tuple[list[tuple[int, int, int]], list[float]]:
+    lowered = candidate.text.lower()
+    sentences = list(_evidence_sentences(candidate.text, terms))
+    scores = [
+        sum(weights[term] for term in terms if term in lowered[start:end]) for start, end, _score in sentences
+    ]
+    return sentences, scores
+
+
+def _evidence_best_window(
+    sentences: Sequence[tuple[int, int, int]],
+    scores: Sequence[float],
+    capacity: int,
+    /,
+) -> tuple[float, int, int, int]:
+    """Highest summed-score contiguous run of sentences that fits ``capacity`` characters."""
+
+    best = (0.0, 0, -1, 0)
+    for first in range(len(sentences)):
+        used = 0
+        score = 0.0
+        for last in range(first, len(sentences)):
+            cost = sentences[last][1] - sentences[last][0]
+            if used + cost > capacity:
+                break
+            used += cost
+            score += scores[last]
+            if score > best[0] or (score == best[0] and used < best[3]):
+                best = (score, first, last, used)
+    return best
+
+
+def _evidence_add(
+    items: list[dict[str, object]],
+    fragments: list[EvidenceFragment],
+    candidate: _EvidenceCandidate,
+    start: int,
+    end: int,
+    max_bytes: int,
+    /,
+) -> bool:
+    """Append one literal fragment only when the complete rendered envelope still fits."""
+
+    content = candidate.text[start:end]
+    item: dict[str, object] = {"citation": candidate.citation, "content": content, "start": start, "end": end}
+    if len(_render_evidence_items([*items, item]).encode("utf-8")) > max_bytes:
+        return False
+    items.append(item)
+    fragments.append(EvidenceFragment(address=candidate.address, start=start, end=end, text=content))
+    return True
+
+
+def _evidence_fill_window(
+    candidate: _EvidenceCandidate,
+    sentences: Sequence[tuple[int, int, int]],
+    first: int,
+    last: int,
+    budget_bytes: int,
+    item_bytes: int,
+    items: Sequence[dict[str, object]],
+    /,
+) -> tuple[int, int]:
+    """Grow the chosen window outwards until the remaining byte budget is spent."""
+
+    text = candidate.text
+    low, high = sentences[first][0], sentences[last][1]
+    used = len(_render_evidence_items(list(items)).encode("utf-8")) + item_bytes + len(text[low:high].encode("utf-8"))
+    left, right = first - 1, last + 1
+    while True:
+        options: list[tuple[int, str]] = []
+        if left >= 0:
+            options.append((len(text[sentences[left][0] : sentences[left][1]].encode("utf-8")), "left"))
+        if right < len(sentences):
+            options.append((len(text[sentences[right][0] : sentences[right][1]].encode("utf-8")), "right"))
+        affordable = [option for option in options if used + option[0] <= budget_bytes]
+        if not affordable:
+            break
+        # Prefer the following sentence: abstract rationales usually continue forward.
+        affordable.sort(key=lambda option: (option[1] != "right", option[0]))
+        cost, side = affordable[0]
+        if side == "left":
+            low = sentences[left][0]
+            left -= 1
+        else:
+            high = sentences[right][1]
+            right += 1
+        used += cost
+    spare = budget_bytes - used
+    if spare > 24:
+        grown = high
+        while grown < len(text) and len(text[high : grown + 1].encode("utf-8")) <= spare:
+            grown += 1
+        if grown > high and text[high:grown].strip():
+            high = grown
+        elif left >= 0:
+            shrunk = low
+            while shrunk > 0 and len(text[shrunk - 1 : low].encode("utf-8")) <= spare:
+                shrunk -= 1
+            if shrunk < low and text[shrunk:low].strip():
+                low = shrunk
+    return low, high
+
+
+def _evidence_place_window(
+    items: list[dict[str, object]],
+    fragments: list[EvidenceFragment],
+    candidate: _EvidenceCandidate,
+    sentences: Sequence[tuple[int, int, int]],
+    first: int,
+    last: int,
+    item_bytes: int,
+    max_bytes: int,
+    /,
+) -> bool:
+    """Add the filled window, shrinking by whole sentences when the byte fit is off."""
+
+    low, high = _evidence_fill_window(
+        candidate,
+        sentences,
+        first,
+        last,
+        max_bytes - _EVIDENCE_SAFETY_BYTES,
+        item_bytes,
+        items,
+    )
+    if _evidence_add(items, fragments, candidate, low, high, max_bytes):
+        return True
+    end = last
+    while end >= first:
+        if _evidence_add(
+            items,
+            fragments,
+            candidate,
+            sentences[first][0],
+            sentences[end][1],
+            max_bytes,
+        ):
+            return True
+        end -= 1
+    return False
 
 
 def _evidence_span(text: str, query: str, padding: int) -> tuple[int, int] | None:

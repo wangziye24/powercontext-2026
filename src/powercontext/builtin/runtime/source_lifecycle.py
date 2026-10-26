@@ -411,7 +411,14 @@ class ScopedSourceLifecycleApplication:
                 targets = _propagate(nodes, event.node_id, event.available)
                 changed = tuple(item for item in nodes if item.available != targets[item.node_id])
                 reason = f"{_EVENT_REASON_PREFIX}: {event.reason}"
-                await self._reconcile_memory(context.artifacts.memory, changed, targets, reason)
+                try:
+                    await self._reconcile_memory(context.artifacts.memory, changed, targets, reason)
+                except SourceLifecycleError:
+                    raise
+                except Exception as error:  # noqa: BLE001 - any interruption leaves the graph untouched
+                    # The graph row still carries the old state, so replaying this event
+                    # finishes the transitions that did not commit.
+                    raise SourceLifecycleError("propagation-interrupted", event.node_id) from error
                 async with self._database.transaction() as connection:
                     current = await self._repository.load_node(
                         connection, self.scope_id, event.node_id, for_update=True
