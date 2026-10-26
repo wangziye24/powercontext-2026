@@ -306,15 +306,70 @@ def _question_document_candidates(
         documents.add(candidate[2])
     if len(documents) < 2:
         return candidates
-    asked = set(_DOCUMENT_TOKEN.findall(question.lower()))
-    addressed = [
-        document_id
+    asked_tokens = set(_DOCUMENT_TOKEN.findall(question.lower()))
+    squashed = "".join(_DOCUMENT_TOKEN.findall(question.lower()))
+    scored = [
+        (_document_match_score(document_id, asked_tokens, squashed), document_id)
         for document_id in documents
-        if (set(_DOCUMENT_TOKEN.findall(document_id.lower())) - _DOCUMENT_NOISE_TOKENS) & asked
     ]
+    best = max(score for score, _document_id in scored)
+    if best <= 0:
+        return candidates
+    addressed = [document_id for score, document_id in scored if score == best]
     if len(addressed) != 1:
         return candidates
     return tuple(candidate for candidate in candidates if candidate[2] == addressed[0])
+
+
+def _document_match_score(document_id: str, asked_tokens: set[str], squashed: str) -> int:
+    """Score how strongly the question names this document; higher is stronger.
+
+    A filing is identified by a document id such as ``AMERICANEXPRESS_2022_10K`` while the
+    question writes the company as "American Express" or "AMEX". The id without separators
+    matches the question without separators, a word of the question that is part of the
+    company name counts, and an abbreviation that reads as a subsequence of the name counts
+    as the weakest match.
+    """
+
+    tokens = [
+        token
+        for token in _DOCUMENT_TOKEN.findall(document_id.lower())
+        if token not in _DOCUMENT_NOISE_TOKENS and not token.isdigit()
+    ]
+    if not tokens:
+        return 0
+    letters = "".join(character for character in document_id.lower() if character.isalpha())
+    if len(letters) >= 4 and letters in squashed:
+        return 90
+    best = 0
+    for token in tokens:
+        if token in asked_tokens:
+            best = max(best, 100)
+            continue
+        if len(token) >= 4 and token in squashed:
+            best = max(best, 80)
+            continue
+        if len(token) >= 4 and any(
+            len(other) >= 4 and (other in token or token in other) for other in asked_tokens
+        ):
+            best = max(best, 60)
+    if best == 0 and len(letters) >= 4:
+        # An abbreviation such as "AMEX" reads as a subsequence of "americanexpress".
+        for other in asked_tokens:
+            if len(other) >= 3 and _is_abbreviation(other, letters):
+                best = max(best, 40)
+                break
+    return best
+
+
+def _is_abbreviation(abbreviation: str, letters: str, /) -> bool:
+    """Report whether the abbreviation reads as a subsequence of the company name."""
+
+    position = 0
+    for character in letters:
+        if position < len(abbreviation) and character == abbreviation[position]:
+            position += 1
+    return position == len(abbreviation)
 
 
 async def _pdf_page_candidates(memory: object) -> list[tuple[object, str, str, int]]:
@@ -605,22 +660,36 @@ def _titles_a_statement(head: str, marker: str) -> bool:
 
     A filing writes "Consolidated Balance Sheets" on the statement and mentions a balance
     sheet inside sentences elsewhere. Only a short heading counts, so the reserved seat goes
-    to the statement page and not to narrative that happens to repeat the phrase.
+    to the statement page and not to narrative that happens to repeat the phrase. A title
+    split over two lines ("CONSOLIDATED STATEMENTS OF" / "OPERATIONS") still counts.
     """
 
-    for line in head.splitlines():
-        if marker not in line:
-            continue
-        words = line.split()
-        if len(words) <= 8 and len(line) <= 70:
+    lines = head.splitlines()
+    for line in lines:
+        if marker in line and len(line.split()) <= 8 and len(line) <= 70:
+            return True
+    for index in range(len(lines) - 1):
+        joined = f"{lines[index]} {lines[index + 1]}"
+        if marker in joined and len(joined.split()) <= 12 and len(joined) <= 90:
             return True
     return False
 
 
 def _leading_lines(text: str) -> str:
-    """The first few non-empty lines of a page, where a statement's own title lives."""
+    """The first few non-empty lines of a page, where a statement's own title lives.
 
-    lines = [line.strip() for line in text.splitlines() if line.strip()][:6]
+    A PDF text layer separates words with non-breaking spaces, so the lines are normalised
+    before they are compared with a title.
+    """
+
+    lines: list[str] = []
+    for line in text.splitlines():
+        collapsed = " ".join(line.replace("\xa0", " ").split())
+        if not collapsed:
+            continue
+        lines.append(collapsed)
+        if len(lines) >= 6:
+            break
     return "\n".join(lines).lower()
 
 
