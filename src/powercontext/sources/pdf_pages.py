@@ -1,4 +1,4 @@
-﻿# Copyright (c) 2026 OceanBase.
+# Copyright (c) 2026 OceanBase.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -97,7 +97,21 @@ _EXPANSIONS: tuple[tuple[tuple[str, ...], tuple[str, ...]], ...] = (
 # statement page carries the totals the narrative only refers to. Every filer titles those
 # pages "Consolidated Statement(s) of ...", so the marker is company independent.
 _STATEMENT_MARKERS = ("consolidated statement", "statement of operations")
-_METRIC_TERMS = ("ebitda", "capex", "margin", "ratio", "tax", "cash", "debt", "inventory")
+_METRIC_TERMS = (
+    "ebitda",
+    "capex",
+    "margin",
+    "ratio",
+    "tax",
+    "cash",
+    "debt",
+    "inventory",
+    "liabilit",
+    "asset",
+    "balance",
+    "equity",
+    "shareholder",
+)
 _STATEMENT_WEIGHT = 2.0
 # Annotated evidence frequently points at the page that opens a 10-K section rather than at
 # the page that repeats its wording most often.
@@ -113,6 +127,15 @@ _SECTION_OPENER_HINTS = (
     "management's discussion and analysis",
 )
 _OPENER_WEIGHT = 0.5
+# Note pages and upper-case title pages carry the tables and headings an annotation names.
+_NOTES_MARKER = "notes to the consolidated"
+_NOTES_WEIGHT = 0.3
+_TITLE_WEIGHT = 0.3
+_TITLE_LINE = re.compile(r"^[A-Z][A-Z0-9 ,.&'’/-]{6,}$")
+# Raw term frequency lets a page that repeats one common word outrank the page that carries
+# every rare term of the question, so half the score comes from distinct-term coverage.
+_COVERAGE_MIX = 0.5
+_COVERAGE_LENGTH_DAMPING = 0.0002
 # Document identities look like ``PEPSICO_2022_10K``; the company token is what a question
 # names, so the form and period tokens must not count as addressing the filing.
 _DOCUMENT_TOKEN = re.compile(r"[a-z0-9]+")
@@ -417,12 +440,24 @@ def _is_section_opener(text: str) -> bool:
     return any(hint in head for hint in _SECTION_OPENER_HINTS)
 
 
+def _is_title_page(text: str) -> bool:
+    """Report whether the page leads with an upper-case title (statement, note or section)."""
+
+    lines = [line.strip() for line in text.splitlines()[1:9] if line.strip()][:4]
+    for line in lines:
+        if len(line) < 6 or line.lower().startswith("table of contents"):
+            continue
+        if _TITLE_LINE.match(line) is not None and len(line.split()) >= 2:
+            return True
+    return False
+
+
 def _rank_pdf_pages(
     candidates: Sequence[tuple[object, str, str, int]],
     question: str,
     limit: int,
 ) -> tuple[object, ...]:
-    """Rank stored pages with BM25, then widen the strongest hits to their neighbours."""
+    """Rank stored pages by term saturation and term coverage, then follow page structure."""
 
     if not candidates:
         return ()
@@ -437,9 +472,11 @@ def _rank_pdf_pages(
     total = len(counts)
     weights = _query_weights(question)
     financial = any(term in question.lower() for term in _METRIC_TERMS)
-    scored: list[tuple[float, int]] = []
+    saturation: list[float] = []
+    coverage: list[float] = []
     for index, counter in enumerate(counts):
         score = 0.0
+        covered = 0.0
         normalization = 1.0 - _BM25_B + _BM25_B * lengths[index] / average
         for term, weight in weights.items():
             frequency = counter.get(term, 0)
@@ -448,15 +485,36 @@ def _rank_pdf_pages(
                 continue
             idf = math.log(1.0 + (total - df + 0.5) / (df + 0.5))
             score += weight * idf * frequency * (_BM25_K1 + 1.0) / (frequency + _BM25_K1 * normalization)
+            covered += weight * idf
+        saturation.append(score)
+        coverage.append(covered / (1.0 + _COVERAGE_LENGTH_DAMPING * lengths[index]))
+    breadth = _scale(saturation)
+    depth = _scale(coverage)
+    scored: list[tuple[float, int]] = []
+    for index in range(len(counts)):
+        score = (1.0 - _COVERAGE_MIX) * breadth[index] + _COVERAGE_MIX * depth[index]
         if score <= 0.0:
             continue
         if financial and _is_statement_page(texts[index]):
             score *= 1.0 + _STATEMENT_WEIGHT
         if _is_section_opener(texts[index]):
             score *= 1.0 + _OPENER_WEIGHT
+        if _NOTES_MARKER in texts[index].lower():
+            score *= 1.0 + _NOTES_WEIGHT
+        if _is_title_page(texts[index]):
+            score *= 1.0 + _TITLE_WEIGHT
         scored.append((score, index))
     scored.sort(key=lambda item: (-item[0], str(getattr(candidates[item[1]][0], "entry_id", ""))))
     return tuple(candidates[index][0] for _score, index in scored[:limit])
+
+
+def _scale(values: Sequence[float]) -> list[float]:
+    """Map a score column onto 0..1 so two different scales can be mixed."""
+
+    peak = max(values) if values else 0.0
+    if peak <= 0.0:
+        return [0.0 for _value in values]
+    return [value / peak for value in values]
 
 
 def decode_pdf_page_identity(source_id: str, /) -> tuple[str, int] | None:
