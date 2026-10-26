@@ -19,13 +19,17 @@ fi
 
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
-PYTHON="${PYTHON:-python3}"
+# shellcheck source=scripts/lib.sh
+source "$HERE/scripts/lib.sh"
+ensure_sddctx_on_path
+PYTHON="${PYTHON:-$HOME/minimax-venv/bin/python}"
+[ -x "$PYTHON" ] || PYTHON="python3"
 
 run_snapshot() {
   local commit="$1" label="$2"
   local dir="$WORK/$label"
   mkdir -p "$dir"
-  git -C "$REPO_ROOT" archive "$commit" minimax/sample-project | tar -x -C "$dir" --strip-components=2
+  git -C "$REPO_ROOT" archive "$commit" "$(detect_project_dir "$REPO_ROOT" "$commit")/sample-project" | tar -x -C "$dir" --strip-components=2
   echo "=== $label ($commit) ==="
 
   echo "--- 目标测试 tests/test_filter_tier.py ---"

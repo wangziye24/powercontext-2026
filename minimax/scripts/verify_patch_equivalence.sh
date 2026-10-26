@@ -9,9 +9,15 @@ set -uo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 REPO_ROOT="$(git -C "$HERE" rev-parse --show-toplevel)"
+# shellcheck source=scripts/lib.sh
+source "$HERE/scripts/lib.sh"
 BEFORE="${1:-54c32599}"
 AFTER="${2:-ce4d6fa4}"
 PATCH="${3:-$HERE/artifacts/diff/minimax-20261026T071003.patch}"
+# 补丁路径必须是绝对路径：脚本后续会 cd 到临时快照目录再读补丁。
+PATCH="$(cd "$(dirname "$PATCH")" && pwd)/$(basename "$PATCH")"
+BEFORE_DIR="$(detect_project_dir "$REPO_ROOT" "$BEFORE")"
+AFTER_DIR="$(detect_project_dir "$REPO_ROOT" "$AFTER")"
 
 if [ ! -f "$PATCH" ]; then
   echo "找不到补丁文件: $PATCH"
@@ -22,8 +28,8 @@ WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 mkdir -p "$WORK/before" "$WORK/after"
 
-git -C "$REPO_ROOT" archive "$BEFORE" minimax/sample-project | tar -x -C "$WORK/before" --strip-components=2
-git -C "$REPO_ROOT" archive "$AFTER" minimax/sample-project | tar -x -C "$WORK/after" --strip-components=2
+git -C "$REPO_ROOT" archive "$BEFORE" "$BEFORE_DIR/sample-project" | tar -x -C "$WORK/before" --strip-components=2
+git -C "$REPO_ROOT" archive "$AFTER" "$AFTER_DIR/sample-project" | tar -x -C "$WORK/after" --strip-components=2
 
 echo "--- 把模型补丁应用到修改前快照（$BEFORE）---"
 ( cd "$WORK/before" && python3 -c "

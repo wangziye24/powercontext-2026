@@ -22,6 +22,20 @@ DEFAULT_MODEL = "MiniMax-M3.1-Flash"
 ENV_KEY = "MINIMAX_API_KEY"
 ENV_BASE_URL = "MINIMAX_BASE_URL"
 ENV_MODEL = "MINIMAX_MODEL"
+# 通用别名：任何 OpenAI 兼容的"已有 AI 开发助手"都可以接管改码环节。
+ENV_KEY_GENERIC = "SDDCTX_LLM_API_KEY"
+ENV_BASE_URL_GENERIC = "SDDCTX_LLM_BASE_URL"
+ENV_MODEL_GENERIC = "SDDCTX_LLM_MODEL"
+
+
+def _env(*names: str, default: str = "") -> str:
+    """Return the first non-empty environment variable among ``names``."""
+
+    for name in names:
+        value = os.environ.get(name)
+        if value:
+            return value
+    return default
 
 
 class MiniMaxError(RuntimeError):
@@ -73,9 +87,9 @@ class MiniMaxClient:
         model: str | None = None,
         timeout: float = 600.0,
     ) -> None:
-        self.api_key = api_key or os.environ.get(ENV_KEY, "")
-        self.base_url = (base_url or os.environ.get(ENV_BASE_URL, DEFAULT_BASE_URL)).rstrip("/")
-        self.model = model or os.environ.get(ENV_MODEL, DEFAULT_MODEL)
+        self.api_key = api_key or _env(ENV_KEY_GENERIC, ENV_KEY)
+        self.base_url = (base_url or _env(ENV_BASE_URL_GENERIC, ENV_BASE_URL, default=DEFAULT_BASE_URL)).rstrip("/")
+        self.model = model or _env(ENV_MODEL_GENERIC, ENV_MODEL, default=DEFAULT_MODEL)
         self.timeout = timeout
 
     def available(self) -> bool:
@@ -95,7 +109,8 @@ class MiniMaxClient:
 
         if not self.api_key:
             raise MiniMaxError(
-                f"{ENV_KEY} is not set. Export the MiniMax API key before running the apply step."
+                f"{ENV_KEY_GENERIC}/{ENV_KEY} is not set. "
+                "Export the API key of the AI assistant before running the apply step."
             )
 
         payload: dict[str, Any] = {

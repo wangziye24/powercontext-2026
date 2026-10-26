@@ -8,6 +8,12 @@ set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$HERE"
 
+# 允许直接用 bash scripts/xxx.sh 运行：把虚拟环境放到 PATH 前面，
+# 否则会报 "sddctx: command not found"。
+# shellcheck source=scripts/lib.sh
+source "$HERE/scripts/lib.sh"
+ensure_sddctx_on_path
+
 SPEC="sample-project/specs/filtering.md"
 OUT="artifacts/spec-change"
 WORK="$(mktemp -d)"
