@@ -7,6 +7,12 @@ set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$HERE"
 
+# 允许直接用 bash scripts/xxx.sh 运行：把虚拟环境放到 PATH 前面，
+# 否则会报 "sddctx: command not found"。
+# shellcheck source=scripts/lib.sh
+source "$HERE/scripts/lib.sh"
+ensure_sddctx_on_path
+
 TASK_ARGS=(--target-spec SPEC-004)
 STEP=0
 
@@ -25,6 +31,10 @@ bash scripts/init_data.sh
 step "修改前基线：目标测试必须失败（功能未实现），回归测试必须通过"
 sddctx verify --phase before "${TASK_ARGS[@]}"
 BEFORE_CODE=$?
+if [ "$BEFORE_CODE" -eq 127 ] || [ "$BEFORE_CODE" -eq 126 ]; then
+  echo "!! sddctx 无法执行（exit=$BEFORE_CODE），这不是预期的测试失败"
+  exit "$BEFORE_CODE"
+fi
 if [ "$BEFORE_CODE" -eq 0 ]; then
   echo "!! 异常：修改前目标测试竟然通过了，验证样例失效"
   exit 1

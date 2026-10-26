@@ -9,6 +9,10 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 REPO_ROOT="$(cd "$HERE/.." && pwd)"
 export SDDCTX_HOME="${SDDCTX_HOME:-$HOME/.sddctx}"
 
+# shellcheck source=scripts/lib.sh
+source "$HERE/scripts/lib.sh"
+ensure_sddctx_on_path
+
 cd "$HERE"
 echo "[reset] 删除本地 seekDB 索引"
 sddctx reset
@@ -31,5 +35,6 @@ else
 fi
 
 echo "[reset] 恢复 sample-project 到基线提交"
-git -C "$REPO_ROOT" checkout -- minimax/sample-project
+PROJECT_DIR="$(detect_project_dir "$REPO_ROOT" HEAD)"
+git -C "$REPO_ROOT" checkout -- "$PROJECT_DIR/sample-project"
 echo "[reset] 完成。下一步：bash scripts/init_data.sh"
