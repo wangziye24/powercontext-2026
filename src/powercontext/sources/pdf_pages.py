@@ -110,13 +110,14 @@ _RESERVED_STATEMENT_MARKERS = (
     "statements of cash flows",
     "statement of financial position",
 )
-_RESERVED_STATEMENT_SEATS = 3
+_RESERVED_STATEMENT_SEATS = 4
 # One seat per primary statement, because a filing names each of them differently and a metric
 # question is answered on whichever statement carries the figure.
 _RESERVED_STATEMENT_KINDS = (
-    ("balance sheet", "financial position", "financial condition"),
+    ("balance sheet", "financial position"),
     ("statement of operations", "statements of operations", "statement of income", "statements of income"),
     ("statement of cash flows", "statements of cash flows", "statement of cash flow"),
+    ("notes to the consolidated financial statements", "notes to financial statements"),
 )
 _METRIC_TERMS = (
     "ebitda",
@@ -561,11 +562,11 @@ def _reserve_statement_seats(
     lowered_heads = [_leading_lines(text) for text in texts]
     reserved: list[int] = []
     for markers in _RESERVED_STATEMENT_KINDS[:seats]:
-        # Markers are ordered most specific first: "financial condition" appears in many
-        # narrative titles, so it is only used when no page really titles itself a balance sheet.
+        # A statement is titled by a short heading. A narrative page that merely mentions
+        # "balance sheet" or "financial condition" in a sentence is not the statement.
         best = None
         for marker in markers:
-            matching = [index for index, head in enumerate(lowered_heads) if marker in head]
+            matching = [index for index, head in enumerate(lowered_heads) if _titles_a_statement(head, marker)]
             if not matching:
                 continue
             best = max(matching, key=lambda index: (scores.get(index, 0.0), -index))
@@ -587,6 +588,23 @@ def _reserve_statement_seats(
             head.append(index)
             chosen.add(index)
     return head
+
+
+def _titles_a_statement(head: str, marker: str) -> bool:
+    """Report whether one of the page's leading lines titles the statement itself.
+
+    A filing writes "Consolidated Balance Sheets" on the statement and mentions a balance
+    sheet inside sentences elsewhere. Only a short heading counts, so the reserved seat goes
+    to the statement page and not to narrative that happens to repeat the phrase.
+    """
+
+    for line in head.splitlines():
+        if marker not in line:
+            continue
+        words = line.split()
+        if len(words) <= 8 and len(line) <= 70:
+            return True
+    return False
 
 
 def _leading_lines(text: str) -> str:
