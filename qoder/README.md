@@ -47,6 +47,27 @@ CourseNote 是一个学习资料混合检索助手，解决以下痛点：
 └─────────────────────────────────────────┘
 ```
 
+## 最快上手：Docker Compose 一键运行（推荐给评审）
+
+仓库自带 `Dockerfile` 与 `docker-compose.yml`，一条命令即可拉起「seekdb + 后端」：
+
+```bash
+cd qoder/
+cp .env.example .env            # 填入 MINIMAX_API_KEY（没有 Key 也可先用 EMBED_PROVIDER=local）
+docker compose up -d --build    # 首次会构建镜像并启动 seekdb(2881) + 应用(8080)
+docker compose exec app python scripts/seed_data.py   # 灌入示例资料
+docker compose exec app python scripts/smoke_test.py  # 端到端自检
+```
+
+浏览器打开 <http://localhost:8080> 即可使用；API 文档在 <http://localhost:8080/docs>。
+
+停止与清理：
+
+```bash
+docker compose down            # 停止
+docker compose down -v         # 连数据卷一起清理
+```
+
 ## 依赖与安装
 
 ### 系统要求

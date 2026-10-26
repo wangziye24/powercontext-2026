@@ -1,0 +1,49 @@
+# 一键启动：seekdb + CourseNote 后端
+# 用法：
+#   1) cp .env.example .env 并填入 MINIMAX_API_KEY
+#   2) docker compose up -d
+#   3) docker compose exec app python scripts/seed_data.py
+#   4) 浏览器打开 http://localhost:8080
+services:
+  seekdb:
+    image: oceanbase/seekdb:latest
+    container_name: coursenote-seekdb
+    environment:
+      OB_ROOT_PASSWORD: ""
+    ports:
+      - "2881:2881"
+    volumes:
+      - coursenote-seekdb-data:/var/lib/ob
+    healthcheck:
+      test: ["CMD", "mysql", "-h", "127.0.0.1", "-P", "2881", "-uroot", "-e", "select 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+
+  app:
+    build: .
+    container_name: coursenote-app
+    depends_on:
+      seekdb:
+        condition: service_healthy
+    environment:
+      MINIMAX_API_KEY: "${MINIMAX_API_KEY:-}"
+      MINIMAX_BASE_URL: "${MINIMAX_BASE_URL:-https://api.minimax.chat/v1}"
+      MINIMAX_EMBED_MODEL: "${MINIMAX_EMBED_MODEL:-embo-01}"
+      MINIMAX_CHAT_MODEL: "${MINIMAX_CHAT_MODEL:-MiniMax-M2.5}"
+      EMBED_PROVIDER: "${EMBED_PROVIDER:-minimax}"
+      SEEKDB_HOST: seekdb
+      SEEKDB_PORT: "2881"
+      SEEKDB_USER: root
+      SEEKDB_PASSWORD: ""
+      DB_NAME: coursenote
+      ENABLE_MEMORY: "${ENABLE_MEMORY:-false}"
+      POWCONTEXT_BASE_URL: "${POWCONTEXT_BASE_URL:-}"
+      POWCONTEXT_API_KEY: "${POWCONTEXT_API_KEY:-}"
+    ports:
+      - "8080:8080"
+    volumes:
+      - .:/app
+
+volumes:
+  coursenote-seekdb-data:
