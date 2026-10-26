@@ -47,6 +47,7 @@ else:
     from multiprocessing.popen_spawn_posix import Popen as SpawnPopen
 
 from powercontext._logging import log_safely
+from powercontext.builtin.persistence.cursors import SourceCursorRepository
 from powercontext.builtin.persistence.database import AsyncDatabase
 from powercontext.builtin.persistence.errors import ArtifactProcessingLeadershipLostError
 from powercontext.builtin.persistence.processing_intents import ArtifactProcessingIntentRepository
@@ -57,7 +58,11 @@ from powercontext.builtin.persistence.supervision import (
     ArtifactProcessingLeaseRepository,
     database_utc_now,
 )
-from powercontext.builtin.persistence.tables import ARTIFACT_PROCESSING_INTENTS_TABLE, ARTIFACT_PROCESSING_LEASES_TABLE
+from powercontext.builtin.persistence.tables import (
+    ARTIFACT_PROCESSING_INTENTS_TABLE,
+    ARTIFACT_PROCESSING_LEASES_TABLE,
+    SOURCE_JOURNAL_HEADS_TABLE,
+)
 from powercontext.builtin.runtime.processing_contracts import (
     ArtifactProcessingWorkAssignment,
     ArtifactProcessingWorkerCompletion,
@@ -702,6 +707,38 @@ class ArtifactProcessingSupervisor:
             state.discovery_pending = True
             state.next_discovery_at = asyncio.get_running_loop().time() + _DISCOVERY_PAGE_DELAY_SECONDS
 
+    async def _count_ready_scopes(
+        self,
+        connection: AsyncConnection,
+        binding_name: str,
+        candidates: tuple[str, ...],
+        threshold: int,
+        /,
+    ) -> tuple[str, ...]:
+        """Keep only Scopes whose journal holds at least ``threshold`` unprocessed entries.
+
+        The intent counter records how often a Scope turned dirty, not how deep its backlog is,
+        so it cannot answer "are there enough new entries yet": a lineage-only write that lands
+        after the Scope was already dirty leaves the counter untouched. The pending depth comes
+        from the durable journal head against this Family's own cursor instead, which is exactly
+        the boundary the challenge defines.
+        """
+
+        heads = SOURCE_JOURNAL_HEADS_TABLE
+        cursors = SourceCursorRepository()
+        ready: list[str] = []
+        for scope_id in candidates:
+            position = (
+                await connection.execute(select(heads.c.position).where(heads.c.scope_id == scope_id))
+            ).scalar_one_or_none()
+            if position is None:
+                continue
+            cursor = await cursors.load(connection, scope_id, binding_name)
+            consumed = 0 if cursor is None else int(cursor.cursor.sequence)
+            if int(position) - consumed >= threshold:
+                ready.append(scope_id)
+        return tuple(ready)
+
     async def _discover_automatic(self, state: _FamilyState) -> None:  # noqa: C901 - bounded admission state
         binding = state.binding
         capacity = self._fresh_capacity(state)
@@ -757,9 +794,6 @@ class ArtifactProcessingSupervisor:
                         after_sequence=scan_after,
                         limit=min(capacity, _DISCOVERY_PAGE_SIZE),
                         dirty_only=True,
-                        # A scan started by the time condition admits every pending Scope;
-                        # the pending count only decides the Scopes of a count-driven scan.
-                        min_pending=None if time_due is not None else count_threshold,
                         upper_sequence=persisted.scan_upper_pending_sequence,
                     )
                     candidates = tuple(
@@ -770,6 +804,13 @@ class ArtifactProcessingSupervisor:
                         and row.scope_id not in state.retries
                         and row.last_auto_scan_generation != persisted.scan_generation
                     )
+                    if count_threshold is not None and time_due is None and candidates:
+                        # A count-driven scan owes admission only to Scopes that really hold
+                        # enough unprocessed journal entries. A time-driven scan keeps admitting
+                        # every pending Scope, so the two reasons never contaminate each other.
+                        candidates = await self._count_ready_scopes(
+                            connection, binding.binding_name, candidates, count_threshold
+                        )
                     eligible = frozenset(candidates)
                     if candidates and binding.automatic_scope_filter is not None:
                         eligible &= await binding.automatic_scope_filter(connection, candidates)

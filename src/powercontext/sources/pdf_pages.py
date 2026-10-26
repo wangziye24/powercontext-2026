@@ -71,6 +71,24 @@ _EXPANSIONS: tuple[tuple[str, tuple[str, ...]], ...] = (
     ("margin", ("operating", "income", "profit")),
     ("operates", ("operate", "operations", "markets", "countries")),
 )
+# A monetary question is answered on a primary statement rather than in prose: a 10-K's
+# statement page carries the totals the narrative only refers to. Every filer titles those
+# pages "Consolidated Statement(s) of ...", so the marker is company independent.
+_STATEMENT_MARKERS = ("consolidated statement", "statement of operations")
+_METRIC_TERMS = (
+    "ebitda",
+    "capex",
+    "margin",
+    "revenue",
+    "income",
+    "profit",
+    "cost",
+    "costs",
+    "expense",
+    "expenses",
+    "cash",
+)
+_STATEMENT_WEIGHT = 2.0
 
 
 @dataclass(frozen=True, slots=True)
@@ -224,6 +242,13 @@ def _query_weights(question: str) -> dict[str, float]:
     return weights
 
 
+def _is_statement_page(text: str) -> bool:
+    """Report whether a page is one of the filer's primary financial statements."""
+
+    lowered = text.lower()
+    return any(marker in lowered for marker in _STATEMENT_MARKERS)
+
+
 def _rank_pdf_pages(
     candidates: Sequence[tuple[object, str]],
     question: str,
@@ -233,6 +258,7 @@ def _rank_pdf_pages(
 
     if not candidates:
         return ()
+    texts = [text for _, text in candidates]
     tokenized = [(_TOKEN.findall(text.lower()), citation) for citation, text in candidates]
     counts = [Counter(tokens) for tokens, _ in tokenized]
     lengths = [len(tokens) for tokens, _ in tokenized]
@@ -242,6 +268,7 @@ def _rank_pdf_pages(
         document_frequency.update(set(counter))
     total = len(counts)
     weights = _query_weights(question)
+    financial = any(term in question.lower() for term in _METRIC_TERMS)
     scored: list[tuple[float, object]] = []
     for index, counter in enumerate(counts):
         score = 0.0
@@ -253,8 +280,11 @@ def _rank_pdf_pages(
                 continue
             idf = math.log(1.0 + (total - df + 0.5) / (df + 0.5))
             score += weight * idf * frequency * (_BM25_K1 + 1.0) / (frequency + _BM25_K1 * normalization)
-        if score > 0.0:
-            scored.append((score, tokenized[index][1]))
+        if score <= 0.0:
+            continue
+        if financial and _is_statement_page(texts[index]):
+            score *= 1.0 + _STATEMENT_WEIGHT
+        scored.append((score, tokenized[index][1]))
     scored.sort(key=lambda item: (-item[0], str(getattr(item[1], "entry_id", ""))))
     return tuple(citation for _, citation in scored[:limit])
 
