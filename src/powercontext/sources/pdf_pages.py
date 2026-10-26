@@ -97,11 +97,33 @@ _EXPANSIONS: tuple[tuple[tuple[str, ...], tuple[str, ...]], ...] = (
 # statement page carries the totals the narrative only refers to. Every filer titles those
 # pages "Consolidated Statement(s) of ...", so the marker is company independent.
 _STATEMENT_MARKERS = ("consolidated statement", "statement of operations")
+# Reserved-seat detection is wider than the score multiplier: a balance sheet or a cash-flow
+# statement is a primary statement too, and a metric question is answered there even when the
+# page's own wording never matches the question.
+_RESERVED_STATEMENT_MARKERS = (
+    "consolidated statement",
+    "statement of operations",
+    "statements of operations",
+    "consolidated balance sheet",
+    "balance sheets",
+    "statement of cash flows",
+    "statements of cash flows",
+    "statement of financial position",
+)
+_RESERVED_STATEMENT_SEATS = 3
+# One seat per primary statement, because a filing names each of them differently and a metric
+# question is answered on whichever statement carries the figure.
+_RESERVED_STATEMENT_KINDS = (
+    ("balance sheet", "financial position", "financial condition"),
+    ("statement of operations", "statements of operations", "statement of income", "statements of income"),
+    ("statement of cash flows", "statements of cash flows", "statement of cash flow"),
+)
 _METRIC_TERMS = (
     "ebitda",
     "capex",
     "margin",
     "ratio",
+    "rate",
     "tax",
     "cash",
     "debt",
@@ -111,6 +133,15 @@ _METRIC_TERMS = (
     "balance",
     "equity",
     "shareholder",
+    "revenue",
+    "sales",
+    "income",
+    "profit",
+    "cost",
+    "expense",
+    "growth",
+    "statement",
+    "financial",
 )
 _STATEMENT_WEIGHT = 2.0
 # Annotated evidence frequently points at the page that opens a 10-K section rather than at
@@ -505,7 +536,66 @@ def _rank_pdf_pages(
             score *= 1.0 + _TITLE_WEIGHT
         scored.append((score, index))
     scored.sort(key=lambda item: (-item[0], str(getattr(candidates[item[1]][0], "entry_id", ""))))
-    return tuple(candidates[index][0] for _score, index in scored[:limit])
+    order = [index for _score, index in scored]
+    if financial:
+        order = _reserve_statement_seats(order, texts, {index: score for score, index in scored}, limit)
+    return tuple(candidates[index][0] for index in order[:limit])
+
+
+def _reserve_statement_seats(
+    order: Sequence[int],
+    texts: Sequence[str],
+    scores: dict[int, float],
+    limit: int,
+) -> list[int]:
+    """Guarantee the strongest primary statements an answer slot on a metric question.
+
+    A statement page is mostly numbers, so its own term overlap stays low even when it holds
+    the figure the question asks for. Reserving a few seats keeps it from being edged out by
+    narrative pages that merely repeat the question's wording.
+    """
+
+    seats = min(_RESERVED_STATEMENT_SEATS, max(0, limit // 4))
+    if seats <= 0:
+        return list(order)
+    lowered_heads = [_leading_lines(text) for text in texts]
+    reserved: list[int] = []
+    for markers in _RESERVED_STATEMENT_KINDS[:seats]:
+        best = None
+        for index, head in enumerate(lowered_heads):
+            if not any(marker in head for marker in markers):
+                continue
+            if best is None or scores.get(index, 0.0) > scores.get(best, 0.0):
+                best = index
+        if best is not None and best not in reserved:
+            reserved.append(best)
+    if not reserved:
+        return list(order)
+    head = list(order[: limit - len(reserved)])
+    chosen = set(head)
+    for index in reserved:
+        if index not in chosen:
+            head.append(index)
+            chosen.add(index)
+    for index in order:
+        if len(head) >= limit:
+            break
+        if index not in chosen:
+            head.append(index)
+            chosen.add(index)
+    return head
+
+
+def _leading_lines(text: str) -> str:
+    """The first few non-empty lines of a page, where a statement's own title lives."""
+
+    lines = [line.strip() for line in text.splitlines() if line.strip()][:4]
+    return "\n".join(lines).lower()
+
+
+def _is_reserved_statement(text: str) -> bool:
+    lowered = text.lower()
+    return any(marker in lowered for marker in _RESERVED_STATEMENT_MARKERS)
 
 
 def _scale(values: Sequence[float]) -> list[float]:
