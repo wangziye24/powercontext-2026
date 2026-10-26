@@ -119,6 +119,7 @@ _RESERVED_STATEMENT_KINDS = (
     ("statement of cash flows", "statements of cash flows", "statement of cash flow"),
     ("notes to the consolidated financial statements", "notes to financial statements"),
     ("summary of financial performance", "selected financial data", "financial highlights"),
+    ("summary of business segment data", "segment data", "business segment information"),
 )
 _METRIC_TERMS = (
     "ebitda",
@@ -539,7 +540,9 @@ def _rank_pdf_pages(
         scored.append((score, index))
     scored.sort(key=lambda item: (-item[0], str(getattr(candidates[item[1]][0], "entry_id", ""))))
     order = [index for _score, index in scored]
-    if financial:
+    if financial and len({candidate[2] for candidate in candidates}) == 1:
+        # Reserved seats only make sense inside one filing. With several filings in the
+        # same scope, a seat would buy a statement of an unrelated company.
         order = _reserve_statement_seats(order, texts, {index: score for score, index in scored}, limit)
     return tuple(candidates[index][0] for index in order[:limit])
 
@@ -617,7 +620,7 @@ def _titles_a_statement(head: str, marker: str) -> bool:
 def _leading_lines(text: str) -> str:
     """The first few non-empty lines of a page, where a statement's own title lives."""
 
-    lines = [line.strip() for line in text.splitlines() if line.strip()][:4]
+    lines = [line.strip() for line in text.splitlines() if line.strip()][:6]
     return "\n".join(lines).lower()
 
 
