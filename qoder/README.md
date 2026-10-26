@@ -363,6 +363,14 @@ git clone https://github.com/oceanbase/powercontext.git && cd powercontext
 # 按其 README 启动服务（默认 8000 端口），再把 POWCONTEXT_BASE_URL 指向它
 ```
 
+## 界面截图
+
+| 页面 | 截图 |
+|---|---|
+| 首页（含后端状态栏） | `docs/screenshots/01-首页.png` |
+| 混合检索结果（展示**向量距离 / 关键词分 / 综合分**） | `docs/screenshots/02-混合检索.png` |
+| 智能问答（答案 + 引用来源） | `docs/screenshots/03-智能问答.png` |
+
 ## 目录结构
 
 ```
