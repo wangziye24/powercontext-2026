@@ -18,6 +18,12 @@ Pydantic AI remains optional and is imported only from
 ``powercontext.builtin.inference.pydantic_ai``.
 """
 
+from powercontext.builtin.inference.coalescing import (
+    DEFAULT_CACHE_SIZE,
+    DEFAULT_COALESCE_MS,
+    DEFAULT_MAX_BATCH_SIZE,
+    CoalescingEmbeddingModel,
+)
 from powercontext.builtin.inference.errors import (
     InferenceConfigurationError,
     InferenceError,
@@ -40,6 +46,10 @@ from powercontext.builtin.inference.protocols import (
 from powercontext.builtin.inference.tokens import TokenEstimator, TokenEstimatorProfile, character_token_estimator
 
 __all__ = [
+    "DEFAULT_CACHE_SIZE",
+    "DEFAULT_COALESCE_MS",
+    "DEFAULT_MAX_BATCH_SIZE",
+    "CoalescingEmbeddingModel",
     "EmbeddingModel",
     "EmbeddingResult",
     "EmbeddingVector",

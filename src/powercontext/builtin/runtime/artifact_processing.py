@@ -79,6 +79,9 @@ _DISCOVERY_PAGE_SIZE = 100
 _RETRY_STATE_LIMIT = 1000
 _CHANNEL_QUEUE_LIMIT = _DISCOVERY_PAGE_SIZE // 2
 _DISCOVERY_PAGE_DELAY_SECONDS = 0.01
+# A binding that is only driven by the pending-entry threshold has no clock to wait on, so it
+# re-examines its dirty intents on this cadence. Short enough for the documented 45s wait.
+_COUNT_POLL_SECONDS = 1.0
 _DISCOVERY_TIMEOUT_SECONDS = 2.0
 _SPAWN_SIGTERM_GRACE_SECONDS = 1.0
 _WORKER_SHUTDOWN_TIMEOUT_SECONDS = 5.0
@@ -112,6 +115,7 @@ class ArtifactProcessingBinding:
     automatic_processing_interval: timedelta | None = None
     cron: str | None = None
     timezone: str = "Asia/Shanghai"
+    source_count_threshold: int | None = None
     config_prefix: str | None = None
     pending_provider: ArtifactProcessingPendingProvider | None = None
     # Only automatic admission is filtered; already accepted requests retain
@@ -715,7 +719,11 @@ class ArtifactProcessingSupervisor:
         async with self._database.transaction() as connection:
             await self._leases.require_fence(connection, self._require_current_fence())
             persisted = await self._binding_states.load(connection, binding.binding_name, for_update=True)
-            enabled = binding.automatic_processing_interval is not None or binding.cron is not None
+            enabled = (
+                binding.automatic_processing_interval is not None
+                or binding.cron is not None
+                or binding.source_count_threshold is not None
+            )
             if not enabled:
                 if persisted is not None and persisted.scan_in_progress:
                     await self._binding_states.finish_scan(connection, binding.binding_name)
@@ -723,10 +731,18 @@ class ArtifactProcessingSupervisor:
                 scan_after = 0
             else:
                 now = await database_utc_now(connection)
+                count_threshold = binding.source_count_threshold
+                # Only a clock can be satisfied on its own. A count-only binding is always an
+                # eligible scan candidate and leaves the decision to the journal counters.
+                clocked = binding.automatic_processing_interval is not None or binding.cron is not None
+                checkpoint = None if persisted is None else persisted.last_schedule_checkpoint_at
+                time_due, next_time = _schedule_deadline(binding, checkpoint, now) if clocked else (None, now)
                 if persisted is None or not persisted.scan_in_progress:
-                    checkpoint = None if persisted is None else persisted.last_schedule_checkpoint_at
-                    due, next_time = _schedule_deadline(binding, checkpoint, now)
-                    next_schedule_at = asyncio.get_running_loop().time() + max(0, (next_time - now).total_seconds())
+                    # Count admission is OR-ed with the time condition: whichever reason is
+                    # satisfied starts one bounded scan, and the reason decides the filter.
+                    due = now if time_due is None and count_threshold is not None else time_due
+                    delay = max(0, (next_time - now).total_seconds(), _count_poll_seconds(binding))
+                    next_schedule_at = asyncio.get_running_loop().time() + delay
                     if due is not None:
                         persisted = await self._binding_states.start_scan(connection, binding.binding_name, due)
                         scan_after = 0
@@ -741,6 +757,9 @@ class ArtifactProcessingSupervisor:
                         after_sequence=scan_after,
                         limit=min(capacity, _DISCOVERY_PAGE_SIZE),
                         dirty_only=True,
+                        # A scan started by the time condition admits every pending Scope;
+                        # the pending count only decides the Scopes of a count-driven scan.
+                        min_pending=None if time_due is not None else count_threshold,
                         upper_sequence=persisted.scan_upper_pending_sequence,
                     )
                     candidates = tuple(
@@ -771,7 +790,8 @@ class ArtifactProcessingSupervisor:
                         # Starting a scan established its checkpoint, so a
                         # completed page must not restart the interval here.
                         _, next_time = _schedule_deadline(binding, persisted.last_schedule_checkpoint_at, now)
-                        next_schedule_at = asyncio.get_running_loop().time() + max(0, (next_time - now).total_seconds())
+                        delay = max(0, (next_time - now).total_seconds(), _count_poll_seconds(binding))
+                        next_schedule_at = asyncio.get_running_loop().time() + delay
                     else:
                         next_discovery_at = asyncio.get_running_loop().time() + _DISCOVERY_PAGE_DELAY_SECONDS
         state.scan_after = scan_after
@@ -1132,6 +1152,18 @@ class ArtifactProcessingSupervisor:
                 else type(error).__name__,
             },
         )
+
+
+def _count_poll_seconds(binding: ArtifactProcessingBinding) -> float:
+    """Return the discovery cadence owed only to a pending-count admission reason."""
+
+    if (
+        binding.source_count_threshold is None
+        or binding.automatic_processing_interval is not None
+        or binding.cron is not None
+    ):
+        return 0.0
+    return _COUNT_POLL_SECONDS
 
 
 def _schedule_deadline(

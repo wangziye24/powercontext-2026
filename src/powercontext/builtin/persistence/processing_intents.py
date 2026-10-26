@@ -181,6 +181,7 @@ class ArtifactProcessingIntentRepository:
         limit: int = 100,
         requested_only: bool = False,
         dirty_only: bool = False,
+        min_pending: int | None = None,
         upper_sequence: int | None = None,
     ) -> tuple[StoredArtifactProcessingIntent, ...]:
         _require_identifier("binding_name", binding_name, MAX_BINDING_NAME_LENGTH)
@@ -196,6 +197,15 @@ class ArtifactProcessingIntentRepository:
             statement = statement.where(table.c.requested_generation > table.c.handled_generation)
         if dirty_only:
             statement = statement.where(table.c.dirty_generation > table.c.clean_generation)
+        if min_pending is not None:
+            # Count admission: only scopes that have accumulated enough unprocessed entries are
+            # offered. A already-acknowledged scope sits at zero, so a success immediately
+            # removes it from this filter and the remainder is re-judged on the next pass.
+            if not isinstance(min_pending, int) or isinstance(min_pending, bool) or min_pending < 1:
+                raise InvalidRepositoryArgumentError("min_pending", "must be a positive integer")
+            statement = statement.where(
+                table.c.dirty_generation - table.c.clean_generation >= min_pending,
+            )
         rows = (await connection.execute(statement.order_by(table.c.pending_sequence).limit(limit))).mappings()
         return tuple(StoredArtifactProcessingIntent.model_validate(dict(row)) for row in rows)
 

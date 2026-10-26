@@ -18,6 +18,11 @@ Independent callers often ask for overlapping text at almost the same instant. A
 provider once per caller wastes requests and quota, so this wrapper resolves each distinct
 text exactly once inside a short coalescing window, batches the result under the provider's
 limit, and replays the cached vector for every waiter.
+
+A text that already left the coalescing window is still shared: dispatched work stays in an
+in-flight table until its batches settle, so a late caller joins the running request instead
+of paying for a second one. That holds with caching disabled too, because the in-flight table
+is the sharing mechanism and the cache only spares later, still newer requests.
 """
 
 from __future__ import annotations
@@ -32,7 +37,8 @@ from powercontext.builtin.inference.models import EmbeddingResult, InferenceUsag
 if TYPE_CHECKING:
     from powercontext.builtin.artifacts.memory.models import EmbeddingProfile
 
-DEFAULT_MAX_BATCH_SIZE = 32
+DEFAULT_MAX_BATCH_SIZE = 64
+DEFAULT_COALESCE_MS = 5.0
 DEFAULT_CACHE_SIZE = 1024
 
 
@@ -52,22 +58,23 @@ class CoalescingEmbeddingModel:
         model: object,
         *,
         max_batch_size: int = DEFAULT_MAX_BATCH_SIZE,
-        coalesce_ms: int = 0,
+        coalesce_ms: float = DEFAULT_COALESCE_MS,
         cache_size: int = DEFAULT_CACHE_SIZE,
     ) -> None:
         if isinstance(max_batch_size, bool) or not isinstance(max_batch_size, int) or max_batch_size < 1:
             raise ValueError("max_batch_size must be a positive integer")  # noqa: TRY003
-        if isinstance(coalesce_ms, bool) or not isinstance(coalesce_ms, int) or coalesce_ms < 0:
-            raise ValueError("coalesce_ms must be a non-negative integer")  # noqa: TRY003
+        if isinstance(coalesce_ms, bool) or not isinstance(coalesce_ms, (int, float)) or not coalesce_ms >= 0:
+            raise ValueError("coalesce_ms must be a non-negative number")  # noqa: TRY003
         if isinstance(cache_size, bool) or not isinstance(cache_size, int) or cache_size < 0:
             raise ValueError("cache_size must be a non-negative integer")  # noqa: TRY003
         self._model = model
         self.profile = model.profile  # type: ignore[attr-defined]
         self._max_batch_size = max_batch_size
-        self._coalesce_seconds = coalesce_ms / 1_000
+        self._coalesce_seconds = float(coalesce_ms) / 1_000
         self._cache_size = cache_size
         self._cache: OrderedDict[str, tuple[float, ...]] = OrderedDict()
         self._pending: dict[str, asyncio.Future[_Resolved]] = {}
+        self._inflight: dict[str, asyncio.Future[_Resolved]] = {}
         self._call_usage: dict[int, InferenceUsage] = {}
         self._pump: asyncio.Task[None] | None = None
         self._call_seq = 0
@@ -75,6 +82,7 @@ class CoalescingEmbeddingModel:
     async def embed(self, texts: tuple[str, ...], /) -> EmbeddingResult:
         """Return one vector per input text, restoring the caller's original order."""
 
+        texts = tuple(texts)
         if not texts:
             return EmbeddingResult(vectors=(), usage=InferenceUsage(requests=0))
         unique = tuple(dict.fromkeys(texts))
@@ -91,20 +99,25 @@ class CoalescingEmbeddingModel:
 
         input_tokens = 0
         output_tokens = 0
+        provider_requests = 0
         saw_input = False
         saw_output = False
         for call_id in call_ids:
             usage = self._call_usage.get(call_id)
             if usage is None:
                 continue
+            # A shared batch is counted once per waiter, and the provider's own
+            # request count is what the budget is measured against.
+            provider_requests += usage.requests or 0
             if usage.input_tokens is not None:
                 input_tokens += usage.input_tokens
                 saw_input = True
             if usage.output_tokens is not None:
                 output_tokens += usage.output_tokens
                 saw_output = True
+        requests = provider_requests if provider_requests > 0 else len(call_ids)
         return InferenceUsage(
-            requests=len(call_ids),
+            requests=requests,
             input_tokens=input_tokens if saw_input else None,
             output_tokens=output_tokens if saw_output else None,
         )
@@ -120,6 +133,9 @@ class CoalescingEmbeddingModel:
             return _Resolved(cached, None)
         future = self._pending.get(text)
         if future is None:
+            # A text whose window already closed keeps sharing its dispatched batch.
+            future = self._inflight.get(text)
+        if future is None:
             future = asyncio.get_running_loop().create_future()
             self._pending[text] = future
             self._schedule_pump()
@@ -134,8 +150,9 @@ class CoalescingEmbeddingModel:
         await asyncio.sleep(self._coalesce_seconds)
         while self._pending:
             batch = list(self._pending.items())[: self._max_batch_size]
-            for text, _ in batch:
+            for text, future in batch:
                 self._pending.pop(text, None)
+                self._inflight[text] = future
             await self._fetch(batch)
 
     async def _fetch(self, batch: list[tuple[str, asyncio.Future[_Resolved]]]) -> None:
@@ -149,15 +166,19 @@ class CoalescingEmbeddingModel:
                 raise ValueError("embedding provider returned a vector count that does not match its input")
             self._call_usage[call_id] = result.usage
         except BaseException as error:  # noqa: BLE001 - propagate the provider failure to every waiter
-            for _, future in batch:
+            for text, future in batch:
+                # A failed batch is never cached, so the same text can be retried.
+                self._inflight.pop(text, None)
                 if not future.done():
                     future.set_exception(error)
             if isinstance(error, asyncio.CancelledError):
                 raise
+            # Drain the rest of the window; one failed batch must not strand the others.
             return
         for (text, future), vector in zip(batch, vectors, strict=True):
             normalized = tuple(float(value) for value in vector)
             self._cache_store(text, normalized)
+            self._inflight.pop(text, None)
             if not future.done():
                 future.set_result(_Resolved(normalized, call_id))
 
@@ -179,4 +200,9 @@ class CoalescingEmbeddingModel:
             self._cache.popitem(last=False)
 
 
-__all__ = ["DEFAULT_CACHE_SIZE", "DEFAULT_MAX_BATCH_SIZE", "CoalescingEmbeddingModel"]
+__all__ = [
+    "DEFAULT_CACHE_SIZE",
+    "DEFAULT_COALESCE_MS",
+    "DEFAULT_MAX_BATCH_SIZE",
+    "CoalescingEmbeddingModel",
+]

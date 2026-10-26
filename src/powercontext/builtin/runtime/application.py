@@ -300,6 +300,7 @@ if TYPE_CHECKING:
 
     from powercontext.builtin.handoff_report.application import HandoffReportApplication
     from powercontext.builtin.runtime.artifact_processing import ArtifactProcessingSupervisors
+    from powercontext.builtin.runtime.source_lifecycle import LifecycleApplication
 
 
 class TopicMemorySearch(Protocol):
@@ -2690,6 +2691,7 @@ class ScopedTopicMemoryApplication:
                     query_embedding,
                     embedding_timeout_seconds,
                 )
+        result = await self._without_unavailable_topics(result)
         observer = self._runtime._topic_memory_search_observer
         if observer is not None:
             try:
@@ -2801,7 +2803,33 @@ class ScopedTopicMemoryApplication:
         if not 1 <= limit <= 100:
             raise InvalidRuntimeRequestError("topic-memory-browse-limit")
         async with self._runtime._scoped_operation(self.scope_id):
-            return await self._runtime._topic_memory_browse(self.scope_id, limit=limit, after=after)
+            items = await self._runtime._topic_memory_browse(self.scope_id, limit=limit, after=after)
+        unavailable = await self._unavailable_topic_artifact_ids()
+        if not unavailable:
+            return items
+        return tuple(item for item in items if item.artifact_ref.artifact_id not in unavailable)
+
+    async def _unavailable_topic_artifact_ids(self) -> frozenset[str]:
+        lifecycle = self._runtime.lifecycle
+        if lifecycle is None:
+            return frozenset()
+        return await lifecycle.for_scope(self.scope_id).unavailable_topic_artifact_ids()
+
+    async def _without_unavailable_topics(
+        self,
+        result: TopicMemorySearchResult,
+    ) -> TopicMemorySearchResult:
+        # A Topic whose registered evidence lost its support must not reach search
+        # or Context; the exact ArtifactRef read path stays untouched.
+        if not result.hits:
+            return result
+        unavailable = await self._unavailable_topic_artifact_ids()
+        if not unavailable:
+            return result
+        hits = tuple(hit for hit in result.hits if hit.artifact_ref.artifact_id not in unavailable)
+        if len(hits) == len(result.hits):
+            return result
+        return result.model_copy(update={"hits": hits})
 
     async def flush(self) -> TopicMemoryFlushResult:
         if not self._runtime._topic_memory_processing_available or self._runtime._topic_memory_flush is None:
@@ -3100,6 +3128,9 @@ class BuiltinRuntime:
         self.decision_model = decision_model
         self.publications = publication_application
         self.scopes = scope_application
+        # Attached by composition so every Scope can register and resolve its
+        # evidence graph; absent for runtimes built without it.
+        self.lifecycle: LifecycleApplication | None = None
         self._readiness = RuntimeReadinessChecks() if readiness is None else readiness
         self._clock = _utc_now if clock is None else clock
         self._tracing = tracing

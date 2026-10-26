@@ -320,6 +320,7 @@ class PreparedContextBuilder:
         fragments: list[EvidenceFragment] = []
         items: list[dict[str, object]] = []
         seen: set[tuple[str, str, str]] = set()
+        query_terms = _evidence_query_terms(request.query)
         for candidates in memory_candidates:
             scope_id = candidates.scope_id
             for hit in candidates.hits:
@@ -340,13 +341,7 @@ class PreparedContextBuilder:
                     "entry_id": hit.entry_id,
                     "entry_version_id": hit.entry_version_id,
                 }
-                for padding in _EVIDENCE_PADDING_STEPS:
-                    span = _evidence_span(hit.text, request.query, padding)
-                    if span is None:
-                        continue
-                    start, end = span
-                    if start >= end:
-                        continue
+                for start, end in _evidence_sentence_spans(hit.text, query_terms):
                     fragment = EvidenceFragment(address=address, start=start, end=end, text=hit.text[start:end])
                     item: dict[str, object] = {
                         "citation": citation,
@@ -354,10 +349,10 @@ class PreparedContextBuilder:
                         "start": start,
                         "end": end,
                     }
-                    if len(_render_evidence_items([*items, item]).encode("utf-8")) <= request.max_bytes:
-                        fragments.append(fragment)
-                        items.append(item)
-                        break
+                    if len(_render_evidence_items([*items, item]).encode("utf-8")) > request.max_bytes:
+                        continue
+                    fragments.append(fragment)
+                    items.append(item)
         if not fragments:
             return PreparedContextBuild(context=self.empty(), origins=(), fragments=())
         content = _render_evidence_items(items)
@@ -760,10 +755,57 @@ def _interleave_groups(groups: Sequence[Sequence[_Item]]) -> tuple[_Item, ...]:
 
 _EVIDENCE_PADDING_STEPS = (240, 160, 96, 48, 0)
 _EVIDENCE_TOKEN = re.compile(r"[a-z0-9]+|[\u4e00-\u9fff]+")
+_EVIDENCE_SENTENCE = re.compile(r"[^.!?\n\u3002\uff01\uff1f]+[.!?\n\u3002\uff01\uff1f]*")
 
 
 def _evidence_query_tokens(query: str) -> tuple[str, ...]:
     return tuple(_EVIDENCE_TOKEN.findall(query.lower()))
+
+
+def _evidence_query_terms(query: str) -> tuple[str, ...]:
+    """Distinct query terms, because one repeated term should not outvote the rest."""
+
+    return tuple(dict.fromkeys(_evidence_query_tokens(query)))
+
+
+def _evidence_sentence_spans(text: str, terms: tuple[str, ...], /) -> tuple[tuple[int, int], ...]:
+    """Rank literal sentence windows that carry query terms, widest evidence first.
+
+    A fixed character window either clips an evidence sentence in half or drags in
+    neighbouring noise, so the unit here is the sentence itself: adjacent sentences that
+    both carry query terms are merged back together, which is what keeps a complete piece
+    of evidence contiguous. Returned spans are disjoint and ordered by how many distinct
+    query terms they cover, so a budget cut drops the weakest evidence rather than the tail.
+    """
+
+    lowered = text.lower()
+    scored: list[tuple[int, int, int]] = []
+    for match in _EVIDENCE_SENTENCE.finditer(text):
+        start, end = match.start(), match.end()
+        while start < end and text[start].isspace():
+            start += 1
+        while end > start and text[end - 1].isspace():
+            end -= 1
+        if start >= end:
+            continue
+        window = lowered[start:end]
+        scored.append((start, end, sum(1 for term in terms if term in window)))
+    if not scored:
+        return ((0, len(text)),) if text.strip() else ()
+    carrying = [entry for entry in scored if entry[2] > 0]
+    chosen = carrying or scored
+    merged: list[list[int]] = []
+    for start, end, _score in sorted(chosen, key=lambda entry: entry[0]):
+        if merged and start <= merged[-1][1]:
+            merged[-1][1] = max(merged[-1][1], end)
+        else:
+            merged.append([start, end])
+    ranked: list[tuple[int, int, int]] = []
+    for start, end in merged:
+        window = lowered[start:end]
+        ranked.append((sum(1 for term in terms if term in window), start, end))
+    ranked.sort(key=lambda entry: (-entry[0], entry[1]))
+    return tuple((start, end) for _covered, start, end in ranked)
 
 
 def _evidence_span(text: str, query: str, padding: int) -> tuple[int, int] | None:
