@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CourseNote — 学习资料混合检索助手</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background: #f5f7fa;
+      color: #333;
+      line-height: 1.6;
+    }
+    .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+    
+    /* Header */
+    .header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 30px 20px;
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    .header h1 { font-size: 2em; margin-bottom: 10px; }
+    .header .subtitle { opacity: 0.9; font-size: 1.1em; }
+    
+    /* Health Status */
+    .health-bar {
+      background: white;
+      padding: 15px 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .health-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #ccc;
+    }
+    .health-dot.ok { background: #10b981; }
+    .health-dot.error { background: #ef4444; }
+    
+    /* Sections */
+    .section {
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      padding: 25px;
+      margin-bottom: 20px;
+    }
+    .section h2 {
+      color: #667eea;
+      margin-bottom: 20px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #f0f0f0;
+    }
+    
+    /* Forms */
+    .form-row {
+      display: flex;
+      gap: 15px;
+      margin-bottom: 15px;
+      flex-wrap: wrap;
+    }
+    .form-group {
+      flex: 1;
+      min-width: 200px;
+    }
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: 500;
+      color: #555;
+    }
+    input[type="text"], input[type="file"], select, textarea {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 14px;
+      transition: border-color 0.2s;
+    }
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+    textarea { resize: vertical; min-height: 80px; }
+    
+    button {
+      background: #667eea;
+      color: white;
+      border: none;
+      padding: 10px 24px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      transition: background 0.2s;
+    }
+    button:hover { background: #5a6fd6; }
+    button:disabled { background: #ccc; cursor: not-allowed; }
+    button.danger { background: #ef4444; }
+    button.danger:hover { background: #dc2626; }
+    
+    /* Results */
+    .result-box {
+      background: #f8f9fa;
+      border-radius: 6px;
+      padding: 15px;
+      margin-top: 15px;
+    }
+    .result-box h3 {
+      color: #667eea;
+      margin-bottom: 10px;
+      font-size: 1em;
+    }
+    
+    /* Table */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+    }
+    th, td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid #eee;
+    }
+    th {
+      background: #f8f9fa;
+      font-weight: 600;
+      color: #555;
+    }
+    tr:hover { background: #f8f9fa; }
+    
+    .score-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+    .score-high { background: #d1fae5; color: #065f46; }
+    .score-mid { background: #fef3c7; color: #92400e; }
+    .score-low { background: #fee2e2; color: #991b1b; }
+    
+    /* Answer */
+    .answer-box {
+      background: #f0f9ff;
+      border-left: 4px solid #0ea5e9;
+      padding: 15px;
+      margin-top: 15px;
+      border-radius: 0 6px 6px 0;
+    }
+    .sources-list {
+      margin-top: 10px;
+      font-size: 14px;
+      color: #666;
+    }
+    .sources-list li { margin: 5px 0; }
+    
+    /* Stats */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 15px;
+      margin-top: 15px;
+    }
+    .stat-card {
+      background: #f8f9fa;
+      padding: 15px;
+      border-radius: 6px;
+      text-align: center;
+    }
+    .stat-value {
+      font-size: 2em;
+      font-weight: bold;
+      color: #667eea;
+    }
+    .stat-label {
+      color: #666;
+      font-size: 14px;
+    }
+    
+    /* Loading */
+    .loading {
+      text-align: center;
+      padding: 20px;
+      color: #666;
+    }
+    .spinner {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 3px solid #f3f3f3;
+      border-top: 3px solid #667eea;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    /* Message */
+    .message {
+      padding: 10px 15px;
+      border-radius: 6px;
+      margin-top: 10px;
+    }
+    .message.success { background: #d1fae5; color: #065f46; }
+    .message.error { background: #fee2e2; color: #991b1b; }
+    
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>CourseNote</h1>
+    <p class="subtitle">学习资料混合检索助手 — 向量 + 全文 + 结构化过滤</p>
+  </div>
+  
+  <div class="container">
+    <!-- Health Status -->
+    <div class="health-bar">
+      <span class="health-dot" id="healthDot"></span>
+      <span id="healthText">检查后端状态...</span>
+    </div>
+    
+    <!-- Upload Section -->
+    <div class="section">
+      <h2>上传资料</h2>
+      <form id="uploadForm">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="file">选择文件（PDF / Markdown / TXT）</label>
+            <input type="file" id="file" accept=".pdf,.md,.txt" required>
+          </div>
+          <div class="form-group">
+            <label for="course">课程分类</label>
+            <input type="text" id="course" placeholder="如：机器学习" value="未分类">
+          </div>
+          <div class="form-group">
+            <label for="tags">标签</label>
+            <input type="text" id="tags" placeholder="逗号分隔">
+          </div>
+        </div>
+        <button type="submit" id="uploadBtn">上传</button>
+        <div id="uploadResult" class="hidden"></div>
+      </form>
+    </div>
+    
+    <!-- Search Section -->
+    <div class="section">
+      <h2>混合检索</h2>
+      <div class="form-row">
+        <div class="form-group" style="flex: 2;">
+          <label for="searchQuery">查询内容</label>
+          <input type="text" id="searchQuery" placeholder="如：如何缓解过拟合">
+        </div>
+        <div class="form-group">
+          <label for="searchCourse">课程过滤（可选）</label>
+          <input type="text" id="searchCourse" placeholder="留空表示全部">
+        </div>
+        <div class="form-group" style="flex: 0.5;">
+          <label for="searchTopK">Top K</label>
+          <input type="text" id="searchTopK" value="10">
+        </div>
+      </div>
+      <button id="searchBtn">检索</button>
+      <div id="searchResult" class="hidden"></div>
+    </div>
+    
+    <!-- Q&A Section -->
+    <div class="section">
+      <h2>智能问答</h2>
+      <div class="form-row">
+        <div class="form-group" style="flex: 3;">
+          <label for="askQuery">提问</label>
+          <textarea id="askQuery" placeholder="如：请解释什么是过拟合，以及如何缓解？"></textarea>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="askCourse">课程过滤（可选）</label>
+          <input type="text" id="askCourse" placeholder="留空表示全部">
+        </div>
+        <div class="form-group" style="flex: 0.5;">
+          <label for="askTopK">Top K</label>
+          <input type="text" id="askTopK" value="5">
+        </div>
+      </div>
+      <button id="askBtn">提问</button>
+      <div id="askResult" class="hidden"></div>
+    </div>
+    
+    <!-- Documents Section -->
+    <div class="section">
+      <h2>资料管理</h2>
+      <button id="refreshDocsBtn">刷新列表</button>
+      <button id="refreshStatsBtn" style="margin-left: 10px;">刷新统计</button>
+      
+      <div id="docsResult" class="hidden">
+        <h3 style="margin-top: 20px; color: #555;">文档列表</h3>
+        <div id="docsList"></div>
+      </div>
+      
+      <div id="statsResult" class="hidden">
+        <h3 style="margin-top: 20px; color: #555;">统计信息</h3>
+        <div id="statsContent"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = '';
+    
+    // Health Check
+    async function checkHealth() {
+      const dot = document.getElementById('healthDot');
+      const text = document.getElementById('healthText');
+      try {
+        const resp = await fetch(`${API_BASE}/api/health`);
+        const data = await resp.json();
+        if (data.status === 'ok') {
+          dot.className = 'health-dot ok';
+          text.textContent = `后端正常 | 数据库: ${data.db} | Embedding: ${data.embed_provider}`;
+        } else {
+          throw new Error('状态异常');
+        }
+      } catch (e) {
+        dot.className = 'health-dot error';
+        text.textContent = '后端连接失败: ' + e.message;
+      }
+    }
+    
+    // Upload
+    document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('uploadBtn');
+      const result = document.getElementById('uploadResult');
+      btn.disabled = true;
+      btn.textContent = '上传中...';
+      result.className = 'hidden';
+      
+      const formData = new FormData();
+      formData.append('file', document.getElementById('file').files[0]);
+      formData.append('course', document.getElementById('course').value);
+      formData.append('tags', document.getElementById('tags').value);
+      
+      try {
+        const resp = await fetch(`${API_BASE}/api/upload`, { method: 'POST', body: formData });
+        const data = await resp.json();
+        if (resp.ok) {
+          result.className = 'message success';
+          result.textContent = `上传成功！文档 ID: ${data.doc_id}，分块数: ${data.chunk_count}`;
+        } else {
+          throw new Error(data.detail || '上传失败');
+        }
+      } catch (e) {
+        result.className = 'message error';
+        result.textContent = '上传失败: ' + e.message;
+      } finally {
+        result.classList.remove('hidden');
+        btn.disabled = false;
+        btn.textContent = '上传';
+      }
+    });
+    
+    // Search
+    document.getElementById('searchBtn').addEventListener('click', async () => {
+      const btn = document.getElementById('searchBtn');
+      const result = document.getElementById('searchResult');
+      btn.disabled = true;
+      btn.textContent = '检索中...';
+      
+      const query = document.getElementById('searchQuery').value;
+      const course = document.getElementById('searchCourse').value;
+      const topK = parseInt(document.getElementById('searchTopK').value);
+      
+      if (!query) {
+        alert('请输入查询内容');
+        btn.disabled = false;
+        btn.textContent = '检索';
+        return;
+      }
+      
+      try {
+        const resp = await fetch(`${API_BASE}/api/search`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query, course: course || null, top_k: topK })
+        });
+        const data = await resp.json();
+        
+        if (resp.ok) {
+          let html = `<div class="result-box"><h3>检索结果（共 ${data.total} 条）</h3>`;
+          if (data.results.length === 0) {
+            html += '<p>未找到相关结果</p>';
+          } else {
+            html += '<table><thead><tr><th>标题</th><th>章节</th><th>向量距离</th><th>关键词分</th><th>综合分</th><th>内容片段</th></tr></thead><tbody>';
+            data.results.forEach(r => {
+              const scoreClass = r.score > 0.7 ? 'score-high' : r.score > 0.4 ? 'score-mid' : 'score-low';
+              html += `<tr>
+                <td>${escapeHtml(r.title)}</td>
+                <td>${escapeHtml(r.heading)}</td>
+                <td>${r.dist.toFixed(4)}</td>
+                <td>${r.kw_score.toFixed(4)}</td>
+                <td><span class="score-badge ${scoreClass}">${r.score.toFixed(4)}</span></td>
+                <td style="max-width: 400px; font-size: 13px;">${escapeHtml(r.content.substring(0, 150))}...</td>
+              </tr>`;
+            });
+            html += '</tbody></table>';
+          }
+          html += '</div>';
+          result.innerHTML = html;
+        } else {
+          throw new Error(data.detail || '检索失败');
+        }
+      } catch (e) {
+        result.innerHTML = `<div class="message error">检索失败: ${escapeHtml(e.message)}</div>`;
+      } finally {
+        result.classList.remove('hidden');
+        btn.disabled = false;
+        btn.textContent = '检索';
+      }
+    });
+    
+    // Ask
+    document.getElementById('askBtn').addEventListener('click', async () => {
+      const btn = document.getElementById('askBtn');
+      const result = document.getElementById('askResult');
+      btn.disabled = true;
+      btn.textContent = '思考中...';
+      
+      const query = document.getElementById('askQuery').value;
+      const course = document.getElementById('askCourse').value;
+      const topK = parseInt(document.getElementById('askTopK').value);
+      
+      if (!query) {
+        alert('请输入问题');
+        btn.disabled = false;
+        btn.textContent = '提问';
+        return;
+      }
+      
+      try {
+        const resp = await fetch(`${API_BASE}/api/ask`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query, course: course || null, top_k: topK })
+        });
+        const data = await resp.json();
+        
+        if (resp.ok) {
+          let html = `<div class="answer-box">
+            <h3>回答</h3>
+            <p>${escapeHtml(data.answer).replace(/\n/g, '<br>')}</p>
+          </div>`;
+          
+          if (data.sources && data.sources.length > 0) {
+            html += '<div class="result-box"><h3>引用来源</h3><ul class="sources-list">';
+            data.sources.forEach(s => {
+              html += `<li>${escapeHtml(s.title)} (chunk_id: ${s.chunk_id})</li>`;
+            });
+            html += '</ul></div>';
+          }
+          result.innerHTML = html;
+        } else {
+          throw new Error(data.detail || '问答失败');
+        }
+      } catch (e) {
+        result.innerHTML = `<div class="message error">问答失败: ${escapeHtml(e.message)}</div>`;
+      } finally {
+        result.classList.remove('hidden');
+        btn.disabled = false;
+        btn.textContent = '提问';
+      }
+    });
+    
+    // Docs
+    document.getElementById('refreshDocsBtn').addEventListener('click', async () => {
+      const result = document.getElementById('docsResult');
+      const list = document.getElementById('docsList');
+      list.innerHTML = '<div class="loading"><span class="spinner"></span> 加载中...</div>';
+      
+      try {
+        const resp = await fetch(`${API_BASE}/api/docs`);
+        const data = await resp.json();
+        
+        if (resp.ok) {
+          if (data.docs.length === 0) {
+            list.innerHTML = '<p>暂无文档</p>';
+          } else {
+            let html = '<table><thead><tr><th>ID</th><th>标题</th><th>课程</th><th>分块数</th><th>创建时间</th><th>操作</th></tr></thead><tbody>';
+            data.docs.forEach(d => {
+              html += `<tr>
+                <td>${d.doc_id}</td>
+                <td>${escapeHtml(d.title)}</td>
+                <td>${escapeHtml(d.course)}</td>
+                <td>${d.chunk_cnt}</td>
+                <td>${d.created_at}</td>
+                <td><button class="danger" onclick="deleteDoc(${d.doc_id})">删除</button></td>
+              </tr>`;
+            });
+            html += '</tbody></table>';
+            list.innerHTML = html;
+          }
+          result.classList.remove('hidden');
+        } else {
+          throw new Error(data.detail || '获取失败');
+        }
+      } catch (e) {
+        list.innerHTML = `<div class="message error">获取失败: ${escapeHtml(e.message)}</div>`;
+        result.classList.remove('hidden');
+      }
+    });
+    
+    async function deleteDoc(docId) {
+      if (!confirm(`确定删除文档 ${docId}？`)) return;
+      
+      try {
+        const resp = await fetch(`${API_BASE}/api/docs/${docId}`, { method: 'DELETE' });
+        const data = await resp.json();
+        if (resp.ok) {
+          alert('删除成功');
+          document.getElementById('refreshDocsBtn').click();
+        } else {
+          throw new Error(data.detail || '删除失败');
+        }
+      } catch (e) {
+        alert('删除失败: ' + e.message);
+      }
+    }
+    
+    // Stats
+    document.getElementById('refreshStatsBtn').addEventListener('click', async () => {
+      const result = document.getElementById('statsResult');
+      const content = document.getElementById('statsContent');
+      content.innerHTML = '<div class="loading"><span class="spinner"></span> 加载中...</div>';
+      
+      try {
+        const resp = await fetch(`${API_BASE}/api/stats`);
+        const data = await resp.json();
+        
+        if (resp.ok) {
+          let html = '<div class="stats-grid">';
+          html += `<div class="stat-card"><div class="stat-value">${data.total_docs}</div><div class="stat-label">文档总数</div></div>`;
+          html += `<div class="stat-card"><div class="stat-value">${data.total_chunks}</div><div class="stat-label">分块总数</div></div>`;
+          for (const [course, count] of Object.entries(data.by_course)) {
+            html += `<div class="stat-card"><div class="stat-value">${count}</div><div class="stat-label">${escapeHtml(course)}</div></div>`;
+          }
+          html += '</div>';
+          content.innerHTML = html;
+          result.classList.remove('hidden');
+        } else {
+          throw new Error(data.detail || '获取失败');
+        }
+      } catch (e) {
+        content.innerHTML = `<div class="message error">获取失败: ${escapeHtml(e.message)}</div>`;
+        result.classList.remove('hidden');
+      }
+    });
+    
+    function escapeHtml(str) {
+      if (!str) return '';
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+    
+    // Init
+    checkHealth();
+  </script>
+</body>
+</html>
