@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="zh-CN"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CourseNote · 学习资料混合检索助手</title>
+<style>
+:root{--p:#5b5bd6;--l:#f5f6fa;--c:#1f2430}
+*{box-sizing:border-box}body{margin:0;font:16px/1.7 -apple-system,"PingFang SC","Microsoft YaHei",sans-serif;color:var(--c);background:#fbfbfd}
+header{background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;padding:56px 24px;text-align:center}
+header h1{margin:0 0 8px;font-size:34px}header p{margin:6px 0;opacity:.95}
+main{max-width:1000px;margin:0 auto;padding:32px 20px 64px}
+section{background:#fff;border-radius:14px;padding:26px 28px;margin:22px 0;box-shadow:0 1px 3px rgba(16,24,40,.08)}
+h2{color:var(--p);margin:0 0 14px;font-size:22px}
+table{border-collapse:collapse;width:100%;font-size:14px}th,td{border:1px solid #e6e8f0;padding:8px 10px;text-align:left}
+th{background:var(--l)}code{background:#f2f3f8;padding:2px 6px;border-radius:5px;font-size:13px}
+pre{background:#151a2b;color:#e8ecf8;padding:16px;border-radius:10px;overflow:auto;font-size:13px}
+figure{margin:18px 0}figure img{width:100%;border:1px solid #e6e8f0;border-radius:10px}
+figcaption{color:#667;font-size:13px;margin-top:6px}
+.tag{display:inline-block;background:#eef0ff;color:var(--p);border-radius:999px;padding:3px 12px;margin:3px 6px 3px 0;font-size:13px}
+a{color:var(--p)}
+</style></head><body>
+<header>
+  <h1>CourseNote · 学习资料混合检索助手</h1>
+  <p>让散落的课件、论文、笔记，变成能问答、能溯源的知识库</p>
+  <p>由 <b>Qoder</b> 开发 · 核心能力由 <b>OceanBase seekdb</b> 提供 · 可接入 <b>PowerContext</b> 记忆</p>
+</header>
+<main>
+<section>
+  <h2>我们解决什么问题</h2>
+  <p>学习科研里，资料散落在不同 PDF、课件和笔记中：想找「某门课怎么讲过某个概念」只能逐个文件翻；
+  复习时记不清出处；问了同学要等回复。</p>
+  <p><b>CourseNote</b> 把资料解析、分块、向量化后存入 <b>seekdb</b>，用「向量 + 全文 + 结构化条件」
+  <b>混合检索</b> 找出最相关片段，再由大模型基于检索结果生成<b>带出处</b>的答案。</p>
+  <div>
+    <span class="tag">seekdb 混合检索</span><span class="tag">VECTOR(1536)</span><span class="tag">ngram 全文索引</span>
+    <span class="tag">HNSW/cosine</span><span class="tag">MiniMax embo-01 / M2.5</span><span class="tag">PowerContext 记忆</span>
+  </div>
+</section>
+
+<section>
+  <h2>核心能力</h2>
+  <table>
+    <tr><th>能力</th><th>实现</th></tr>
+    <tr><td>资料入库</td><td>上传 PDF / Markdown / TXT → 按标题与长度分块 → MiniMax embo-01 向量化 → 写入 seekdb</td></tr>
+    <tr><td>混合检索</td><td>一条 SQL 同时使用：<code>VECTOR_DISTANCE</code>（语义）+ <code>MATCH ... AGAINST</code>（中文 ngram 全文）+ <code>WHERE course = ?</code>（结构化过滤），按 <code>0.7×语义 + 0.3×关键词</code> 融合打分</td></tr>
+    <tr><td>带出处问答</td><td>Top-K 片段作为上下文交给 MiniMax-M2.5，答案逐句标注来源章节，并返回引用列表</td></tr>
+    <tr><td>资料管理</td><td>文档列表 / 删除 / 按课程统计</td></tr>
+    <tr><td>记忆增强</td><td>可选接入 PowerContext，记录课程偏好与检索历史，下次检索自动带上</td></tr>
+  </table>
+</section>
+
+<section>
+  <h2>技术结合是真的在起作用（实测对照）</h2>
+  <p>同一个查询「向量时钟」，只切换课程过滤：</p>
+  <table>
+    <tr><th>过滤条件</th><th>Top-1 来源</th><th>向量距离</th><th>关键词分</th></tr>
+    <tr><td>course = 分布式系统</td><td>分布式系统讲义.md · 2.3 向量时钟</td><td><b>0.2738</b></td><td><b>3.8248</b></td></tr>
+    <tr><td>course = 机器学习</td><td>机器学习复习笔记.md · 3.4 支持向量</td><td>1.1817</td><td>0.9994</td></tr>
+  </table>
+  <p>正确课程下语义更近、关键词命中更强 —— 说明向量、全文与过滤三者都在真实参与打分。</p>
+  <pre>SELECT c.chunk_id, c.heading, d.title,
+       VECTOR_DISTANCE(c.embedding, '[1536 维]') AS vdist,
+       MATCH(c.content) AGAINST ('向量时钟' IN NATURAL LANGUAGE MODE) AS kw
+FROM chunks c JOIN docs d ON d.doc_id = c.doc_id
+WHERE c.course = '分布式系统'
+ORDER BY (0.7*(1-VECTOR_DISTANCE(c.embedding,'[1536 维]'))
+        + 0.3*MATCH(c.content) AGAINST ('向量时钟' IN NATURAL LANGUAGE MODE)) DESC
+LIMIT 10;</pre>
+</section>
+
+<section>
+  <h2>界面</h2>
+  <figure><img src="img/01-首页.png" alt="首页：后端状态栏（数据库 / embedding provider）"><figcaption>首页：后端状态栏（数据库 / embedding provider）</figcaption></figure>
+<figure><img src="img/02-混合检索.png" alt="混合检索：结果表同时给出向量距离、关键词分与综合分"><figcaption>混合检索：结果表同时给出向量距离、关键词分与综合分</figcaption></figure>
+<figure><img src="img/03-智能问答.png" alt="智能问答：答案分「什么是 / 如何缓解」并标注来源"><figcaption>智能问答：答案分「什么是 / 如何缓解」并标注来源</figcaption></figure>
+</section>
+
+<section>
+  <h2>如何运行</h2>
+  <pre>cd qoder/
+cp .env.example .env        # 填入 MINIMAX_API_KEY（或 EMBED_PROVIDER=local 离线运行）
+docker compose up -d --build
+docker compose exec app python scripts/seed_data.py
+docker compose exec app python scripts/smoke_test.py
+# 浏览器打开 http://localhost:8080</pre>
+  <p>本地方式：<code>pip install -r requirements.txt</code> → <code>python scripts/seed_data.py</code> →
+  <code>uvicorn app.main:app --port 8080</code> → <code>python scripts/smoke_test.py</code>（自动拉起服务并端到端自检）。</p>
+</section>
+
+<section>
+  <h2>代码仓库</h2>
+  <p><a href="https://github.com/wangziye24/powercontext-2026">github.com/wangziye24/powercontext-2026</a>
+  （分支 <code>2026-competition-ecosystem</code>）</p>
+  <p>开发过程由 Qoder 完成（需求拆解 → 编码 → 自测 → 文档），项目位于仓库 <code>qoder/</code> 目录。</p>
+</section>
+</main></body></html>
