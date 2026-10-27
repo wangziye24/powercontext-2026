@@ -44,20 +44,38 @@
 
 ---
 
-## 快速开始（3 条命令）
+## 快速开始
 
 ```bash
-# 1) seekdb（设定库 + 玩家账本 + PowerContext 记忆表同库）
-cd dify/deploy && docker compose -f seekdb.yml up -d seekdb
-
-# 2) 侧车服务（给 Dify 提供 seekdb 访问）
-cd ../backend && python3 -m app.main          # 需要先 cp .env.example .env
-
-# 3) Dify 1.18
-cd ../deploy/dify && cp .env.template .env && docker compose up -d
+# 一键起全栈（seekdb + 侧车 + PowerContext + Dify）+ 自检
+bash dify/scripts/start_all.sh
 ```
 
-PowerContext 启动与数据初始化见 [运行说明 §4](docs/01-运行说明.md#4-部署步骤)。
+PowerContext 需要用仓库源码启动（见 [运行说明 §4.2](docs/01-运行说明.md)），其余都在脚本里。
+手工步骤见 [运行说明 §4](docs/01-运行说明.md#4-部署步骤)。
+
+```bash
+# 灌种子数据（35 条设定 + 预置记忆）
+cd dify/backend && python3 -m app.seed
+python3 dify/scripts/init_powercontext.py --memory
+
+# 导入 DSL → 发布 → 跑一遍完整玩法演示
+export DIFY_CONSOLE=http://127.0.0.1:5001 DIFY_EMAIL=you@example.com DIFY_PASSWORD='YourPass2026'
+python3 dify/scripts/dify_ops.py import
+python3 dify/scripts/dify_ops.py publish --app-id <app_id>
+python3 dify/scripts/demo_run.py --app-id <app_id> --out dify/docs/evidence/demo-transcript.md
+```
+
+## 验证状态（本机实测）
+
+| 项目 | 结果 |
+|---|---|
+| DSL 导入 Dify 1.18.0 | ✅ `status: completed`（无告警） |
+| 14 个节点执行 | ✅ 14/14 `succeeded`（见 `docs/evidence/node-trace.txt`） |
+| 混合检索 | ✅ `mode=hybrid_rrf`，"关东煮还有吗" → 命中「关东煮拼盘」（semantic 0.9765 / keyword 3.4284） |
+| 跨会话记忆 | ✅ 新会话里阿夜主动提起上一轮的恶作剧 |
+| 记忆校准 | ✅ 玩家纠正后当场认错并写回记忆 |
+| 一键自检 | ✅ `smoke_test.sh` 6/6 通过 |
 
 ---
 
@@ -65,12 +83,24 @@ PowerContext 启动与数据初始化见 [运行说明 §4](docs/01-运行说明
 
 ```
 dify/
-├── dsl/aye-ledger-chatflow.yml   # ★ Dify DSL（提交物）
+├── 提交说明.md                    # ★ 对照平台表单逐项填写
+├── dsl/aye-ledger-chatflow.yml   # ★ Dify DSL（Dify 官方导出，导入即用）
+├── dsl/aye-ledger-chatflow.source.yml  # 脚本生成的等价版本
 ├── backend/                      # 侧车（标准库 + vendor PyMySQL，零 pip 依赖）
 ├── data/                         # schema.sql + 35 条设定
 ├── deploy/                       # Dify 1.18 compose / seekdb compose
-├── scripts/                      # DSL 生成器、灌数据、自检
+├── scripts/
+│   ├── build_dsl.py              # DSL 生成器
+│   ├── validate_dsl.py           # DSL 自检（引用/语法/JSON 合法性）
+│   ├── seed.py                   # 灌数据 + 预置记忆
+│   ├── init_powercontext.py      # PowerContext 存储准备（建库/清表）
+│   ├── dify_ops.py               # Dify 控制台 API（导入/导出/发布/对话/插件/凭证）
+│   ├── demo_run.py               # 完整玩法演示（生成对话记录）
+│   ├── dump_trace.sh             # 导出节点执行记录
+│   ├── start_all.sh              # 一键起全栈
+│   └── smoke_test.sh             # 一键自检
 └── docs/                         # 设计 / 运行说明 / 验证样例 / 证据 / 开发记录
+    └── evidence/                 # 真实对话记录 + 节点执行记录
 ```
 
 ## 许可与来源说明
