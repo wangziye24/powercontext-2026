@@ -70,9 +70,9 @@ stepfun/
 前置：Node.js ≥ 22（本地实测 24.15）、npm、Python 3（仅生成语料时需要）。
 
 ```bash
-# 1) 安装依赖 + 自举：拷贝浏览器端第三方产物、预下载端侧模型
+# 1) 安装依赖 + 自举：准备端侧模型（浏览器端运行时已随仓库提供，无需安装）
 npm run setup
-#    等价于 npm --prefix server install --legacy-peer-deps && npm --prefix web install && node scripts/prepare.mjs
+#    等价于 npm --prefix server install --legacy-peer-deps && node scripts/prepare.mjs
 
 # 2) 启动：拉起本地 seekdb + 前端（http://127.0.0.1:5178）
 npm start          # 启动前会自动再跑一次 prepare（已就绪则秒过）
@@ -86,8 +86,9 @@ npm --prefix bench install
 node bench/run-bench.mjs
 ```
 
-> 仓库不提交大文件（浏览器端第三方运行时与 ONNX 权重），`npm run setup` / `npm start` 会自动补齐：
-> 首次准备约需下载 159 MiB 模型（huggingface.co 直连不通时自动回落 hf-mirror.com），之后完全离线运行。
+> **依赖说明**：前端的第三方 ESM 与 onnxruntime 的 wasm 运行时**已随仓库提供**（`web/public/vendor/`，约 50 MiB），
+> 因此新环境只需安装后端依赖（seekdb）并下载端侧模型（约 159 MiB，huggingface.co 直连不通时自动回落
+> hf-mirror.com），之后完全离线运行；`npm run vendor` 只在需要重新生成前端运行时时才需要装前端依赖。
 
 浏览器打开 http://127.0.0.1:5178 后：选择端侧精度 → 选择若干 `.txt/.md` 文件导入 → 输入查询即可看到混合检索结果。
 
