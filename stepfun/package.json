@@ -1,0 +1,15 @@
+{
+  "name": "stepfun-edge-kb",
+  "private": true,
+  "version": "0.1.0",
+  "description": "端侧迷你知识库：浏览器本地 embedding + seekdb 向量/全文混合检索（OceanBase 2026 阶跃星辰赛题）",
+  "type": "module",
+  "scripts": {
+    "setup": "npm --prefix server install --legacy-peer-deps && node scripts/prepare.mjs",
+    "prepare": "node scripts/prepare.mjs",
+    "vendor": "npm --prefix web install && node scripts/copy-web-assets.mjs",
+    "start": "node scripts/prepare.mjs && npm --prefix server run start",
+    "bench": "node bench/run-bench.mjs",
+    "corpus": "python scripts/make_corpus.py"
+  }
+}

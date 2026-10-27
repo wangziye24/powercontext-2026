@@ -1,0 +1,14 @@
+{
+  "name": "stepfun-kb-server",
+  "private": true,
+  "version": "0.1.0",
+  "description": "本地 seekdb 生命周期管理 + 端侧向量落库与混合检索 API",
+  "type": "module",
+  "scripts": {
+    "start": "node src/server.mjs"
+  },
+  "dependencies": {
+    "@oceanbase/seekdb-node": "1.4.0",
+    "seekdb": "1.4.0"
+  }
+}
