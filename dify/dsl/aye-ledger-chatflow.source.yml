@@ -118,7 +118,7 @@ workflow:
             temperature: 0.1
             max_tokens: 512
         prompt_template:
-        - id: e4f2e3d4-c807-4b9a-a7f7-cbb17223e19a
+        - id: 10369216-50eb-4779-95d3-372b5a885ce7
           role: system
           text: '你是「凌晨便利店」的剧情调度器。收银员阿夜毒舌、记仇、嘴上不饶人但手上照顾人。
 
@@ -247,7 +247,7 @@ workflow:
         body:
           type: json
           data:
-          - id: e69b5bab-9493-4dac-99b6-b04d4c5bb0c0
+          - id: 677becf1-eeb6-4f86-86cf-35b0a7217f0f
             type: text
             value: '{"query": "{{#sys.query#}}", "kinds": "{{#1750000000003.lore_kinds#}}", "top_k": "5"}'
         authorization:
@@ -287,9 +287,9 @@ workflow:
         body:
           type: json
           data:
-          - id: 873ce684-079e-4da2-bbbc-fa967969bff3
+          - id: a33388f4-0267-412c-a962-5b8496a0657f
             type: text
-            value: '{"query": "{{#1750000000003.memory_query#}}", "user_id": "{{#1750000000003.player_id#}}", "agent_id": "aye-nightstore", "limit": "5"}'
+            value: '{"query": "{{#1750000000003.memory_query#}}", "user_id": "{{#1750000000003.player_id#}}", "agent_id": "aye-nightstore", "limit": "8"}'
         authorization:
           type: no-auth
           config: null
@@ -409,53 +409,9 @@ workflow:
             temperature: 0.8
             max_tokens: 1024
         prompt_template:
-        - id: 6425eead-1017-4cdc-9fa2-38efa89f67f6
+        - id: 41f0ee1a-9f4c-492e-b300-e7e4f4e9d254
           role: system
-          text: '你是「凌晨便利店」的夜班收银员**阿夜**。凌晨 1:47 接班，5:00 交班。
-
-            说话简短、毒舌、记仇，但手上永远照顾人。只说人话，不写旁白。
-
-
-            玩家刚说了：{{#sys.query#}}
-
-            本轮意图：{{#1750000000003.intent#}}（关键词：{{#1750000000003.target#}}）
-
-
-            【店里查到的素材｜来自 seekdb 混合检索】
-
-            {{#1750000000007.lore_ctx#}}
-
-
-            【你记得关于这个玩家的东西｜来自 PowerContext 记忆】
-
-            {{#1750000000007.memory_ctx#}}
-
-
-            【账本状态｜来自 seekdb】
-
-            {{#1750000000007.state_ctx#}}
-
-
-            请**只输出一个 JSON**（不要任何多余文字、不要代码块围栏）：
-
-            {"reply":"阿夜说的话（1-3 句，口语，可带一点毒舌）","affection_delta":整数,"balance_delta":数字,"memory_item":"一行记忆","hit_event":"用到的素材标题原文","action":"玩家这一轮实际做了什么","prank_done":"1 或 0"}
-
-
-            规则：
-
-            1. 好感度增减：普通闲聊 +1~+3；被整蛊 -3~-6（但如果你觉得好笑，可以 +2~+4）；玩家记住你的偏好、道歉、还钱 +5~+8；冒犯或威胁 -5~-10。
-
-            2. memory_item 必须是**一行**，以方括号类别开头：[偏好] / [恶作剧] / [梗] / [状态] / [互动]，写这一轮值得记住的事（例："[偏好] 玩家小李每周三买热咖啡"）。没有值得记的就写 "[互动] 玩家说：<不超过30字>"。
-
-            3. 如果玩家在质疑你记错（意图是 confront）：优先用【你记得】里的真实记忆回答；如果【你记得】是空的，就把【店里查到的素材】里的一条**传闻**当成本玩家的"光荣事迹"说出来（这样玩家可以纠正你；下一轮你要认错，并把真话写进 memory_item）。
-
-            4. 绝对不要编造素材里没有的商品和价格；没有就直说没有。
-
-            5. hit_event 只能填素材里出现过的标题原文；没用到就填空字符串。
-
-            6. prank_done 在玩家这一轮真的完成/尝试了整蛊时填 "1"，否则填 "0"。
-
-            7. 如果玩家提到你记得的旧事（【你记得】里有相关内容），reply 里**必须**主动提起那件旧事——这是本作的核心记忆玩法。'
+          text: "你是「凌晨便利店」的夜班收银员**阿夜**。凌晨 1:47 接班，5:00 交班。\n说话简短、毒舌、记仇，但手上永远照顾人。只说人话，不写旁白。\n\n玩家刚说了：{{#sys.query#}}\n本轮意图：{{#1750000000003.intent#}}（关键词：{{#1750000000003.target#}}）\n\n【店里查到的素材｜来自 seekdb 混合检索】\n{{#1750000000007.lore_ctx#}}\n\n【你记得关于这个玩家的东西｜来自 PowerContext 记忆】\n{{#1750000000007.memory_ctx#}}\n（说明：以 [偏好] / [恶作剧] / [梗] 开头的才是**关于这个玩家本人的事实**，回答时要优先用它们；\n [互动] 只是他随口说过的一句，别当成事实转述。）\n\n【账本状态｜来自 seekdb】\n{{#1750000000007.state_ctx#}}\n\n请**只输出一个 JSON**（不要任何多余文字、不要代码块围栏）：\n{\"reply\":\"阿夜说的话（1-3 句，口语，可带一点毒舌）\",\"affection_delta\":整数,\"balance_delta\":数字,\"memory_item\":\"一行记忆\",\"hit_event\":\"用到的素材标题原文\",\"action\":\"玩家这一轮实际做了什么\",\"prank_done\":\"1 或 0\"}\n\n规则：\n1. 好感度增减：普通闲聊 +2~+4；被整蛊 -3~-6（但如果你觉得好笑，可以 +2~+4）；玩家记住你的偏好、道歉、还钱、请你吃关东煮 +6~+10；冒犯或威胁 -5~-10。\n2. memory_item 必须是**一行**，以方括号类别开头：[偏好] / [恶作剧] / [梗] / [状态] / [互动]，写这一轮值得记住的事（例：\"[偏好] 玩家小李每周三买热咖啡\"）。没有值得记的就写 \"[互动] 玩家说：<不超过30字>\"。\n3. 如果玩家在质疑你记错（意图是 confront）：优先用【你记得】里的真实记忆回答；如果【你记得】是空的，就把【店里查到的素材】里的一条**传闻**当成本玩家的\"光荣事迹\"说出来（这样玩家可以纠正你；下一轮你要认错，并把真话写进 memory_item）。\n4. 绝对不要编造素材里没有的商品和价格；没有就直说没有。\n5. hit_event 只能填素材里出现过的标题原文；没用到就填空字符串。\n6. prank_done 在玩家这一轮真的完成/尝试了整蛊时填 \"1\"，否则填 \"0\"。\n6.1 reply **必须**有内容（至少一句完整的话），绝对不能是空字符串；哪怕信息不足，也要用阿夜的口吻接一句。\n7. 如果玩家提到你记得的旧事（【你记得】里有相关内容），reply 里**必须**主动提起那件旧事——这是本作的核心记忆玩法。"
         context:
           enabled: false
           variable_selector: []
@@ -490,7 +446,7 @@ workflow:
         desc: 好感度结算、欠账、整蛊计数、章节推进、结局判定
         type: code
         code_language: python3
-        code: "import json\nimport re\n\n\ndef _loads(text):\n    try:\n        return json.loads(text or \"{}\")\n    except Exception:\n        return {}\n\n\ndef _num(value, default=0.0):\n    try:\n        return float(value)\n    except Exception:\n        return default\n\n\ndef _bar(affection: int) -> str:\n    filled = int(round((affection + 100) / 200 * 10))\n    filled = max(0, min(10, filled))\n    return \"█\" * filled + \"░\" * (10 - filled)\n\n\ndef main(role_text: str, state_body: str, query: str) -> dict:\n    m = re.search(r\"\\{[\\s\\S]*\\}\", role_text or \"\")\n    role = _loads(m.group(0)) if m else {}\n    state = _loads(state_body)\n\n    affection = int(_num(state.get(\"affection\", 0)))\n    balance = round(_num(state.get(\"balance\", 0)), 2)\n    blacklist = int(_num(state.get(\"blacklist\", 0)))\n    pranks = int(_num(state.get(\"pranks_done\", 0)))\n    old_chapter = str(state.get(\"chapter\", \"第一章·夜来客\"))\n\n    d_aff = int(_num(role.get(\"affection_delta\", 0)))\n    d_bal = round(_num(role.get(\"balance_delta\", 0)), 2)\n    if str(role.get(\"prank_done\", \"0\")).strip().lower() in (\"1\", \"true\"):\n        pranks += 1\n\n    affection = max(-100, min(100, affection + d_aff))\n    balance = round(balance + d_bal, 2)\n    if affection <= -50:\n        blacklist = 1\n\n    if affection >= 85 and pranks >= 4:\n        chapter = \"第四章·合伙人\"\n    elif affection >= 60:\n        chapter = \"第三章·熟客\"\n    elif affection >= 30:\n        chapter = \"第二章·常客\"\n    else:\n        chapter = \"第一章·夜来客\"\n\n    # 只有\"章节推进\"或\"被拉黑\"时才播报结局/里程碑\n    milestone = chapter != old_chapter and chapter in (\n        \"第二章·常客\", \"第三章·熟客\", \"第四章·合伙人\"\n    )\n    blacklisted = affection <= -50\n    ending_ready = 1 if (milestone or blacklisted) else 0\n    ending_aff = affection if ending_ready else 9999\n\n    reply = str(role.get(\"reply\", \"\")).strip()\n    if not reply:\n        reply = \"（阿夜没说话，只是把便签本翻开了一页。）\"\n\n    memory_item = str(role.get(\"memory_item\", \"\")).strip()\n    if not memory_item:\n        memory_item = \"[互动] 玩家说：\" + (query or \"\")[:30]\n\n    return {\n        \"affection\": affection,\n        \"balance\": balance,\n        \"blacklist\": blacklist,\n        \"pranks_done\": pranks,\n        \"chapter\": chapter,\n        \"reply\": reply,\n        \"memory_item\": memory_item,\n        \"hit_event\": str(role.get(\"hit_event\", \"\")).strip(),\n        \"action\": str(role.get(\"action\", \"\")).strip(),\n        \"affection_delta\": d_aff,\n        \"affection_bar\": _bar(affection),\n        \"ending_aff\": ending_aff,\n    }\n"
+        code: "import json\nimport re\n\n\ndef _loads(text):\n    try:\n        return json.loads(text or \"{}\")\n    except Exception:\n        return {}\n\n\ndef _num(value, default=0.0):\n    try:\n        return float(value)\n    except Exception:\n        return default\n\n\ndef _bar(affection: int) -> str:\n    filled = int(round((affection + 100) / 200 * 10))\n    filled = max(0, min(10, filled))\n    return \"█\" * filled + \"░\" * (10 - filled)\n\n\ndef main(role_text: str, state_body: str, query: str) -> dict:\n    m = re.search(r\"\\{[\\s\\S]*\\}\", role_text or \"\")\n    role = _loads(m.group(0)) if m else {}\n    state = _loads(state_body)\n\n    affection = int(_num(state.get(\"affection\", 0)))\n    balance = round(_num(state.get(\"balance\", 0)), 2)\n    blacklist = int(_num(state.get(\"blacklist\", 0)))\n    pranks = int(_num(state.get(\"pranks_done\", 0)))\n    old_chapter = str(state.get(\"chapter\", \"第一章·夜来客\"))\n\n    d_aff = int(_num(role.get(\"affection_delta\", 0)))\n    d_bal = round(_num(role.get(\"balance_delta\", 0)), 2)\n    if str(role.get(\"prank_done\", \"0\")).strip().lower() in (\"1\", \"true\"):\n        pranks += 1\n\n    affection = max(-100, min(100, affection + d_aff))\n    balance = round(balance + d_bal, 2)\n    if affection <= -50:\n        blacklist = 1\n\n    if affection >= 85 and pranks >= 4:\n        chapter = \"第四章·合伙人\"\n    elif affection >= 60:\n        chapter = \"第三章·熟客\"\n    elif affection >= 30:\n        chapter = \"第二章·常客\"\n    else:\n        chapter = \"第一章·夜来客\"\n\n    # 只有\"章节推进\"或\"被拉黑\"时才播报结局/里程碑\n    milestone = chapter != old_chapter and chapter in (\n        \"第二章·常客\", \"第三章·熟客\", \"第四章·合伙人\"\n    )\n    blacklisted = affection <= -50\n    ending_ready = 1 if (milestone or blacklisted) else 0\n    ending_aff = affection if ending_ready else 9999\n\n    reply = str(role.get(\"reply\", \"\")).strip()\n    if not reply:\n        reply = \"（阿夜翻了翻便签本，发现自己对这位客人……一无所知。）\"\n\n    memory_item = str(role.get(\"memory_item\", \"\")).strip()\n    if not memory_item:\n        memory_item = \"[互动] 玩家说：\" + (query or \"\")[:30]\n\n    return {\n        \"affection\": affection,\n        \"balance\": balance,\n        \"blacklist\": blacklist,\n        \"pranks_done\": pranks,\n        \"chapter\": chapter,\n        \"reply\": reply,\n        \"memory_item\": memory_item,\n        \"hit_event\": str(role.get(\"hit_event\", \"\")).strip(),\n        \"action\": str(role.get(\"action\", \"\")).strip(),\n        \"affection_delta\": d_aff,\n        \"affection_bar\": _bar(affection),\n        \"ending_aff\": ending_aff,\n    }\n"
         selected: false
         variables:
         - variable: role_text
@@ -566,7 +522,7 @@ workflow:
         body:
           type: json
           data:
-          - id: a817882f-d49b-41d9-9e29-e2cfa8992e6e
+          - id: 98ef5b47-e0c9-4a91-8ad0-bf03d9c5ff89
             type: text
             value: '{"query": "\u7ed3\u5c40", "kinds": "ending", "min_affection": "{{#1750000000009.ending_aff#}}", "max_affection": "{{#1750000000009.ending_aff#}}", "min_pranks": "{{#1750000000009.pranks_done#}}", "top_k": "1"}'
         authorization:
@@ -635,7 +591,7 @@ workflow:
         body:
           type: json
           data:
-          - id: 708c534f-7c4c-43f1-889b-0e67813f50a1
+          - id: 3ba72e56-4b17-4666-81c3-522dee66d5bb
             type: text
             value: '{"player_id": "{{#1750000000003.player_id#}}", "player_name": "{{#1750000000001.player_name#}}", "affection": "{{#1750000000009.affection#}}", "balance": "{{#1750000000009.balance#}}", "blacklist": "{{#1750000000009.blacklist#}}", "pranks_done": "{{#1750000000009.pranks_done#}}", "chapter": "{{#1750000000009.chapter#}}", "event": {"turn_id":"{{#sys.conversation_id#}}","intent":"{{#1750000000003.intent#}}","action":"{{#1750000000009.action#}}","affection_delta":{{#1750000000009.affection_delta#}},"balance_delta":0,"hit_event":"{{#1750000000009.hit_event#}}"}}'
         authorization:
@@ -675,7 +631,7 @@ workflow:
         body:
           type: json
           data:
-          - id: 7cd07f42-e507-45bd-bc4f-7331e742b86c
+          - id: 44e09cc0-c196-4a9d-9f0b-11846c36b3c6
             type: text
             value: '{"content": "{{#1750000000009.memory_item#}}", "user_id": "{{#1750000000003.player_id#}}", "agent_id": "aye-nightstore", "scope": "user", "memory_type": "working", "infer": "false"}'
         authorization:

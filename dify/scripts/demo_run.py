@@ -46,6 +46,13 @@ SCRIPT = [
             "你还记得我喜欢喝什么吗？",
         ],
     ),
+    (
+        "会话四（新玩家：第一次来就翻旧账 → 她把城市传闻当你的事）",
+        [
+            "你还记得我上次干了什么吗？",
+            "不对，我上次明明是把薄荷糖换成了芥末糖",
+        ],
+    ),
 ]
 
 
@@ -94,8 +101,10 @@ def main() -> int:
     for title, queries in SCRIPT:
         lines.append(f"\n## {title}\n")
         conversation_id = ""
+        # 第四段换一个"新玩家"，用来演示记忆盲盒（她把传闻当成你的事）
+        player = "player_newbie" if title.startswith("会话四") else args.player_id
         for q in queries:
-            resp = chat(args.base, token, q, args.player_id, conversation_id)
+            resp = chat(args.base, token, q, player, conversation_id)
             conversation_id = resp.get("conversation_id", conversation_id)
             answer = resp.get("answer") or resp.get("error", "")
             lines.append(f"**玩家**：{q}\n")

@@ -360,7 +360,7 @@ def build_http_memory() -> dict:
                     ("query", "{{#code_intent.memory_query#}}"),
                     ("user_id", "{{#code_intent.player_id#}}"),
                     ("agent_id", AGENT_ID),
-                    ("limit", "5"),
+                    ("limit", "8"),
                 ]
             ),
         )
@@ -469,6 +469,8 @@ def build_llm_role() -> dict:
 
 【你记得关于这个玩家的东西｜来自 PowerContext 记忆】
 {{#code_ctx.memory_ctx#}}
+（说明：以 [偏好] / [恶作剧] / [梗] 开头的才是**关于这个玩家本人的事实**，回答时要优先用它们；
+ [互动] 只是他随口说过的一句，别当成事实转述。）
 
 【账本状态｜来自 seekdb】
 {{#code_ctx.state_ctx#}}
@@ -477,12 +479,13 @@ def build_llm_role() -> dict:
 {"reply":"阿夜说的话（1-3 句，口语，可带一点毒舌）","affection_delta":整数,"balance_delta":数字,"memory_item":"一行记忆","hit_event":"用到的素材标题原文","action":"玩家这一轮实际做了什么","prank_done":"1 或 0"}
 
 规则：
-1. 好感度增减：普通闲聊 +1~+3；被整蛊 -3~-6（但如果你觉得好笑，可以 +2~+4）；玩家记住你的偏好、道歉、还钱 +5~+8；冒犯或威胁 -5~-10。
+1. 好感度增减：普通闲聊 +2~+4；被整蛊 -3~-6（但如果你觉得好笑，可以 +2~+4）；玩家记住你的偏好、道歉、还钱、请你吃关东煮 +6~+10；冒犯或威胁 -5~-10。
 2. memory_item 必须是**一行**，以方括号类别开头：[偏好] / [恶作剧] / [梗] / [状态] / [互动]，写这一轮值得记住的事（例："[偏好] 玩家小李每周三买热咖啡"）。没有值得记的就写 "[互动] 玩家说：<不超过30字>"。
 3. 如果玩家在质疑你记错（意图是 confront）：优先用【你记得】里的真实记忆回答；如果【你记得】是空的，就把【店里查到的素材】里的一条**传闻**当成本玩家的"光荣事迹"说出来（这样玩家可以纠正你；下一轮你要认错，并把真话写进 memory_item）。
 4. 绝对不要编造素材里没有的商品和价格；没有就直说没有。
 5. hit_event 只能填素材里出现过的标题原文；没用到就填空字符串。
 6. prank_done 在玩家这一轮真的完成/尝试了整蛊时填 "1"，否则填 "0"。
+6.1 reply **必须**有内容（至少一句完整的话），绝对不能是空字符串；哪怕信息不足，也要用阿夜的口吻接一句。
 7. 如果玩家提到你记得的旧事（【你记得】里有相关内容），reply 里**必须**主动提起那件旧事——这是本作的核心记忆玩法。"""
     return node(
         "llm_role",
@@ -577,7 +580,7 @@ def main(role_text: str, state_body: str, query: str) -> dict:
 
     reply = str(role.get("reply", "")).strip()
     if not reply:
-        reply = "（阿夜没说话，只是把便签本翻开了一页。）"
+        reply = "（阿夜翻了翻便签本，发现自己对这位客人……一无所知。）"
 
     memory_item = str(role.get("memory_item", "")).strip()
     if not memory_item:
