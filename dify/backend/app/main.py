@@ -29,7 +29,7 @@ from urllib.parse import parse_qs, urlparse
 from . import seed as seed_mod
 from .config import settings
 from .db import cursor, fetch_all, fetch_one
-from .embed import embed_texts, provider_name, vec_literal
+from .embed import embed_texts, effective_provider, provider_name, vec_literal
 from .search import search as do_search
 from .state import get_state, list_events, save_state
 
@@ -47,7 +47,11 @@ def _render_context(hits: list[dict]) -> str:
 
 # --------------------------------------------------------------------------- 路由实现
 def health(_: dict) -> dict:
-    info: dict[str, Any] = {"status": "ok", "embed_provider": provider_name()}
+    info: dict[str, Any] = {
+        "status": "ok",
+        "embed_provider": provider_name(),
+        "embed_effective": effective_provider(),
+    }
     try:
         with cursor() as cur:
             cur.execute("SELECT 1 AS ok")

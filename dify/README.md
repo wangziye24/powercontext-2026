@@ -76,6 +76,8 @@ python3 dify/scripts/demo_run.py --app-id <app_id> --out dify/docs/evidence/demo
 | 跨会话记忆 | ✅ 新会话里阿夜主动提起上一轮的恶作剧 |
 | 记忆校准 | ✅ 玩家纠正后当场认错并写回记忆 |
 | 一键自检 | ✅ `smoke_test.sh` 6/6 通过 |
+| 模型无关性 | ✅ 自带 `scripts/mock_llm.py`（OpenAI 兼容 Mock），**没有可用 Key 也能验证整条链路** |
+| embedding 不可用 | ✅ 侧车自动降级为本地确定性向量并提示，灌数据不中断 |
 
 ---
 

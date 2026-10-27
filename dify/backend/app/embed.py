@@ -20,6 +20,21 @@ from .config import settings
 
 _TOKEN_RE = re.compile(r"[a-z0-9_]+|[一-鿿]")
 
+# 降级状态：云端 embedding 不可用时置位，只提示一次
+_FALLBACK = [False]
+
+
+def _warn_fallback(exc: Exception) -> None:
+    if not _FALLBACK[0]:
+        _FALLBACK[0] = True
+        print(
+            "[embed] 警告：云端 embedding 不可用（%s: %s），已降级为本地确定性向量。\n"
+            "         检索仍可用（全文检索照常），但向量语义质量下降；\n"
+            "         换用可用的 Key 后重跑 `python3 -m app.seed` 或 POST /admin/reindex 即可恢复。"
+            % (type(exc).__name__, str(exc)[:120]),
+            flush=True,
+        )
+
 
 def embed_local(text: str, dim: int | None = None) -> list[float]:
     """确定性哈希向量：英文按词、中文按字 + 双字组合，L2 归一化。"""
@@ -61,14 +76,26 @@ def embed_minimax(texts: list[str]) -> list[list[float]]:
 
 
 def embed_texts(texts: list[str]) -> list[list[float]]:
+    """按配置生成向量；云端 embedding 不可用时**自动降级**为本地确定性向量。
+
+    为什么要降级：评委/复现者的 Key 可能没余额、被限流或指向别的服务。
+    如果这里直接抛异常，整个"灌种子数据"就断了，作品无法复现。
+    降级后流程照样跑通（全文检索照常，向量语义质量下降），并给出明确提示。
+    """
     if settings.embed_provider == "minimax":
-        return embed_minimax(texts)
+        try:
+            return embed_minimax(texts)
+        except Exception as exc:  # noqa: BLE001
+            _warn_fallback(exc)
     return [embed_local(t) for t in texts]
 
 
 def embed_query(text: str) -> list[float]:
     if settings.embed_provider == "minimax":
-        return embed_minimax([text])[0]
+        try:
+            return embed_minimax([text])[0]
+        except Exception as exc:  # noqa: BLE001
+            _warn_fallback(exc)
     return embed_local(text)
 
 
@@ -79,3 +106,8 @@ def vec_literal(vec: list[float]) -> str:
 
 def provider_name() -> str:
     return settings.embed_provider
+
+
+def effective_provider() -> str:
+    """实际生效的 provider：云端挂了就变成 local。"""
+    return "local(降级)" if _FALLBACK[0] else settings.embed_provider

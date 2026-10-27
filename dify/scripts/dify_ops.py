@@ -325,6 +325,45 @@ def cmd_install_plugin(args) -> int:
     return 0
 
 
+def _find_llm_credential(c, provider: str, model: str):
+    resp = c._req(
+        "GET",
+        f"/console/api/workspaces/current/model-providers/{provider}/models/credentials"
+        f"?model_type=llm&model={model}",
+    )
+    creds = resp.get("credentials") or {}
+    cid = resp.get("current_credential_id")
+    return cid, creds
+
+
+def cmd_retarget_credential(args) -> int:
+    """把某个模型凭证的 endpoint_url 改成别的 OpenAI 兼容端点（用于离线自检/换服务商）。"""
+    c = Console()
+    c.login()
+    provider = "langgenius/openai_api_compatible/openai_api_compatible"
+    cid, creds = _find_llm_credential(c, provider, args.model)
+    if not cid:
+        print(f"[credential] 没找到 {args.model} 的凭证")
+        return 1
+    creds = dict(creds)
+    creds["endpoint_url"] = args.endpoint
+    payload = {
+        "credential_id": cid,
+        "model": args.model,
+        "model_type": "llm",
+        "name": args.name or "MiniMax-M2.5",
+        "credentials": creds,
+    }
+    resp = c._req(
+        "PUT",
+        f"/console/api/workspaces/current/model-providers/{provider}/models/credentials",
+        payload,
+    )
+    print(json.dumps(resp, ensure_ascii=False)[:300])
+    print(f"[credential] {args.model} -> {args.endpoint}")
+    return 0
+
+
 def cmd_apps(args) -> int:
     c = Console()
     c.login()
@@ -385,6 +424,12 @@ def main() -> int:
     p = sub.add_parser("install-plugin")
     p.add_argument("identifier")
     p.set_defaults(func=cmd_install_plugin)
+
+    p = sub.add_parser("retarget-credential")
+    p.add_argument("--model", default="MiniMax-M2.5")
+    p.add_argument("--endpoint", required=True)
+    p.add_argument("--name", default="")
+    p.set_defaults(func=cmd_retarget_credential)
 
     p = sub.add_parser("apps")
     p.set_defaults(func=cmd_apps)

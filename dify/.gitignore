@@ -1,4 +1,6 @@
 # ---- 本地运行产物（不要提交）----
+deploy/dify/nginx_conf/conf.d/default.conf
+deploy/dify/seekdb.env
 .env
 .env.local
 volumes/

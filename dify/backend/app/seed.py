@@ -11,7 +11,7 @@ from pathlib import Path
 
 from .config import settings
 from .db import cursor, fetch_one, server_cursor
-from .embed import embed_texts, provider_name, vec_literal
+from .embed import embed_texts, effective_provider, provider_name, vec_literal
 
 DATA_DIR = Path(__file__).resolve().parents[2] / "data"
 SCHEMA_SQL = DATA_DIR / "schema.sql"
@@ -31,10 +31,14 @@ def _split_sql(text: str) -> list[str]:
 
 
 def ensure_schema(cur) -> None:
-    # 先确保数据库存在（此时可能还没有 nightstore 库）
+    # 先确保目标库存在
     with server_cursor() as raw:
         raw.execute(f"CREATE DATABASE IF NOT EXISTS {settings.db_name}")
     for stmt in _split_sql(SCHEMA_SQL.read_text(encoding="utf-8")):
+        # schema.sql 里写了 "USE nightstore;"（方便人工执行），
+        # 这里要按实际配置的 DB_NAME 替换，否则改库名时表会建到别的库里
+        if stmt.strip().upper().startswith("USE "):
+            stmt = f"USE {settings.db_name}"
         cur.execute(stmt)
 
 
@@ -77,6 +81,7 @@ def seed_all() -> dict:
         "lore_rows": n,
         "lore_rows_in_db": int(row["c"]) if row else 0,
         "embed_provider": provider_name(),
+        "embed_effective": effective_provider(),
         "embed_dim": settings.embed_dim,
         "db": f"{settings.db_host}:{settings.db_port}/{settings.db_name}",
     }
