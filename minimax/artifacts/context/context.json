@@ -1,0 +1,458 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-10-26T15:13:25+08:00",
+  "task": "在订单筛选中增加客户等级过滤（customer_tier），同时保持 SPEC-001 ~ SPEC-003、SPEC-005 ~ SPEC-007 描述的原有行为完全不变。",
+  "keywords": [
+    "spec-001",
+    "spec-003",
+    "spec-005",
+    "spec-007",
+    "customer_tier",
+    "spec",
+    "在订",
+    "订单",
+    "单筛",
+    "筛选",
+    "选中",
+    "中增",
+    "加客",
+    "客户",
+    "户等",
+    "等级",
+    "级过",
+    "过滤",
+    "同时保持",
+    "时保",
+    "描述",
+    "述的",
+    "的原",
+    "有行",
+    "为完",
+    "完全",
+    "全不"
+  ],
+  "mentioned_specs": [
+    "SPEC-001",
+    "SPEC-002",
+    "SPEC-003",
+    "SPEC-005",
+    "SPEC-006",
+    "SPEC-007"
+  ],
+  "target_specs": [
+    "SPEC-004"
+  ],
+  "specifications": [
+    {
+      "spec_id": "SPEC-004",
+      "title": "客户等级过滤",
+      "body": "- `filter_orders` 接受可选关键字参数 `tier`，用于按客户等级筛选订单。\n- 允许的等级集合为：`VIP`、`GOLD`、`SILVER`。\n- 等级比较**大小写不敏感**：`tier=\"vip\"` 与 `tier=\"VIP\"` 等价。\n- 传入不在允许集合中的等级时，必须抛出 `InvalidTierError`。\n- `tier` 为 `None` 时不按等级过滤（视为未提供）。\n- 订单的 `customer_tier` 为 `None` 表示该订单没有等级信息，只有 `tier=\"NONE\"` 才能匹配到这类订单。",
+      "source_path": "specs/filtering.md",
+      "source_hash": "9e583fd1d54ed997470b8410aeb3a6f502d5918d38e0ee67852ef49406539874",
+      "score": 8
+    },
+    {
+      "spec_id": "SPEC-001",
+      "title": "状态过滤",
+      "body": "- `filter_orders` 接受可选关键字参数 `status`。\n- `status` 只能取 `paid`、`pending`、`cancelled` 之一，大小写敏感。\n- 传入其它值时必须抛出 `InvalidStatusError`。\n- 提供 `status` 时，只返回 `status` 等于该值的订单。",
+      "source_path": "specs/filtering.md",
+      "source_hash": "05edc65f067a9710a3a87146bec6c699539f5f2259307a1a2d11867317167d52",
+      "score": 7
+    },
+    {
+      "spec_id": "SPEC-003",
+      "title": "关键词搜索",
+      "body": "- `filter_orders` 接受可选关键字参数 `keyword`。\n- 关键词匹配是**大小写不敏感**的子串匹配，匹配范围是订单的 `name` 或 `customer_email`。\n- `keyword` 为空字符串时不过滤（视为未提供）。",
+      "source_path": "specs/filtering.md",
+      "source_hash": "b19c8c47ba9bffccbae5873ea480b983eda90cf377b3320d8865862c18414806",
+      "score": 7
+    },
+    {
+      "spec_id": "SPEC-005",
+      "title": "条件组合",
+      "body": "- 多个过滤条件同时提供时，条件之间是**与（AND）**关系：订单必须同时满足全部条件才会被返回。\n- 返回结果的顺序与输入顺序一致（稳定过滤，不重排）。",
+      "source_path": "specs/filtering.md",
+      "source_hash": "7653d5fca06e913fb3a338c06848a9eec890bed0220be12e38418ad9398f5659",
+      "score": 7
+    },
+    {
+      "spec_id": "SPEC-006",
+      "title": "空条件",
+      "body": "- 未提供任何过滤条件时，`filter_orders` 返回全部订单，顺序与输入一致。",
+      "source_path": "specs/filtering.md",
+      "source_hash": "74c22b6ed37062eb1d5fb9db1d381015f62e3401273c5d109a9ba81293f28518",
+      "score": 7
+    },
+    {
+      "spec_id": "SPEC-007",
+      "title": "缺少金额的订单",
+      "body": "- `amount` 为 `None` 的订单，在任何金额区间过滤（提供 `min_amount` 或 `max_amount`）下都必须被排除。\n- 未提供金额区间时，`amount` 为 `None` 的订单正常保留。",
+      "source_path": "specs/filtering.md",
+      "source_hash": "ebcb769b5eb2bc529b039368ba1534b5bc24c2871425e98b910f723f55c8100d",
+      "score": 7
+    },
+    {
+      "spec_id": "SPEC-002",
+      "title": "金额区间过滤",
+      "body": "- `filter_orders` 接受可选关键字参数 `min_amount` 与 `max_amount`。\n- 区间是**闭区间**：`min_amount <= amount <= max_amount`。\n- 当 `min_amount` 与 `max_amount` 同时提供且 `min_amount > max_amount` 时，必须抛出 `InvalidRangeError`。\n- 只提供其中一个端点时，另一端不设限制。",
+      "source_path": "specs/filtering.md",
+      "source_hash": "d1a48498a3938184051a04625825964f786c50610d91a77ee1d3c9b38255f224",
+      "score": 6
+    }
+  ],
+  "code": [
+    {
+      "path": "src/orders/filter.py",
+      "symbol": "filter_orders",
+      "kind": "function",
+      "line_start": 19,
+      "line_end": 79,
+      "signature": "def filter_orders(",
+      "doc": "Return the orders that satisfy every provided condition.\n\nImplements SPEC-001 (status), SPEC-002 (amount range), SPEC-003 (keyword),\nSPEC-004 (customer tier), SPEC-005 (AND combination), SPEC-006 (no\ncondition) and SPEC-007 (orders without an amount).",
+      "body": "def filter_orders(\n    orders: Iterable[Order],\n    *,\n    status: str | None = None,\n    min_amount: float | None = None,\n    max_amount: float | None = None,\n    keyword: str | None = None,\n    tier: str | None = None,\n) -> list[Order]:\n    \"\"\"Return the orders that satisfy every provided condition.\n\n    Implements SPEC-001 (status), SPEC-002 (amount range), SPEC-003 (keyword),\n    SPEC-004 (customer tier), SPEC-005 (AND combination), SPEC-006 (no\n    condition) and SPEC-007 (orders without an amount).\n    \"\"\"\n\n    if status is not None and status not in VALID_STATUSES:\n        raise InvalidStatusError(f\"unknown order status: {status!r}\")\n    if tier is not None:\n        normalized_tier = tier.upper() if isinstance(tier, str) else \"\"\n        if normalized_tier not in VALID_TIERS and normalized_tier != \"NONE\":\n            raise InvalidTierError(f\"unknown customer tier: {tier!r}\")\n    if min_amount is not None and max_amount is not None and min_amount > max_amount:\n        raise InvalidRangeError(\n            f\"min_amount {min_amount} is greater than max_amount {max_amount}\"\n        )\n\n    selected = list(orders)\n\n    if status is not None:\n        selected = [order for order in selected if order.status == status]\n\n    if min_amount is not None or max_amount is not None:\n        selected = [\n            order\n            for order in selected\n            if order.amount is not None\n            and (min_amount is None or order.amount >= min_amount)\n            and (max_amount is None or order.amount <= max_amount)\n        ]\n\n    if keyword:\n        needle = keyword.lower()\n        selected = [\n            order\n            for order in selected\n            if needle in order.name.lower() or needle in order.customer_email.lower()\n        ]\n\n    if tier is not None:\n        if normalized_tier == \"NONE\":\n            selected = [order for order in selected if order.customer_tier is None]\n        else:\n            selected = [\n                order\n                for order in selected\n                if order.customer_tier is not None\n                and order.customer_tier.upper() == normalized_tier\n            ]\n\n    return selected",
+      "covers_specs": [
+        "SPEC-001",
+        "SPEC-002",
+        "SPEC-003",
+        "SPEC-004",
+        "SPEC-005",
+        "SPEC-006",
+        "SPEC-007"
+      ],
+      "source_hash": "1dfc7aa46e259ffa1b958338bbd22027e3bc528cb71d964c59b64e19a995123c",
+      "score": 19
+    }
+  ],
+  "tests": [
+    {
+      "path": "tests/test_filter_tier.py",
+      "name": "test_spec_004_combines_with_other_conditions",
+      "purpose": "SPEC-004: the tier filter combines with the other conditions.",
+      "covers": [
+        "SPEC-004"
+      ],
+      "target_feature": "SPEC-004",
+      "role": "target",
+      "body": "def test_spec_004_combines_with_other_conditions(orders):\n    \"\"\"SPEC-004: the tier filter combines with the other conditions.\"\"\"\n    selected = filter_orders(orders, tier=\"VIP\", status=\"paid\")\n    assert [order.id for order in selected] == [\"o-1\", \"o-5\"]",
+      "source_hash": "193ffcacbb4cf597202b063262b9af3e8063cdd6998aa9803c10ae3975d15899",
+      "score": 9
+    },
+    {
+      "path": "tests/test_filter_tier.py",
+      "name": "test_spec_004_filters_by_tier",
+      "purpose": "SPEC-004: filtering by tier keeps only the orders in that tier.",
+      "covers": [
+        "SPEC-004"
+      ],
+      "target_feature": "SPEC-004",
+      "role": "target",
+      "body": "def test_spec_004_filters_by_tier(orders):\n    \"\"\"SPEC-004: filtering by tier keeps only the orders in that tier.\"\"\"\n    selected = filter_orders(orders, tier=\"VIP\")\n    assert [order.id for order in selected] == [\"o-1\", \"o-5\"]",
+      "source_hash": "2861a2061c10a4f15b9c9177832e93eea097f70ba8df1f42bacbb2543ba81142",
+      "score": 9
+    },
+    {
+      "path": "tests/test_filter_tier.py",
+      "name": "test_spec_004_gold_tier_matches",
+      "purpose": "SPEC-004: every allowed tier can be selected.",
+      "covers": [
+        "SPEC-004"
+      ],
+      "target_feature": "SPEC-004",
+      "role": "target",
+      "body": "def test_spec_004_gold_tier_matches(orders):\n    \"\"\"SPEC-004: every allowed tier can be selected.\"\"\"\n    selected = filter_orders(orders, tier=\"GOLD\")\n    assert [order.id for order in selected] == [\"o-2\"]",
+      "source_hash": "47df2d87d89dc4348a1c8da2a0634d6b8e3367382b690bc1d5171763f31598f8",
+      "score": 9
+    },
+    {
+      "path": "tests/test_filter_tier.py",
+      "name": "test_spec_004_none_tier_matches_orders_without_tier",
+      "purpose": "SPEC-004: only tier NONE selects the orders without a tier.",
+      "covers": [
+        "SPEC-004"
+      ],
+      "target_feature": "SPEC-004",
+      "role": "target",
+      "body": "def test_spec_004_none_tier_matches_orders_without_tier(orders):\n    \"\"\"SPEC-004: only tier NONE selects the orders without a tier.\"\"\"\n    selected = filter_orders(orders, tier=\"NONE\")\n    assert [order.id for order in selected] == [\"o-3\"]",
+      "source_hash": "59dd74d4de90d3f0ee6c95518be568c02bfd8974a13e1a46eb77910cd48c9c54",
+      "score": 9
+    },
+    {
+      "path": "tests/test_filter_tier.py",
+      "name": "test_spec_004_rejects_unknown_tier",
+      "purpose": "SPEC-004: an unknown tier is rejected with InvalidTierError.",
+      "covers": [
+        "SPEC-004"
+      ],
+      "target_feature": "SPEC-004",
+      "role": "target",
+      "body": "def test_spec_004_rejects_unknown_tier(orders):\n    \"\"\"SPEC-004: an unknown tier is rejected with InvalidTierError.\"\"\"\n    with pytest.raises(InvalidTierError):\n        filter_orders(orders, tier=\"diamond\")",
+      "source_hash": "769e0edff71146697488fbe27701cde8cbeca5876503c0a4cd97e85571086d1e",
+      "score": 9
+    },
+    {
+      "path": "tests/test_filter_tier.py",
+      "name": "test_spec_004_silver_tier_matches",
+      "purpose": "SPEC-004: every allowed tier can be selected.",
+      "covers": [
+        "SPEC-004"
+      ],
+      "target_feature": "SPEC-004",
+      "role": "target",
+      "body": "def test_spec_004_silver_tier_matches(orders):\n    \"\"\"SPEC-004: every allowed tier can be selected.\"\"\"\n    selected = filter_orders(orders, tier=\"silver\")\n    assert [order.id for order in selected] == [\"o-4\"]",
+      "source_hash": "ce814e37fcbd2ca3a27387c491e07abbdff208d2ce16a2a1ef916dcbe370362d",
+      "score": 9
+    },
+    {
+      "path": "tests/test_filter_tier.py",
+      "name": "test_spec_004_tier_comparison_is_case_insensitive",
+      "purpose": "SPEC-004: the tier comparison ignores the case.",
+      "covers": [
+        "SPEC-004"
+      ],
+      "target_feature": "SPEC-004",
+      "role": "target",
+      "body": "def test_spec_004_tier_comparison_is_case_insensitive(orders):\n    \"\"\"SPEC-004: the tier comparison ignores the case.\"\"\"\n    selected = filter_orders(orders, tier=\"vip\")\n    assert [order.id for order in selected] == [\"o-1\", \"o-5\"]",
+      "source_hash": "ae1de916869375f9182fcab1771821e11653f0d8bc08460ce9c57f79a3a68c81",
+      "score": 9
+    },
+    {
+      "path": "tests/test_filter_tier.py",
+      "name": "test_spec_004_tier_none_does_not_filter",
+      "purpose": "SPEC-004: tier None means no tier filtering at all.",
+      "covers": [
+        "SPEC-004"
+      ],
+      "target_feature": "SPEC-004",
+      "role": "target",
+      "body": "def test_spec_004_tier_none_does_not_filter(orders):\n    \"\"\"SPEC-004: tier None means no tier filtering at all.\"\"\"\n    assert len(filter_orders(orders, tier=None)) == len(orders)",
+      "source_hash": "20bfd0bceb1625130fcb5f00ccd54b9f9689f6ee63387f441f7be32c41cd01f1",
+      "score": 9
+    },
+    {
+      "path": "tests/test_filter_regression.py",
+      "name": "test_spec_001_filters_by_status",
+      "purpose": "SPEC-001: filtering by status keeps only the orders in that status.",
+      "covers": [
+        "SPEC-001"
+      ],
+      "target_feature": "SPEC-001",
+      "role": "regression",
+      "body": "def test_spec_001_filters_by_status(orders):\n    \"\"\"SPEC-001: filtering by status keeps only the orders in that status.\"\"\"\n    paid = filter_orders(orders, status=\"paid\")\n    assert [order.id for order in paid] == [\"o-1\", \"o-3\", \"o-5\"]",
+      "source_hash": "0b9aec7176dc6f6151bb6085216497367bf06f3942d8599082e8f89d449ff4da",
+      "score": 5
+    },
+    {
+      "path": "tests/test_filter_regression.py",
+      "name": "test_spec_001_rejects_unknown_status",
+      "purpose": "SPEC-001: an unknown status is rejected with InvalidStatusError.",
+      "covers": [
+        "SPEC-001"
+      ],
+      "target_feature": "SPEC-001",
+      "role": "regression",
+      "body": "def test_spec_001_rejects_unknown_status(orders):\n    \"\"\"SPEC-001: an unknown status is rejected with InvalidStatusError.\"\"\"\n    with pytest.raises(InvalidStatusError):\n        filter_orders(orders, status=\"refunded\")",
+      "source_hash": "518fd4e18a53d4ac089d1d8b433e8ee988dcd6576738aa6873730ce7e2bf1626",
+      "score": 5
+    },
+    {
+      "path": "tests/test_filter_regression.py",
+      "name": "test_spec_003_empty_keyword_does_not_filter",
+      "purpose": "SPEC-003: an empty keyword is treated as no keyword at all.",
+      "covers": [
+        "SPEC-003"
+      ],
+      "target_feature": "SPEC-003",
+      "role": "regression",
+      "body": "def test_spec_003_empty_keyword_does_not_filter(orders):\n    \"\"\"SPEC-003: an empty keyword is treated as no keyword at all.\"\"\"\n    assert len(filter_orders(orders, keyword=\"\")) == len(orders)",
+      "source_hash": "f7d9e5322248a99ef86167ec4ee1a4960d04eca20755cdd5f0ddde5cd160d20a",
+      "score": 5
+    },
+    {
+      "path": "tests/test_filter_regression.py",
+      "name": "test_spec_003_keyword_is_case_insensitive",
+      "purpose": "SPEC-003: the keyword is matched case insensitively.",
+      "covers": [
+        "SPEC-003"
+      ],
+      "target_feature": "SPEC-003",
+      "role": "regression",
+      "body": "def test_spec_003_keyword_is_case_insensitive(orders):\n    \"\"\"SPEC-003: the keyword is matched case insensitively.\"\"\"\n    selected = filter_orders(orders, keyword=\"KEYBOARD\")\n    assert [order.id for order in selected] == [\"o-2\", \"o-5\"]",
+      "source_hash": "77317ef9c095182c06b5c1f3f817b07ec76689e5d6a4fb058211873b9ee65b59",
+      "score": 5
+    },
+    {
+      "path": "tests/test_filter_regression.py",
+      "name": "test_spec_003_keyword_matches_email",
+      "purpose": "SPEC-003: the keyword also matches the customer email.",
+      "covers": [
+        "SPEC-003"
+      ],
+      "target_feature": "SPEC-003",
+      "role": "regression",
+      "body": "def test_spec_003_keyword_matches_email(orders):\n    \"\"\"SPEC-003: the keyword also matches the customer email.\"\"\"\n    selected = filter_orders(orders, keyword=\"ada@example.com\")\n    assert [order.id for order in selected] == [\"o-1\"]",
+      "source_hash": "b8512bb67c933a3ef4f49557aae32cddb2a945c159443b0906e918fa5d6ced0f",
+      "score": 5
+    },
+    {
+      "path": "tests/test_filter_regression.py",
+      "name": "test_spec_005_conditions_are_combined_with_and",
+      "purpose": "SPEC-005: several conditions are combined with AND.",
+      "covers": [
+        "SPEC-005"
+      ],
+      "target_feature": "SPEC-005",
+      "role": "regression",
+      "body": "def test_spec_005_conditions_are_combined_with_and(orders):\n    \"\"\"SPEC-005: several conditions are combined with AND.\"\"\"\n    selected = filter_orders(orders, status=\"paid\", min_amount=50.0)\n    assert [order.id for order in selected] == [\"o-1\"]",
+      "source_hash": "c43a47213f9b1bfa50d2dea2774bd2f70c046d7c05625d44433fa2051542329c",
+      "score": 5
+    },
+    {
+      "path": "tests/test_filter_regression.py",
+      "name": "test_spec_005_result_order_is_stable",
+      "purpose": "SPEC-005: the result keeps the order of the input.",
+      "covers": [
+        "SPEC-005"
+      ],
+      "target_feature": "SPEC-005",
+      "role": "regression",
+      "body": "def test_spec_005_result_order_is_stable(orders):\n    \"\"\"SPEC-005: the result keeps the order of the input.\"\"\"\n    selected = filter_orders(orders, status=\"paid\")\n    assert [order.id for order in selected] == sorted(\n        [order.id for order in selected], key=lambda item: [o.id for o in orders].index(item)\n    )",
+      "source_hash": "aa61fc6afa9f4ecfb9967517c4454191aca388552d823a537059884e24b005c2",
+      "score": 5
+    },
+    {
+      "path": "tests/test_filter_regression.py",
+      "name": "test_spec_007_orders_without_amount_are_excluded_by_range",
+      "purpose": "SPEC-007: orders without an amount never survive an amount range.",
+      "covers": [
+        "SPEC-007"
+      ],
+      "target_feature": "SPEC-007",
+      "role": "regression",
+      "body": "def test_spec_007_orders_without_amount_are_excluded_by_range(orders):\n    \"\"\"SPEC-007: orders without an amount never survive an amount range.\"\"\"\n    selected = filter_orders(orders, min_amount=0.0)\n    assert \"o-3\" not in [order.id for order in selected]",
+      "source_hash": "c4d111a603fe5cc9df8329d2b6d1b9504856461b3a285999ac0962c1b8bb8eb4",
+      "score": 5
+    },
+    {
+      "path": "tests/test_filter_regression.py",
+      "name": "test_spec_007_orders_without_amount_survive_without_range",
+      "purpose": "SPEC-007: orders without an amount stay when no range is given.",
+      "covers": [
+        "SPEC-007"
+      ],
+      "target_feature": "SPEC-007",
+      "role": "regression",
+      "body": "def test_spec_007_orders_without_amount_survive_without_range(orders):\n    \"\"\"SPEC-007: orders without an amount stay when no range is given.\"\"\"\n    assert \"o-3\" in [order.id for order in filter_orders(orders)]",
+      "source_hash": "62b4a754a4b30a0a715b82b8664803709bca96b93fb774933d1822874b672936",
+      "score": 5
+    },
+    {
+      "path": "tests/test_filter_regression.py",
+      "name": "test_spec_002_amount_range_is_inclusive",
+      "purpose": "SPEC-002: the amount range is closed on both ends.",
+      "covers": [
+        "SPEC-002"
+      ],
+      "target_feature": "SPEC-002",
+      "role": "regression",
+      "body": "def test_spec_002_amount_range_is_inclusive(orders):\n    \"\"\"SPEC-002: the amount range is closed on both ends.\"\"\"\n    selected = filter_orders(orders, min_amount=45.5, max_amount=120.0)\n    assert [order.id for order in selected] == [\"o-1\", \"o-2\", \"o-5\"]",
+      "source_hash": "e6e149f6dd001bd40fd77da6514c4739a94753150207e1aefa89c5407be123af",
+      "score": 4
+    },
+    {
+      "path": "tests/test_filter_regression.py",
+      "name": "test_spec_002_rejects_contradictory_range",
+      "purpose": "SPEC-002: a contradictory range is rejected with InvalidRangeError.",
+      "covers": [
+        "SPEC-002"
+      ],
+      "target_feature": "SPEC-002",
+      "role": "regression",
+      "body": "def test_spec_002_rejects_contradictory_range(orders):\n    \"\"\"SPEC-002: a contradictory range is rejected with InvalidRangeError.\"\"\"\n    with pytest.raises(InvalidRangeError):\n        filter_orders(orders, min_amount=100.0, max_amount=10.0)",
+      "source_hash": "d7f67dc1d4352142facb4fb89ae2e933a8a472f31528f288817326f118543705",
+      "score": 4
+    },
+    {
+      "path": "tests/test_filter_regression.py",
+      "name": "test_spec_002_single_endpoint_is_unbounded",
+      "purpose": "SPEC-002: a single endpoint leaves the other side unbounded.",
+      "covers": [
+        "SPEC-002"
+      ],
+      "target_feature": "SPEC-002",
+      "role": "regression",
+      "body": "def test_spec_002_single_endpoint_is_unbounded(orders):\n    \"\"\"SPEC-002: a single endpoint leaves the other side unbounded.\"\"\"\n    assert [order.id for order in filter_orders(orders, min_amount=900.0)] == [\"o-4\"]\n    assert [order.id for order in filter_orders(orders, max_amount=46.0)] == [\"o-2\", \"o-5\"]",
+      "source_hash": "cc18996f49bbf838483c6331771e71a6f9943c8bb2c9095e0490a71547b96f90",
+      "score": 4
+    },
+    {
+      "path": "tests/test_filter_regression.py",
+      "name": "test_spec_006_without_conditions_every_order_is_kept",
+      "purpose": "SPEC-006: without any condition every order is returned.",
+      "covers": [
+        "SPEC-006"
+      ],
+      "target_feature": "SPEC-006",
+      "role": "regression",
+      "body": "def test_spec_006_without_conditions_every_order_is_kept(orders):\n    \"\"\"SPEC-006: without any condition every order is returned.\"\"\"\n    assert [order.id for order in filter_orders(orders)] == [\n        \"o-1\",\n        \"o-2\",\n        \"o-3\",\n        \"o-4\",\n        \"o-5\",\n    ]",
+      "source_hash": "681beaf87f2c8293327c1526c9ac73cbe435b9f78395b093f52274c74073125f",
+      "score": 4
+    }
+  ],
+  "conventions": [
+    {
+      "symbol": "InvalidRangeError",
+      "path": "src/orders/errors.py",
+      "kind": "class",
+      "doc": "Raised when the requested amount range is contradictory.",
+      "body": "class InvalidRangeError(OrderFilterError):\n    \"\"\"Raised when the requested amount range is contradictory.\"\"\""
+    },
+    {
+      "symbol": "InvalidStatusError",
+      "path": "src/orders/errors.py",
+      "kind": "class",
+      "doc": "Raised when an unknown order status is requested.",
+      "body": "class InvalidStatusError(OrderFilterError):\n    \"\"\"Raised when an unknown order status is requested.\"\"\""
+    },
+    {
+      "symbol": "InvalidTierError",
+      "path": "src/orders/errors.py",
+      "kind": "class",
+      "doc": "Raised when an unknown customer tier is requested.",
+      "body": "class InvalidTierError(OrderFilterError):\n    \"\"\"Raised when an unknown customer tier is requested.\"\"\""
+    },
+    {
+      "symbol": "OrderFilterError",
+      "path": "src/orders/errors.py",
+      "kind": "class",
+      "doc": "Base class for every invalid filter argument.",
+      "body": "class OrderFilterError(ValueError):\n    \"\"\"Base class for every invalid filter argument.\"\"\""
+    }
+  ],
+  "related_files": [
+    {
+      "path": "src/orders/filter.py",
+      "kind": "code",
+      "content": "\"\"\"Order filtering rules.\n\nThe behaviour of this module is defined by ``specs/filtering.md``. Every\nspecification entry that applies to this function is referenced in the\ndocstring so a development assistant can connect a change to its rule.\n\"\"\"\n\nfrom __future__ import annotations\n\nfrom collections.abc import Iterable\n\nfrom .errors import InvalidRangeError, InvalidStatusError, InvalidTierError\nfrom .models import Order\n\nVALID_STATUSES = (\"paid\", \"pending\", \"cancelled\")\nVALID_TIERS = (\"VIP\", \"GOLD\", \"SILVER\")\n\n\ndef filter_orders(\n    orders: Iterable[Order],\n    *,\n    status: str | None = None,\n    min_amount: float | None = None,\n    max_amount: float | None = None,\n    keyword: str | None = None,\n    tier: str | None = None,\n) -> list[Order]:\n    \"\"\"Return the orders that satisfy every provided condition.\n\n    Implements SPEC-001 (status), SPEC-002 (amount range), SPEC-003 (keyword),\n    SPEC-004 (customer tier), SPEC-005 (AND combination), SPEC-006 (no\n    condition) and SPEC-007 (orders without an amount).\n    \"\"\"\n\n    if status is not None and status not in VALID_STATUSES:\n        raise InvalidStatusError(f\"unknown order status: {status!r}\")\n    if tier is not None:\n        normalized_tier = tier.upper() if isinstance(tier, str) else \"\"\n        if normalized_tier not in VALID_TIERS and normalized_tier != \"NONE\":\n            raise InvalidTierError(f\"unknown customer tier: {tier!r}\")\n    if min_amount is not None and max_amount is not None and min_amount > max_amount:\n        raise InvalidRangeError(\n            f\"min_amount {min_amount} is greater than max_amount {max_amount}\"\n        )\n\n    selected = list(orders)\n\n    if status is not None:\n        selected = [order for order in selected if order.status == status]\n\n    if min_amount is not None or max_amount is not None:\n        selected = [\n            order\n            for order in selected\n            if order.amount is not None\n            and (min_amount is None or order.amount >= min_amount)\n            and (max_amount is None or order.amount <= max_amount)\n        ]\n\n    if keyword:\n        needle = keyword.lower()\n        selected = [\n            order\n            for order in selected\n            if needle in order.name.lower() or needle in order.customer_email.lower()\n        ]\n\n    if tier is not None:\n        if normalized_tier == \"NONE\":\n            selected = [order for order in selected if order.customer_tier is None]\n        else:\n            selected = [\n                order\n                for order in selected\n                if order.customer_tier is not None\n                and order.customer_tier.upper() == normalized_tier\n            ]\n\n    return selected\n",
+      "selected": true
+    },
+    {
+      "path": "src/orders/errors.py",
+      "kind": "code",
+      "content": "\"\"\"Errors raised by the orders filter.\"\"\"\n\nfrom __future__ import annotations\n\n\nclass OrderFilterError(ValueError):\n    \"\"\"Base class for every invalid filter argument.\"\"\"\n\n\nclass InvalidStatusError(OrderFilterError):\n    \"\"\"Raised when an unknown order status is requested.\"\"\"\n\n\nclass InvalidRangeError(OrderFilterError):\n    \"\"\"Raised when the requested amount range is contradictory.\"\"\"\n\n\nclass InvalidTierError(OrderFilterError):\n    \"\"\"Raised when an unknown customer tier is requested.\"\"\"\n",
+      "selected": false
+    },
+    {
+      "path": "src/orders/models.py",
+      "kind": "code",
+      "content": "\"\"\"Data model of the orders package.\"\"\"\n\nfrom __future__ import annotations\n\nfrom dataclasses import dataclass\n\n\n@dataclass(frozen=True)\nclass Order:\n    \"\"\"One order that can be filtered.\"\"\"\n\n    id: str\n    status: str\n    amount: float | None\n    name: str\n    customer_email: str\n    customer_tier: str | None = None\n",
+      "selected": false
+    },
+    {
+      "path": "src/orders/__init__.py",
+      "kind": "code",
+      "content": "\"\"\"Package exports of the orders domain.\"\"\"\n\nfrom __future__ import annotations\n\nfrom .errors import (\n    InvalidRangeError,\n    InvalidStatusError,\n    InvalidTierError,\n    OrderFilterError,\n)\nfrom .filter import VALID_STATUSES, filter_orders\nfrom .models import Order\n\n__all__ = [\n    \"InvalidRangeError\",\n    \"InvalidStatusError\",\n    \"InvalidTierError\",\n    \"Order\",\n    \"OrderFilterError\",\n    \"VALID_STATUSES\",\n    \"filter_orders\",\n]\n",
+      "selected": false
+    }
+  ],
+  "missing_error_types": []
+}

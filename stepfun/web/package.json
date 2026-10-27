@@ -1,0 +1,13 @@
+{
+  "name": "stepfun-kb-web",
+  "private": true,
+  "version": "0.1.0",
+  "description": "浏览器端 embedding（Transformers.js，WebGPU 优先、WASM 自动降级）；零构建，浏览器直接跑 ESM",
+  "type": "module",
+  "scripts": {
+    "vendor": "node ../scripts/copy-web-assets.mjs"
+  },
+  "dependencies": {
+    "@huggingface/transformers": "^3.8.1"
+  }
+}
