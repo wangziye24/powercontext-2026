@@ -1,4 +1,9 @@
-# Qoder Sites 发布指引（3 分钟）
+# Qoder Sites 发布指引（已完成）
+
+> ✅ **已发布**：https://coursenote-qmrksdxnp0m.qoder.zone
+> 验证（2026-10-27）：HTTP 200；未登录可访问；3 张界面截图浏览器实测均正常渲染（naturalWidth=1600）
+> 站点源码：`qoder/site/index.html`（sha256 与已上传部署一致）
+> 站点描述：仓库根 `.coursenote.qoder.site`（含 siteId / deploymentId / uploadId，作为 Qoder Sites 发布的证据）
 
 ## 为什么需要这一步
 大赛 Qoder 题要求「项目网站必须通过 Qoder Sites 发布」，可见范围设为「任何人可访问」。
@@ -45,4 +50,4 @@ Branch    : 2026-competition-ecosystem
 ## 兜底
 若 Qoder Sites 临时不可用，已部署一个可公开访问的同内容站点：
 https://wangziye24.github.io/coursenote-site/
-（注意：官方要求 Qoder Sites 发布，兜底链接仅应急，正式提交请用 Qoder Sites 网址）
+（注意：官方要求 Qoder Sites 发布，兜底链接仅应急，正式提交请用上面的 Qoder 网址）
