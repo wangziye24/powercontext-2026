@@ -1,0 +1,53 @@
+{
+  "task_key": "task-9489089210",
+  "task": "在订单筛选中增加客户等级过滤（customer_tier），同时保持 SPEC-001 ~ SPEC-003、SPEC-005 ~ SPEC-007 描述的原有行为完全不变。",
+  "stage": "verify-before",
+  "target_tests": [
+    "tests/test_filter_tier.py"
+  ],
+  "regression_tests": [
+    "tests/test_filter_regression.py"
+  ],
+  "target_result": {
+    "label": "before-target",
+    "command": "/home/wzy20/minimax-venv/bin/python -m pytest -q tests/test_filter_tier.py",
+    "exit_code": 1,
+    "passed": false,
+    "log": "/mnt/d/HuaweiMoveData/Users/wzy20/Desktop/项目/OceanBase数据库大赛/code/minimax-repo/minimax/artifacts/logs/pytest-before-target-20261026T070745.log",
+    "output_tail": [
+      "",
+      "tests/test_filter_tier.py:58: TypeError",
+      "=========================== short test summary info ============================",
+      "FAILED tests/test_filter_tier.py::test_spec_004_filters_by_tier - TypeError: ...",
+      "FAILED tests/test_filter_tier.py::test_spec_004_tier_comparison_is_case_insensitive",
+      "FAILED tests/test_filter_tier.py::test_spec_004_gold_tier_matches - TypeError...",
+      "FAILED tests/test_filter_tier.py::test_spec_004_silver_tier_matches - TypeErr...",
+      "FAILED tests/test_filter_tier.py::test_spec_004_rejects_unknown_tier - TypeEr...",
+      "FAILED tests/test_filter_tier.py::test_spec_004_none_tier_matches_orders_without_tier",
+      "FAILED tests/test_filter_tier.py::test_spec_004_tier_none_does_not_filter - T...",
+      "FAILED tests/test_filter_tier.py::test_spec_004_combines_with_other_conditions",
+      "8 failed in 0.14s"
+    ]
+  },
+  "full_result": {
+    "label": "before-full",
+    "command": "/home/wzy20/minimax-venv/bin/python -m pytest -q tests/test_filter_regression.py tests/test_filter_tier.py",
+    "exit_code": 1,
+    "passed": false,
+    "log": "/mnt/d/HuaweiMoveData/Users/wzy20/Desktop/项目/OceanBase数据库大赛/code/minimax-repo/minimax/artifacts/logs/pytest-before-full-20261026T070746.log",
+    "output_tail": [
+      "",
+      "tests/test_filter_tier.py:58: TypeError",
+      "=========================== short test summary info ============================",
+      "FAILED tests/test_filter_tier.py::test_spec_004_filters_by_tier - TypeError: ...",
+      "FAILED tests/test_filter_tier.py::test_spec_004_tier_comparison_is_case_insensitive",
+      "FAILED tests/test_filter_tier.py::test_spec_004_gold_tier_matches - TypeError...",
+      "FAILED tests/test_filter_tier.py::test_spec_004_silver_tier_matches - TypeErr...",
+      "FAILED tests/test_filter_tier.py::test_spec_004_rejects_unknown_tier - TypeEr...",
+      "FAILED tests/test_filter_tier.py::test_spec_004_none_tier_matches_orders_without_tier",
+      "FAILED tests/test_filter_tier.py::test_spec_004_tier_none_does_not_filter - T...",
+      "FAILED tests/test_filter_tier.py::test_spec_004_combines_with_other_conditions",
+      "8 failed, 13 passed in 0.17s"
+    ]
+  }
+}
