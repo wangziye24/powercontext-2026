@@ -1,17 +1,15 @@
-# 依赖与构建产物
-node_modules/
-server/node_modules/
-web/node_modules/
-bench/node_modules/
-
-# 本地 seekdb 数据目录（运行时生成）
-data/
-
-# 端侧 embedding 模型：由 scripts/download-model.mjs 按需下载（约 159 MiB，不进版本库）
-web/public/models/
-
-# 编辑器与系统文件
-.DS_Store
-Thumbs.db
-__pycache__/
-*.pyc
+﻿# 端侧 embedding 模型：INT8/FP16 权重随应用分发（运行时零下载）；
+# FP32 基线权重 90 MiB 不入库，需要时用 node scripts/download-model.mjs --with-fp32 获取。
+web/public/models/*
+!web/public/models/Xenova/
+web/public/models/Xenova/*
+!web/public/models/Xenova/bge-small-zh-v1.5/
+!web/public/models/Xenova/bge-small-zh-v1.5/config.json
+!web/public/models/Xenova/bge-small-zh-v1.5/tokenizer.json
+!web/public/models/Xenova/bge-small-zh-v1.5/tokenizer_config.json
+!web/public/models/Xenova/bge-small-zh-v1.5/special_tokens_map.json
+!web/public/models/Xenova/bge-small-zh-v1.5/manifest.json
+!web/public/models/Xenova/bge-small-zh-v1.5/onnx/
+web/public/models/Xenova/bge-small-zh-v1.5/onnx/*
+!web/public/models/Xenova/bge-small-zh-v1.5/onnx/model_quantized.onnx
+!web/public/models/Xenova/bge-small-zh-v1.5/onnx/model_fp16.onnx
