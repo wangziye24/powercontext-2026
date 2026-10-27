@@ -1,0 +1,189 @@
+[
+  {
+    "q": "混合检索为什么要由数据库完成融合排序",
+    "relevant": [
+      "seekdb-hybrid.md"
+    ]
+  },
+  {
+    "q": "中文全文索引用哪个分词器",
+    "relevant": [
+      "seekdb-hybrid.md"
+    ]
+  },
+  {
+    "q": "写入向量后为什么还要刷新索引",
+    "relevant": [
+      "seekdb-hybrid.md",
+      "oceanbase-arch.md"
+    ]
+  },
+  {
+    "q": "增量写入怎么减少索引构建开销",
+    "relevant": [
+      "seekdb-hybrid.md",
+      "oceanbase-arch.md"
+    ]
+  },
+  {
+    "q": "集合可以同时建哪几种索引",
+    "relevant": [
+      "seekdb-schema.md"
+    ]
+  },
+  {
+    "q": "向量维度在什么时候确定",
+    "relevant": [
+      "seekdb-schema.md",
+      "oceanbase-arch.md"
+    ]
+  },
+  {
+    "q": "距离度量有哪些选项",
+    "relevant": [
+      "seekdb-schema.md",
+      "oceanbase-arch.md"
+    ]
+  },
+  {
+    "q": "本地部署 seekdb 有哪两种形态",
+    "relevant": [
+      "seekdb-operations.md"
+    ]
+  },
+  {
+    "q": "为什么路径里不能有中文",
+    "relevant": [
+      "seekdb-operations.md"
+    ]
+  },
+  {
+    "q": "端口冲突要怎么避免",
+    "relevant": [
+      "seekdb-operations.md"
+    ]
+  },
+  {
+    "q": "浏览器里跑模型有什么好处",
+    "relevant": [
+      "edge-inference.md"
+    ]
+  },
+  {
+    "q": "WebGPU 不可用时怎么办",
+    "relevant": [
+      "edge-inference.md"
+    ]
+  },
+  {
+    "q": "INT8 量化的代价是什么",
+    "relevant": [
+      "edge-inference.md"
+    ]
+  },
+  {
+    "q": "怎么评估量化前后的检索质量",
+    "relevant": [
+      "edge-inference.md",
+      "powercontext-retrieval.md"
+    ]
+  },
+  {
+    "q": "批量推理对吞吐有什么影响",
+    "relevant": [
+      "edge-inference.md"
+    ]
+  },
+  {
+    "q": "端侧模型从哪里获取更稳妥",
+    "relevant": [
+      "edge-inference.md"
+    ]
+  },
+  {
+    "q": "切块粒度为什么重要",
+    "relevant": [
+      "edge-pipeline.md"
+    ]
+  },
+  {
+    "q": "索引刷新应该放在什么时机",
+    "relevant": [
+      "edge-pipeline.md",
+      "oceanbase-search.md"
+    ]
+  },
+  {
+    "q": "查询耗时要怎么拆开测",
+    "relevant": [
+      "edge-pipeline.md"
+    ]
+  },
+  {
+    "q": "PowerContext 如何隔离不同任务的记忆",
+    "relevant": [
+      "powercontext-memory.md"
+    ]
+  },
+  {
+    "q": "上下文的预算约束是什么意思",
+    "relevant": [
+      "powercontext-memory.md"
+    ]
+  },
+  {
+    "q": "跨会话交接需要保存哪些状态",
+    "relevant": [
+      "powercontext-memory.md"
+    ]
+  },
+  {
+    "q": "Recall@K 和 nDCG@K 有什么区别",
+    "relevant": [
+      "powercontext-retrieval.md"
+    ]
+  },
+  {
+    "q": "评测集应该怎么设计",
+    "relevant": [
+      "powercontext-retrieval.md"
+    ]
+  },
+  {
+    "q": "量化对比要保证什么一致",
+    "relevant": [
+      "powercontext-retrieval.md"
+    ]
+  },
+  {
+    "q": "seekdb 和 OceanBase 是什么关系",
+    "relevant": [
+      "oceanbase-arch.md"
+    ]
+  },
+  {
+    "q": "多租户下访问需要带什么",
+    "relevant": [
+      "oceanbase-arch.md"
+    ]
+  },
+  {
+    "q": "倒排索引和图索引分别适合什么",
+    "relevant": [
+      "oceanbase-search.md"
+    ]
+  },
+  {
+    "q": "融合排序有哪些做法",
+    "relevant": [
+      "oceanbase-search.md",
+      "seekdb-hybrid.md"
+    ]
+  },
+  {
+    "q": "写入和刷新之间的窗口期是什么",
+    "relevant": [
+      "oceanbase-search.md"
+    ]
+  }
+]
