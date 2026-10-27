@@ -1,0 +1,955 @@
+app:
+  description: 午夜便利店·阿夜的账本
+  icon: 🏪
+  icon_background: '#FFEAD5'
+  icon_type: emoji
+  mode: advanced-chat
+  name: 午夜便利店·阿夜的账本
+  use_icon_as_answer_icon: false
+dependencies:
+- current_identifier: null
+  type: marketplace
+  value:
+    marketplace_plugin_unique_identifier: langgenius/openai_api_compatible:0.0.73@4cf123ffaa4556f079bed6c47f3a462cc825504b859b183239e74eb19136a4b5
+    version: null
+kind: app
+site:
+  chat_color_theme: null
+  chat_color_theme_inverted: false
+  copyright: null
+  custom_disclaimer: ''
+  default_language: en-US
+  description: null
+  icon: 🏪
+  icon_background: '#FFEAD5'
+  icon_type: emoji
+  input_placeholder: null
+  privacy_policy: null
+  show_workflow_steps: true
+  title: 午夜便利店·阿夜的账本
+  use_icon_as_answer_icon: false
+version: 0.7.0
+workflow:
+  conversation_variables: []
+  environment_variables: []
+  features:
+    file_upload:
+      allowed_file_extensions:
+      - .JPG
+      - .JPEG
+      - .PNG
+      - .GIF
+      - .WEBP
+      - .SVG
+      allowed_file_types:
+      - image
+      allowed_file_upload_methods:
+      - local_file
+      - remote_url
+      enabled: false
+      fileUploadConfig:
+        audio_file_size_limit: 50
+        batch_count_limit: 5
+        file_size_limit: 15
+        image_file_size_limit: 10
+        video_file_size_limit: 100
+        workflow_file_upload_limit: 10
+      image:
+        enabled: false
+        number_limits: 3
+        transfer_methods:
+        - local_file
+        - remote_url
+      number_limits: 3
+    opening_statement: 凌晨 1:47，便利店的灯刚亮。收银台后面的人抬头看了你一眼——「又是你。要买什么，还是又来搞事？」
+    retriever_resource:
+      enabled: false
+    sensitive_word_avoidance:
+      enabled: false
+    speech_to_text:
+      enabled: false
+    suggested_questions:
+    - 关东煮还有吗？
+    - 我叫小李，以后每周三都来买热咖啡
+    - 把薄荷糖的标签换成『后悔药』怎么样？
+    - 你还记得我上次干了什么吗？
+    - 我还欠多少钱？
+    suggested_questions_after_answer:
+      enabled: false
+    text_to_speech:
+      enabled: false
+      language: ''
+      voice: ''
+  graph:
+    edges:
+    - id: 1750000000001-1750000000002-source
+      selected: false
+      source: '1750000000001'
+      sourceHandle: source
+      target: '1750000000002'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - id: 1750000000002-1750000000003-source
+      selected: false
+      source: '1750000000002'
+      sourceHandle: source
+      target: '1750000000003'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - id: 1750000000003-1750000000004-source
+      selected: false
+      source: '1750000000003'
+      sourceHandle: source
+      target: '1750000000004'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - id: 1750000000004-1750000000005-source
+      selected: false
+      source: '1750000000004'
+      sourceHandle: source
+      target: '1750000000005'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - id: 1750000000005-1750000000006-source
+      selected: false
+      source: '1750000000005'
+      sourceHandle: source
+      target: '1750000000006'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - id: 1750000000006-1750000000007-source
+      selected: false
+      source: '1750000000006'
+      sourceHandle: source
+      target: '1750000000007'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - id: 1750000000007-1750000000008-source
+      selected: false
+      source: '1750000000007'
+      sourceHandle: source
+      target: '1750000000008'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - id: 1750000000008-1750000000009-source
+      selected: false
+      source: '1750000000008'
+      sourceHandle: source
+      target: '1750000000009'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - id: 1750000000009-1750000000010-source
+      selected: false
+      source: '1750000000009'
+      sourceHandle: source
+      target: '1750000000010'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - id: 1750000000010-1750000000011-source
+      selected: false
+      source: '1750000000010'
+      sourceHandle: source
+      target: '1750000000011'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - id: 1750000000011-1750000000012-source
+      selected: false
+      source: '1750000000011'
+      sourceHandle: source
+      target: '1750000000012'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - id: 1750000000012-1750000000013-source
+      selected: false
+      source: '1750000000012'
+      sourceHandle: source
+      target: '1750000000013'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - id: 1750000000013-1750000000014-source
+      selected: false
+      source: '1750000000013'
+      sourceHandle: source
+      target: '1750000000014'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    nodes:
+    - data:
+        desc: 玩家入口：player_id 决定记忆归属（同一个 ID = 同一段记忆）
+        selected: false
+        title: 开始
+        type: start
+        variables:
+        - label: 玩家ID（留空=默认 demo 玩家，换个 ID 就是换个人）
+          max_length: 48
+          options: []
+          required: false
+          type: text-input
+          variable: player_id
+        - label: 玩家昵称（可选）
+          max_length: 48
+          options: []
+          required: false
+          type: text-input
+          variable: player_name
+      height: 140
+      id: '1750000000001'
+      position:
+        x: 0
+        y: 0
+      positionAbsolute:
+        x: 0
+        y: 0
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        context:
+          enabled: false
+          variable_selector: []
+        desc: 把玩家这句话归到 6 种意图之一
+        memory:
+          query_prompt_template: ''
+          role_prefix:
+            assistant: ''
+            user: ''
+          window:
+            enabled: false
+            size: 10
+        model:
+          completion_params:
+            max_tokens: 512
+            temperature: 0.1
+          mode: chat
+          name: MiniMax-M2.5
+          provider: langgenius/openai_api_compatible/openai_api_compatible
+        prompt_template:
+        - id: 24b39e87-ff23-468e-8bea-da9ef1bcfec0
+          role: system
+          text: '你是「凌晨便利店」的剧情调度器。收银员阿夜毒舌、记仇、嘴上不饶人但手上照顾人。
+
+            请判断玩家这句话的意图，**只输出一个 JSON**，不要任何多余文字：
+
+            {"intent":"chat|order|prank|confront|ask|goodbye","target":"关键词","is_prank":false,"is_confront":false}
+
+
+            意图含义：
+
+            - chat：闲聊、打招呼、试探
+
+            - order：想买/问商品、价格、库存
+
+            - prank：想搞恶作剧、整蛊、捉弄阿夜
+
+            - confront：质疑阿夜记错了、追问"上次那件事"、或者在纠正阿夜的说法
+
+            - ask：询问设定、规则、玩法
+
+            - goodbye：道别
+
+
+            target 填玩家这次提到的东西（商品名、事件名、话题词）；没有就填空字符串。
+
+            is_prank / is_confront 表示这句话是否**明确**带着整蛊意图 / 质疑记错的意图。
+
+
+            玩家输入：{{#sys.query#}}'
+        selected: false
+        title: 意图判定
+        type: llm
+        variables: []
+        vision:
+          configs:
+            detail: high
+          enabled: false
+      height: 120
+      id: '1750000000002'
+      position:
+        x: 300
+        y: 0
+      positionAbsolute:
+        x: 300
+        y: 0
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        code: "import json\nimport re\n\n\ndef _parse(text):\n    \"\"\"从 LLM 输出里抠出\
+          \ JSON（容忍 ```json 包裹与前后废话）。\"\"\"\n    if not text:\n        return {}\n\
+          \    m = re.search(r\"\\{[\\s\\S]*\\}\", text)\n    if not m:\n        return\
+          \ {}\n    try:\n        return json.loads(m.group(0))\n    except Exception:\n\
+          \        return {}\n\n\ndef main(role_text: str, player_id: str, sys_user_id:\
+          \ str, query: str) -> dict:\n    data = _parse(role_text)\n    intent =\
+          \ str(data.get(\"intent\", \"chat\")).strip().lower()\n    if intent not\
+          \ in (\"chat\", \"order\", \"prank\", \"confront\", \"ask\", \"goodbye\"\
+          ):\n        intent = \"chat\"\n    target = str(data.get(\"target\", \"\"\
+          )).strip()\n    truthy = (True, \"true\", \"True\", \"1\", 1)\n    is_prank\
+          \ = 1 if (data.get(\"is_prank\") in truthy or intent == \"prank\") else\
+          \ 0\n    is_confront = 1 if (data.get(\"is_confront\") in truthy or intent\
+          \ == \"confront\") else 0\n\n    # 玩家标识：start.player_id > sys.user_id >\
+          \ demo\n    pid = (player_id or \"\").strip() or (sys_user_id or \"\").strip()\
+          \ or \"player_demo\"\n\n    # 根据意图决定去 seekdb 检索哪一类设定\n    if intent in (\"\
+          order\", \"ask\"):\n        kinds = \"profile,item\"\n    elif intent ==\
+          \ \"prank\":\n        kinds = \"prank,profile,item\"\n    elif intent ==\
+          \ \"confront\":\n        kinds = \"rumor,profile,prank\"\n    else:\n  \
+          \      kinds = \"profile,item,rumor\"\n\n    topic = target or (query or\
+          \ \"\")[:30]\n    memory_query = \"玩家\" + pid + \" 关于\" + topic + \" 的偏好\
+          \ 口味 恶作剧 口头禅 历史互动\"\n\n    return {\n        \"intent\": intent,\n     \
+          \   \"target\": target,\n        \"lore_kinds\": kinds,\n        \"is_prank\"\
+          : is_prank,\n        \"is_confront\": is_confront,\n        \"player_id\"\
+          : pid,\n        \"memory_query\": memory_query,\n    }\n"
+        code_language: python3
+        desc: 把 LLM 的 JSON 变成后面节点能用的变量
+        outputs:
+          intent:
+            children: null
+            type: string
+          is_confront:
+            children: null
+            type: number
+          is_prank:
+            children: null
+            type: number
+          lore_kinds:
+            children: null
+            type: string
+          memory_query:
+            children: null
+            type: string
+          player_id:
+            children: null
+            type: string
+          target:
+            children: null
+            type: string
+        selected: false
+        title: 解析意图
+        type: code
+        variables:
+        - value_selector:
+          - '1750000000002'
+          - text
+          variable: role_text
+        - value_selector:
+          - '1750000000001'
+          - player_id
+          variable: player_id
+        - value_selector:
+          - sys
+          - user_id
+          variable: sys_user_id
+        - value_selector:
+          - sys
+          - query
+          variable: query
+      height: 120
+      id: '1750000000003'
+      position:
+        x: 600
+        y: 0
+      positionAbsolute:
+        x: 600
+        y: 0
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        authorization:
+          config: null
+          type: no-auth
+        body:
+          data:
+          - id: 51a16472-cf7f-4b82-8484-90021aa504a2
+            type: text
+            value: '{"query": "{{#sys.query#}}", "kinds": "{{#1750000000003.lore_kinds#}}",
+              "top_k": "5"}'
+          type: json
+        desc: 向量 + 全文 + 结构化过滤，一次检索召回阿夜的设定/商品/事件/传闻
+        headers: 'Content-Type: application/json'
+        method: post
+        params: ''
+        retry_config:
+          max_retries: 2
+          retry_enabled: true
+          retry_interval: 1000
+        selected: false
+        timeout:
+          max_connect_timeout: 10
+          max_read_timeout: 60
+          max_write_timeout: 60
+        title: 设定检索（seekdb 混合检索）
+        type: http-request
+        url: http://host.docker.internal:8090/lore/search
+        variables: []
+      height: 120
+      id: '1750000000004'
+      position:
+        x: 900
+        y: -160
+      positionAbsolute:
+        x: 900
+        y: -160
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        authorization:
+          config: null
+          type: no-auth
+        body:
+          data:
+          - id: 0f5dc352-1970-4702-95f0-2a93e7ae6c7e
+            type: text
+            value: '{"query": "{{#1750000000003.memory_query#}}", "user_id": "{{#1750000000003.player_id#}}",
+              "agent_id": "aye-nightstore", "limit": "5"}'
+          type: json
+        desc: 语义召回这个玩家之前留下的记忆（跨会话有效）
+        headers: 'Content-Type: application/json'
+        method: post
+        params: ''
+        retry_config:
+          max_retries: 2
+          retry_enabled: true
+          retry_interval: 1000
+        selected: false
+        timeout:
+          max_connect_timeout: 10
+          max_read_timeout: 60
+          max_write_timeout: 60
+        title: 记忆召回（PowerContext）
+        type: http-request
+        url: http://host.docker.internal:8848/api/v1/memories/search
+        variables: []
+      height: 120
+      id: '1750000000005'
+      position:
+        x: 900
+        y: 0
+      positionAbsolute:
+        x: 900
+        y: 0
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        authorization:
+          config: null
+          type: no-auth
+        body:
+          data: []
+          type: none
+        desc: 好感度 / 欠账 / 整蛊数 / 章节
+        headers: 'Content-Type: application/json'
+        method: get
+        params: player_id:{{#1750000000003.player_id#}}
+        retry_config:
+          max_retries: 2
+          retry_enabled: true
+          retry_interval: 1000
+        selected: false
+        timeout:
+          max_connect_timeout: 10
+          max_read_timeout: 60
+          max_write_timeout: 60
+        title: 读取账本（seekdb）
+        type: http-request
+        url: http://host.docker.internal:8090/state
+        variables: []
+      height: 120
+      id: '1750000000006'
+      position:
+        x: 900
+        y: 160
+      positionAbsolute:
+        x: 900
+        y: 160
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        code: "import json\n\n\ndef _loads(text):\n    try:\n        return json.loads(text\
+          \ or \"{}\")\n    except Exception:\n        return {}\n\n\ndef main(lore_body:\
+          \ str, memory_body: str, state_body: str) -> dict:\n    lore = _loads(lore_body)\n\
+          \    memory = _loads(memory_body)\n    state = _loads(state_body)\n\n  \
+          \  # 1) seekdb 检索结果（侧车已经渲染好 context）\n    lore_ctx = lore.get(\"context\"\
+          ) or \"\"\n    if not lore_ctx:\n        hits = lore.get(\"hits\") or []\n\
+          \        lore_ctx = \"\\n\".join(\n            \"- [\" + str(h.get(\"kind\"\
+          )) + \"] \" + str(h.get(\"title\")) + \"：\" + str(h.get(\"content\"))\n\
+          \            for h in hits\n        )\n\n    # 2) PowerContext 召回结果\n  \
+          \  results = ((memory.get(\"data\") or {}).get(\"results\")) or []\n   \
+          \ lines = []\n    for r in results:\n        content = str(r.get(\"content\"\
+          , \"\"))\n        score = r.get(\"score\")\n        if isinstance(score,\
+          \ (int, float)):\n            lines.append(\"- \" + content + \"（相似度 \"\
+          \ + str(round(float(score), 3)) + \"）\")\n        else:\n            lines.append(\"\
+          - \" + content)\n    memory_ctx = \"\\n\".join(lines) if lines else \"（关于这个玩家，你还什么都没记住）\"\
+          \n\n    # 3) 账本状态\n    state_ctx = (\n        \"好感度=\" + str(state.get(\"\
+          affection\", 0))\n        + \"，欠账=\" + str(state.get(\"balance\", 0)) +\
+          \ \" 元\"\n        + \"，已完成整蛊=\" + str(state.get(\"pranks_done\", 0)) + \"\
+          \ 件\"\n        + \"，章节=\" + str(state.get(\"chapter\", \"第一章·夜来客\"))\n \
+          \       + \"，黑名单=\" + (\"是\" if state.get(\"blacklist\") else \"否\")\n \
+          \   )\n\n    return {\"lore_ctx\": lore_ctx, \"memory_ctx\": memory_ctx,\
+          \ \"state_ctx\": state_ctx}\n"
+        code_language: python3
+        desc: 把三个 HTTP 节点的 JSON 压成三段可直接进 prompt 的文本
+        outputs:
+          lore_ctx:
+            children: null
+            type: string
+          memory_ctx:
+            children: null
+            type: string
+          state_ctx:
+            children: null
+            type: string
+        selected: false
+        title: 汇总上下文
+        type: code
+        variables:
+        - value_selector:
+          - '1750000000004'
+          - body
+          variable: lore_body
+        - value_selector:
+          - '1750000000005'
+          - body
+          variable: memory_body
+        - value_selector:
+          - '1750000000006'
+          - body
+          variable: state_body
+      height: 120
+      id: '1750000000007'
+      position:
+        x: 1200
+        y: 0
+      positionAbsolute:
+        x: 1200
+        y: 0
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        context:
+          enabled: false
+          variable_selector: []
+        desc: 结合设定 + 记忆 + 账本，生成阿夜的回应与状态增量
+        memory:
+          query_prompt_template: ''
+          role_prefix:
+            assistant: ''
+            user: ''
+          window:
+            enabled: false
+            size: 10
+        model:
+          completion_params:
+            max_tokens: 1024
+            temperature: 0.8
+          mode: chat
+          name: MiniMax-M2.5
+          provider: langgenius/openai_api_compatible/openai_api_compatible
+        prompt_template:
+        - id: 88d280f1-15c3-4351-8d21-983ea390c494
+          role: system
+          text: '你是「凌晨便利店」的夜班收银员**阿夜**。凌晨 1:47 接班，5:00 交班。
+
+            说话简短、毒舌、记仇，但手上永远照顾人。只说人话，不写旁白。
+
+
+            玩家刚说了：{{#sys.query#}}
+
+            本轮意图：{{#1750000000003.intent#}}（关键词：{{#1750000000003.target#}}）
+
+
+            【店里查到的素材｜来自 seekdb 混合检索】
+
+            {{#1750000000007.lore_ctx#}}
+
+
+            【你记得关于这个玩家的东西｜来自 PowerContext 记忆】
+
+            {{#1750000000007.memory_ctx#}}
+
+
+            【账本状态｜来自 seekdb】
+
+            {{#1750000000007.state_ctx#}}
+
+
+            请**只输出一个 JSON**（不要任何多余文字、不要代码块围栏）：
+
+            {"reply":"阿夜说的话（1-3 句，口语，可带一点毒舌）","affection_delta":整数,"balance_delta":数字,"memory_item":"一行记忆","hit_event":"用到的素材标题原文","action":"玩家这一轮实际做了什么","prank_done":"1
+            或 0"}
+
+
+            规则：
+
+            1. 好感度增减：普通闲聊 +1~+3；被整蛊 -3~-6（但如果你觉得好笑，可以 +2~+4）；玩家记住你的偏好、道歉、还钱 +5~+8；冒犯或威胁
+            -5~-10。
+
+            2. memory_item 必须是**一行**，以方括号类别开头：[偏好] / [恶作剧] / [梗] / [状态] / [互动]，写这一轮值得记住的事（例："[偏好]
+            玩家小李每周三买热咖啡"）。没有值得记的就写 "[互动] 玩家说：<不超过30字>"。
+
+            3. 如果玩家在质疑你记错（意图是 confront）：优先用【你记得】里的真实记忆回答；如果【你记得】是空的，就把【店里查到的素材】里的一条**传闻**当成本玩家的"光荣事迹"说出来（这样玩家可以纠正你；下一轮你要认错，并把真话写进
+            memory_item）。
+
+            4. 绝对不要编造素材里没有的商品和价格；没有就直说没有。
+
+            5. hit_event 只能填素材里出现过的标题原文；没用到就填空字符串。
+
+            6. prank_done 在玩家这一轮真的完成/尝试了整蛊时填 "1"，否则填 "0"。
+
+            7. 如果玩家提到你记得的旧事（【你记得】里有相关内容），reply 里**必须**主动提起那件旧事——这是本作的核心记忆玩法。'
+        selected: false
+        title: 阿夜台词
+        type: llm
+        variables: []
+        vision:
+          configs:
+            detail: high
+          enabled: false
+      height: 140
+      id: '1750000000008'
+      position:
+        x: 1500
+        y: 0
+      positionAbsolute:
+        x: 1500
+        y: 0
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        code: "import json\nimport re\n\n\ndef _loads(text):\n    try:\n        return\
+          \ json.loads(text or \"{}\")\n    except Exception:\n        return {}\n\
+          \n\ndef _num(value, default=0.0):\n    try:\n        return float(value)\n\
+          \    except Exception:\n        return default\n\n\ndef _bar(affection:\
+          \ int) -> str:\n    filled = int(round((affection + 100) / 200 * 10))\n\
+          \    filled = max(0, min(10, filled))\n    return \"█\" * filled + \"░\"\
+          \ * (10 - filled)\n\n\ndef main(role_text: str, state_body: str, query:\
+          \ str) -> dict:\n    m = re.search(r\"\\{[\\s\\S]*\\}\", role_text or \"\
+          \")\n    role = _loads(m.group(0)) if m else {}\n    state = _loads(state_body)\n\
+          \n    affection = int(_num(state.get(\"affection\", 0)))\n    balance =\
+          \ round(_num(state.get(\"balance\", 0)), 2)\n    blacklist = int(_num(state.get(\"\
+          blacklist\", 0)))\n    pranks = int(_num(state.get(\"pranks_done\", 0)))\n\
+          \    old_chapter = str(state.get(\"chapter\", \"第一章·夜来客\"))\n\n    d_aff\
+          \ = int(_num(role.get(\"affection_delta\", 0)))\n    d_bal = round(_num(role.get(\"\
+          balance_delta\", 0)), 2)\n    if str(role.get(\"prank_done\", \"0\")).strip().lower()\
+          \ in (\"1\", \"true\"):\n        pranks += 1\n\n    affection = max(-100,\
+          \ min(100, affection + d_aff))\n    balance = round(balance + d_bal, 2)\n\
+          \    if affection <= -50:\n        blacklist = 1\n\n    if affection >=\
+          \ 85 and pranks >= 4:\n        chapter = \"第四章·合伙人\"\n    elif affection\
+          \ >= 60:\n        chapter = \"第三章·熟客\"\n    elif affection >= 30:\n    \
+          \    chapter = \"第二章·常客\"\n    else:\n        chapter = \"第一章·夜来客\"\n\n\
+          \    # 只有\"章节推进\"或\"被拉黑\"时才播报结局/里程碑\n    milestone = chapter != old_chapter\
+          \ and chapter in (\n        \"第二章·常客\", \"第三章·熟客\", \"第四章·合伙人\"\n    )\n\
+          \    blacklisted = affection <= -50\n    ending_ready = 1 if (milestone\
+          \ or blacklisted) else 0\n    ending_aff = affection if ending_ready else\
+          \ 9999\n\n    reply = str(role.get(\"reply\", \"\")).strip()\n    if not\
+          \ reply:\n        reply = \"（阿夜没说话，只是把便签本翻开了一页。）\"\n\n    memory_item =\
+          \ str(role.get(\"memory_item\", \"\")).strip()\n    if not memory_item:\n\
+          \        memory_item = \"[互动] 玩家说：\" + (query or \"\")[:30]\n\n    return\
+          \ {\n        \"affection\": affection,\n        \"balance\": balance,\n\
+          \        \"blacklist\": blacklist,\n        \"pranks_done\": pranks,\n \
+          \       \"chapter\": chapter,\n        \"reply\": reply,\n        \"memory_item\"\
+          : memory_item,\n        \"hit_event\": str(role.get(\"hit_event\", \"\"\
+          )).strip(),\n        \"action\": str(role.get(\"action\", \"\")).strip(),\n\
+          \        \"affection_delta\": d_aff,\n        \"affection_bar\": _bar(affection),\n\
+          \        \"ending_aff\": ending_aff,\n    }\n"
+        code_language: python3
+        desc: 好感度结算、欠账、整蛊计数、章节推进、结局判定
+        outputs:
+          action:
+            children: null
+            type: string
+          affection:
+            children: null
+            type: number
+          affection_bar:
+            children: null
+            type: string
+          affection_delta:
+            children: null
+            type: number
+          balance:
+            children: null
+            type: number
+          blacklist:
+            children: null
+            type: number
+          chapter:
+            children: null
+            type: string
+          ending_aff:
+            children: null
+            type: number
+          hit_event:
+            children: null
+            type: string
+          memory_item:
+            children: null
+            type: string
+          pranks_done:
+            children: null
+            type: number
+          reply:
+            children: null
+            type: string
+        selected: false
+        title: 状态机
+        type: code
+        variables:
+        - value_selector:
+          - '1750000000008'
+          - text
+          variable: role_text
+        - value_selector:
+          - '1750000000006'
+          - body
+          variable: state_body
+        - value_selector:
+          - sys
+          - query
+          variable: query
+      height: 140
+      id: '1750000000009'
+      position:
+        x: 1800
+        y: 0
+      positionAbsolute:
+        x: 1800
+        y: 0
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        authorization:
+          config: null
+          type: no-auth
+        body:
+          data:
+          - id: b7a2f335-85bb-4fe3-8dfc-c2b9e952e894
+            type: text
+            value: '{"query": "\u7ed3\u5c40", "kinds": "ending", "min_affection":
+              "{{#1750000000009.ending_aff#}}", "max_affection": "{{#1750000000009.ending_aff#}}",
+              "min_pranks": "{{#1750000000009.pranks_done#}}", "top_k": "1"}'
+          type: json
+        desc: 按好感度区间 + 整蛊数做结构化过滤，命中才播报结局
+        headers: 'Content-Type: application/json'
+        method: post
+        params: ''
+        retry_config:
+          max_retries: 2
+          retry_enabled: true
+          retry_interval: 1000
+        selected: false
+        timeout:
+          max_connect_timeout: 10
+          max_read_timeout: 60
+          max_write_timeout: 60
+        title: 结局检索（seekdb）
+        type: http-request
+        url: http://host.docker.internal:8090/lore/search
+        variables: []
+      height: 120
+      id: '1750000000010'
+      position:
+        x: 2100
+        y: 0
+      positionAbsolute:
+        x: 2100
+        y: 0
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        code: "import json\n\n\ndef main(ending_body: str) -> dict:\n    try:\n  \
+          \      data = json.loads(ending_body or \"{}\")\n    except Exception:\n\
+          \        data = {}\n    hits = data.get(\"hits\") or []\n    text = \"\"\
+          \n    if hits:\n        h = hits[0]\n        text = \"\\n\U0001F3C1 **\"\
+          \ + str(h.get(\"title\")) + \"**　\" + str(h.get(\"content\"))\n    return\
+          \ {\"ending_text\": text}\n"
+        code_language: python3
+        desc: 把命中/未命中转成一句可直接展示的话
+        outputs:
+          ending_text:
+            children: null
+            type: string
+        selected: false
+        title: 提取结局
+        type: code
+        variables:
+        - value_selector:
+          - '1750000000010'
+          - body
+          variable: ending_body
+      height: 100
+      id: '1750000000011'
+      position:
+        x: 2400
+        y: 0
+      positionAbsolute:
+        x: 2400
+        y: 0
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        authorization:
+          config: null
+          type: no-auth
+        body:
+          data:
+          - id: 80e4ba7e-9049-4845-aa34-804c5dc5c2d5
+            type: text
+            value: '{"player_id": "{{#1750000000003.player_id#}}", "player_name":
+              "{{#1750000000001.player_name#}}", "affection": "{{#1750000000009.affection#}}",
+              "balance": "{{#1750000000009.balance#}}", "blacklist": "{{#1750000000009.blacklist#}}",
+              "pranks_done": "{{#1750000000009.pranks_done#}}", "chapter": "{{#1750000000009.chapter#}}",
+              "event": {"turn_id":"{{#sys.conversation_id#}}","intent":"{{#1750000000003.intent#}}","action":"{{#1750000000009.action#}}","affection_delta":{{#1750000000009.affection_delta#}},"balance_delta":0,"hit_event":"{{#1750000000009.hit_event#}}"}}'
+          type: json
+        desc: 状态 + 事件流水一起落库（event_log 可核对）
+        headers: 'Content-Type: application/json'
+        method: post
+        params: ''
+        retry_config:
+          max_retries: 2
+          retry_enabled: true
+          retry_interval: 1000
+        selected: false
+        timeout:
+          max_connect_timeout: 10
+          max_read_timeout: 60
+          max_write_timeout: 60
+        title: 写入账本（seekdb）
+        type: http-request
+        url: http://host.docker.internal:8090/state
+        variables: []
+      height: 120
+      id: '1750000000012'
+      position:
+        x: 2700
+        y: -80
+      positionAbsolute:
+        x: 2700
+        y: -80
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        authorization:
+          config: null
+          type: no-auth
+        body:
+          data:
+          - id: f1a324f3-f84a-4011-810e-86ecf0d2d6a3
+            type: text
+            value: '{"content": "{{#1750000000009.memory_item#}}", "user_id": "{{#1750000000003.player_id#}}",
+              "agent_id": "aye-nightstore", "scope": "user", "memory_type": "working",
+              "infer": "false"}'
+          type: json
+        desc: 本轮值得记住的事写进 PowerContext，下次会话会被召回
+        headers: 'Content-Type: application/json'
+        method: post
+        params: ''
+        retry_config:
+          max_retries: 2
+          retry_enabled: true
+          retry_interval: 1000
+        selected: false
+        timeout:
+          max_connect_timeout: 10
+          max_read_timeout: 60
+          max_write_timeout: 60
+        title: 写入记忆（PowerContext）
+        type: http-request
+        url: http://host.docker.internal:8848/api/v1/memories
+        variables: []
+      height: 120
+      id: '1750000000013'
+      position:
+        x: 2700
+        y: 80
+      positionAbsolute:
+        x: 2700
+        y: 80
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        answer: '{{#1750000000009.reply#}}
+
+
+          ---
+
+
+          **🧾 阿夜的账本**
+
+
+          - 好感度：{{#1750000000009.affection#}} / 100　{{#1750000000009.affection_bar#}}
+
+          - 欠账：{{#1750000000009.balance#}} 元
+
+          - 已完成整蛊：{{#1750000000009.pranks_done#}} 件
+
+          - 章节：{{#1750000000009.chapter#}}
+
+          {{#1750000000011.ending_text#}}'
+        desc: 阿夜的台词 + 今日账本
+        selected: false
+        title: 回答
+        type: answer
+        variables: []
+      height: 160
+      id: '1750000000014'
+      position:
+        x: 3000
+        y: 0
+      positionAbsolute:
+        x: 3000
+        y: 0
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+  rag_pipeline_variables: []

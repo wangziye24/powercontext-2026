@@ -1,0 +1,28 @@
+# ============================================================
+# 覆盖官方 compose：
+#   1) 让 Dify 容器能访问宿主机上的侧车服务(8090)与 PowerContext(8848)
+#   2) 用本地已有镜像顶替 agent_backend（本作不使用 Agent 节点，省一次大镜像下载）
+# 用法：与官方 docker-compose.yaml 放在同一目录，docker compose 会自动合并
+# ============================================================
+services:
+  api:
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    # 发布到宿主机：浏览器里的 Dify 控制台需要直连 console API
+    ports:
+      - "${EXPOSE_API_PORT:-5001}:5001"
+  worker:
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+  web:
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+  plugin_daemon:
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  # 本作不用 Agent 节点：用一个常驻容器顶替，避免拉取 agent-backend 大镜像
+  agent_backend:
+    image: busybox:latest
+    command: ["sh", "-c", "while true; do sleep 3600; done"]
+    restart: always

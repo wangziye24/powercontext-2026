@@ -1,0 +1,46 @@
+services:
+  # seekdb：AI 原生数据库（MySQL 协议），承载本作的设定库 / 玩家账本 / 事件流水
+  # 同时也被 PowerContext 用作记忆存储（OCEANBASE_HOST=127.0.0.1:2881）
+  seekdb:
+    image: oceanbase/seekdb:latest
+    container_name: nightstore-seekdb
+    restart: always
+    ports:
+      - "${SEEKDB_PORT:-2881}:2881"
+      - "${SEEKDB_RPC_PORT:-2886}:2886"
+    environment:
+      ROOT_PASSWORD: ${SEEKDB_ROOT_PASSWORD:-}
+      MEMORY_LIMIT: ${SEEKDB_MEMORY_LIMIT:-2G}
+    volumes:
+      - ${SEEKDB_DATA_DIR:-./volumes/seekdb}:/var/lib/oceanbase
+
+  # 侧车服务：给 Dify 的 HTTP Request 节点提供 seekdb 访问（混合检索 / 玩家状态）
+  sidecar:
+    image: python:3.12-slim
+    container_name: nightstore-sidecar
+    working_dir: /app
+    restart: always
+    command: >
+      bash -lc "pip install --no-cache-dir pymysql==1.1.1 &&
+                python3 -m app.main"
+    environment:
+      SEEKDB_HOST: seekdb
+      SEEKDB_PORT: 2881
+      SEEKDB_USER: root
+      SEEKDB_PASSWORD: ${SEEKDB_ROOT_PASSWORD:-}
+      DB_NAME: nightstore
+      EMBED_PROVIDER: ${EMBED_PROVIDER:-minimax}
+      EMBED_DIM: 1536
+      MINIMAX_BASE_URL: ${MINIMAX_BASE_URL:-https://api.minimax.chat/v1}
+      MINIMAX_API_KEY: ${MINIMAX_API_KEY:-}
+      MINIMAX_EMBED_MODEL: ${MINIMAX_EMBED_MODEL:-embo-01}
+      TOP_K: 5
+      POWERCONTEXT_BASE_URL: http://host.docker.internal:8848
+      SIDECAR_HOST: 0.0.0.0
+      SIDECAR_PORT: 8090
+    ports:
+      - "${SIDECAR_PORT:-8090}:8090"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ../backend:/app

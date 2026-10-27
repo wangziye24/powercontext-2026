@@ -1,0 +1,32 @@
+# Dify 节点执行记录（导出于 2026-10-27 09:26:48）
+
+                run_id                |  status   |         created_at         
+--------------------------------------+-----------+----------------------------
+ 7c01a92f-ce9c-42df-87ce-e3733310fe58 | succeeded | 2026-10-27 01:26:21.626715
+ ebb98e1b-09b0-492e-bf86-84bf9929b8b3 | succeeded | 2026-10-27 01:26:09.807265
+ d9fed0bc-7985-4299-8e13-9bde6fc380b3 | succeeded | 2026-10-27 01:26:00.660865
+ 5efe884d-1931-4654-b3a3-0c22fd21f7b0 | succeeded | 2026-10-27 01:25:55.918183
+ bfd40001-1f48-493f-85ab-00d868d33e7b | succeeded | 2026-10-27 01:25:49.795399
+(5 rows)
+
+
+==== 最近一次运行的逐节点执行明细 ====
+
+  node_type   |            title            |  status   | elapsed_time |                                                                                                                                                   outputs                                                                                                                                                    
+--------------+-----------------------------+-----------+--------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ start        | 开始                        | succeeded |      6.4e-05 | {"player_id": "player_demo", "player_name": "\u5c0f\u674e"}
+ llm          | 意图判定                    | succeeded |     2.613349 | {"text": "{\"intent\":\"chat\",\"target\":\"\u559c\u6b22\u559d\u7684\u4e1c\u897f\",\"is_prank\":false,\"is_confront\":false}", "reasoning_content": "", "usage": {"prompt_tokens": 532, "prompt_unit_price": "0", "prompt_price_unit": "0", "prompt_price": "0", "completion_tokens": 115, "completion_unit_
+ code         | 解析意图                    | succeeded |     0.037558 | {"intent": "chat", "is_confront": 0, "is_prank": 0, "lore_kinds": "profile,item,rumor", "memory_query": "\u73a9\u5bb6player_demo \u5173\u4e8e\u559c\u6b22\u559d\u7684\u4e1c\u897f \u7684\u504f\u597d \u53e3\u5473 \u6076\u4f5c\u5267 \u53e3\u5934\u7985 \u5386\u53f2\u4e92\u52a8", "player_id": "player_demo
+ http-request | 设定检索（seekdb 混合检索） | succeeded |     0.648532 | {"status_code": 200, "body": "{\"hits\": [{\"id\": 3, \"kind\": \"profile\", \"title\": \"\u963f\u591c\u00b7\u53cd\u5dee\", \"content\": \"\u963f\u591c\u8bb0\u5f97\u6bcf\u4e2a\u5e38\u5ba2\u7684\u53e3\u5473\uff1a\u8c01\u559d\u7f8e\u5f0f\u4e0d\u52a0\u7cd6\u3001\u8c01\u53ea\u4e70\u6700\u4fbf\u5b9c\u768
+ http-request | 记忆召回（PowerContext）    | succeeded |     1.476791 | {"status_code": 200, "body": "{\"success\":true,\"data\":{\"results\":[{\"memory_id\":\"770095947341365248\",\"content\":\"[\u6076\u4f5c\u5267] \u73a9\u5bb6\u7ea0\u6b63\uff1a\u4e0a\u6b21\u662f\u628a\u8584\u8377\u7cd6\u6362\u6210\u82a5\u672b\u7cd6\",\"score\":0.004917847613458834,\"metadata\":{\"scop
+ http-request | 读取账本（seekdb）          | succeeded |     0.003124 | {"status_code": 200, "body": "{\"player_id\": \"player_demo\", \"player_name\": \"\u5c0f\u674e\", \"affection\": 9, \"balance\": 0.0, \"blacklist\": 0, \"pranks_done\": 0, \"chapter\": \"\u7b2c\u4e00\u7ae0\u00b7\u591c\u6765\u5ba2\"}", "headers": {"server": "AyeSidecar/1.0 Python/3.14.4", "date": "Tu
+ code         | 汇总上下文                  | succeeded |     0.039367 | {"lore_ctx": "- [profile] \u963f\u591c\u00b7\u53cd\u5dee\uff1a\u963f\u591c\u8bb0\u5f97\u6bcf\u4e2a\u5e38\u5ba2\u7684\u53e3\u5473\uff1a\u8c01\u559d\u7f8e\u5f0f\u4e0d\u52a0\u7cd6\u3001\u8c01\u53ea\u4e70\u6700\u4fbf\u5b9c\u7684\u3001\u8c01\u5468\u4e09\u4f1a\u5e26\u4e00\u675f\u82b1\u3002\u5979\u628a\u8f
+ llm          | 阿夜台词                    | succeeded |     4.333312 | {"text": "{\"reply\":\"\u8bb0\u5f97\uff0c\u4f60\u559c\u6b22\u559d\u70ed\u5496\u5561\uff0c\u8fd8\u662f\u6bcf\u5468\u4e09\u90fd\u6765\u4e70\u2014\u2014\u6bd4\u4f60\u628a\u8584\u8377\u7cd6\u6362\u6210\u82a5\u672b\u7cd6\u7684\u65f6\u95f4\u8bb0\u5f97\u51c6\u3002\u8138\u76ae\u4e5f\u66f4\u539a\u3002\",\"af
+ code         | 状态机                      | succeeded |     0.039567 | {"action": "\u73a9\u5bb6\u8be2\u95ee\u963f\u591c\u662f\u5426\u8bb0\u5f97\u81ea\u5df1\u559c\u6b22\u559d\u4ec0\u4e48", "affection": 11, "affection_bar": "\u2588\u2588\u2588\u2588\u2588\u2588\u2591\u2591\u2591\u2591", "affection_delta": 2, "balance": 0.0, "blacklist": 0, "chapter": "\u7b2c\u4e00\u7ae0\
+ http-request | 结局检索（seekdb）          | succeeded |     0.379119 | {"status_code": 200, "body": "{\"hits\": [], \"mode\": \"hybrid_rrf\", \"query\": \"\u7ed3\u5c40\", \"kinds\": [\"ending\"], \"tags\": [], \"top_k\": 1, \"embed_provider\": \"minimax\", \"context\": \"\uff08\u672c\u6b21\u6ca1\u6709\u68c0\u7d22\u5230\u76f8\u5173\u7d20\u6750\uff0c\u8bf7\u7528\u963f\u5
+ code         | 提取结局                    | succeeded |     0.039247 | {"ending_text": ""}
+ http-request | 写入账本（seekdb）          | succeeded |     0.026552 | {"status_code": 200, "body": "{\"player_id\": \"player_demo\", \"player_name\": \"\u5c0f\u674e\", \"affection\": 11, \"balance\": 0.0, \"blacklist\": 0, \"pranks_done\": 0, \"chapter\": \"\u7b2c\u4e00\u7ae0\u00b7\u591c\u6765\u5ba2\"}", "headers": {"server": "AyeSidecar/1.0 Python/3.14.4", "date": "T
+ http-request | 写入记忆（PowerContext）    | succeeded |     0.560804 | {"status_code": 200, "body": "{\"success\":true,\"data\":[{\"memory_id\":\"770095990479781888\",\"content\":\"[\u504f\u597d] \u73a9\u5bb6\u5c0f\u674e\u559c\u6b22\u559d\u70ed\u5496\u5561\uff0c\u6bcf\u5468\u4e09\u90fd\u4f1a\u6765\u4e70\",\"user_id\":\"player_demo\",\"agent_id\":\"aye-nightstore\",\"me
+ answer       | 回答                        | succeeded |      9.3e-05 | {"answer": "\u8bb0\u5f97\uff0c\u4f60\u559c\u6b22\u559d\u70ed\u5496\u5561\uff0c\u8fd8\u662f\u6bcf\u5468\u4e09\u90fd\u6765\u4e70\u2014\u2014\u6bd4\u4f60\u628a\u8584\u8377\u7cd6\u6362\u6210\u82a5\u672b\u7cd6\u7684\u65f6\u95f4\u8bb0\u5f97\u51c6\u3002\u8138\u76ae\u4e5f\u66f4\u539a\u3002\n\n---\n\n**\ud83
+(14 rows)
+

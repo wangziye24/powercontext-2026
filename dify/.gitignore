@@ -1,0 +1,11 @@
+# ---- 本地运行产物（不要提交）----
+.env
+.env.local
+volumes/
+*.log
+__pycache__/
+*.pyc
+
+# ---- 侧车本地配置 ----
+backend/.env
+backend/vendor/**/__pycache__/
