@@ -70,21 +70,24 @@ stepfun/
 前置：Node.js ≥ 22（本地实测 24.15）、npm、Python 3（仅生成语料时需要）。
 
 ```bash
-# 1) 安装依赖并把浏览器端第三方产物拷到 web/public/vendor
+# 1) 安装依赖 + 自举：拷贝浏览器端第三方产物、预下载端侧模型
 npm run setup
+#    等价于 npm --prefix server install --legacy-peer-deps && npm --prefix web install && node scripts/prepare.mjs
 
-# 2) 预下载端侧模型到 web/public/models（离线可用；默认 huggingface.co，不通时自动回落 hf-mirror.com）
-node scripts/download-model.mjs
+# 2) 启动：拉起本地 seekdb + 前端（http://127.0.0.1:5178）
+npm start          # 启动前会自动再跑一次 prepare（已就绪则秒过）
 
-# 3) 启动：拉起本地 seekdb + 前端（http://127.0.0.1:5178）
-npm start
+# 3) 端到端冒烟（驱动系统 Edge 跑一遍导入→检索）
+npm --prefix bench install
+node bench/smoke.mjs --dtype fp16 --backend auto
 
-# 4) 端到端冒烟（驱动系统 Edge 跑一遍导入→检索）
-node bench/smoke.mjs --dtype q8 --backend wasm
-
-# 5) 性能与质量基准（两种精度 × 两种后端）
+# 4) 性能与质量基准（3 精度 × 2 后端 + 1 组基线配置）
+npm --prefix bench install
 node bench/run-bench.mjs
 ```
+
+> 仓库不提交大文件（浏览器端第三方运行时与 ONNX 权重），`npm run setup` / `npm start` 会自动补齐：
+> 首次准备约需下载 159 MiB 模型（huggingface.co 直连不通时自动回落 hf-mirror.com），之后完全离线运行。
 
 浏览器打开 http://127.0.0.1:5178 后：选择端侧精度 → 选择若干 `.txt/.md` 文件导入 → 输入查询即可看到混合检索结果。
 

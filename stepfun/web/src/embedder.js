@@ -27,10 +27,11 @@ export const MODEL_CATALOG = [
 const POOLING = "cls";
 
 /**
- * onnxruntime-web 默认从 CDN 取 wasm 运行时，这里改成本地 public/ort/，
+ * onnxruntime-web 默认从 CDN 取 wasm 运行时，这里改成本地 /vendor/ort/，
  * 保证推理运行时也不依赖任何外部网络。
+ * （scripts/copy-web-assets.mjs 会把 onnxruntime-web 的 dist 复制到该目录。）
  */
-env.backends.onnx.wasm.wasmPaths = "/ort/";
+env.backends.onnx.wasm.wasmPaths = "/vendor/ort/";
 
 /** 模型本地目录（由 scripts/download-model.mjs 预下载）。 */
 env.allowLocalModels = true;

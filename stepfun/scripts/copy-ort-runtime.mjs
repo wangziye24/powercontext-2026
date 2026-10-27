@@ -11,7 +11,8 @@ import { fileURLToPath } from "node:url";
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const WEB = path.resolve(HERE, "..", "web");
 const SOURCE = path.join(WEB, "node_modules", "onnxruntime-web", "dist");
-const TARGET = path.join(WEB, "public", "ort");
+// 与 web/src/embedder.js 里的 wasmPaths（/vendor/ort/）保持一致
+const TARGET = path.join(WEB, "public", "vendor", "ort");
 
 if (!fs.existsSync(SOURCE)) {
   console.error(`[ort] 找不到 onnxruntime-web 产物：${SOURCE}（先执行 npm --prefix web install）`);
