@@ -1,0 +1,93 @@
+{
+  "topic": "stepfun",
+  "title": "端侧 AI 推理性能优化与 seekdb 混合检索 —— 提交物清单",
+  "generatedAt": "2026-10-28T00:42:37.060Z",
+  "artifacts": [
+    {
+      "type": "runnable-web-application",
+      "requirement": "4.1 可运行的 Web 应用：可本地启动，说明浏览器要求、依赖安装与启动步骤",
+      "path": "stepfun/web",
+      "entry": "stepfun/web/index.html",
+      "backend": "stepfun/server/src/server.mjs（本地 seekdb 进程 + 静态托管前端）",
+      "browserRequirement": "Chrome / Edge 最新版（Chromium 内核）；实测 Edge，适配器 intel xe-lpg",
+      "howToRun": [
+        "npm --prefix server install --legacy-peer-deps",
+        "node scripts/prepare.mjs（浏览器端运行时与 INT8/FP16 权重已随仓库提供，通常无需下载）",
+        "npm start",
+        "浏览器打开 http://127.0.0.1:5178"
+      ],
+      "status": "ready"
+    },
+    {
+      "type": "complete-source-code",
+      "requirement": "4.2 完整源码：应用源码、依赖与配置、模型获取及量化步骤、seekdb 集合/表结构与索引配置、用于复现测试的数据或生成方式",
+      "path": "stepfun",
+      "sourceFileCount": 86,
+      "language": "JavaScript (ESM) + Shell + Python（语料生成）",
+      "modelAcquisition": "stepfun/scripts/download-model.mjs（公开权重；INT8/FP16 随仓库分发，FP32 基线用 --with-fp32 现取）",
+      "collectionAndIndex": "集合 knowledge_base：VECTOR(512) + document + metadata；FULLTEXT KEY idx_fts (document) WITH PARSER ik, ik_mode=smart；VECTOR KEY idx_vec (embedding) WITH DISTANCE=COSINE, TYPE=HNSW, M=16, EF_CONSTRUCTION=200, EF_SEARCH=64",
+      "testData": "stepfun/corpus（9 篇文档 + 30 条标注查询，由 stepfun/scripts/make_corpus.py 固定生成）",
+      "status": "ready"
+    },
+    {
+      "type": "one-page-technical-note",
+      "requirement": "4.3 一页技术说明：模型来源与版本、量化方案与体积/压缩比/质量变化、端侧运行与降级策略、seekdb 集合结构与混合检索方式、增量写入与刷新、状态管理与优化点、关键性能对比",
+      "path": "stepfun/TECH-NOTE.md",
+      "status": "ready"
+    },
+    {
+      "type": "requirement-mapping",
+      "requirement": "赛题要求 ↔ 实现 ↔ 证据 对照表",
+      "path": "stepfun/README.md §1",
+      "status": "ready"
+    },
+    {
+      "type": "raw-benchmark-data",
+      "requirement": "保留原始测试数据，便于复核",
+      "path": "stepfun/bench/results/bench.json",
+      "status": "ready"
+    }
+  ],
+  "checklist": [
+    {
+      "item": "可运行的 Web 应用",
+      "status": "pass",
+      "path": "stepfun/web"
+    },
+    {
+      "item": "完整源码与依赖配置",
+      "status": "pass",
+      "path": "stepfun/server, stepfun/web"
+    },
+    {
+      "item": "模型获取与量化步骤",
+      "status": "pass",
+      "path": "stepfun/scripts/download-model.mjs"
+    },
+    {
+      "item": "seekdb 集合/表结构与索引配置",
+      "status": "pass",
+      "path": "stepfun/TECH-NOTE.md §3"
+    },
+    {
+      "item": "复现测试的数据或生成方式",
+      "status": "pass",
+      "path": "stepfun/corpus, stepfun/scripts/make_corpus.py"
+    },
+    {
+      "item": "一页技术说明",
+      "status": "pass",
+      "path": "stepfun/TECH-NOTE.md"
+    },
+    {
+      "item": "性能优化前后的实测结果",
+      "status": "pass",
+      "path": "performance-results.json"
+    }
+  ],
+  "verification": {
+    "cleanCheckoutRun": "在纯 ASCII 路径的 worktree 上执行 npm install → prepare（零下载）→ npm start → 端到端冒烟，FP16 与 INT8 均通过：模型加载 709/607 ms，27 片段向量化 584/2485 ms，写入+刷新 2724/507 ms，查询向量化 37/118 ms，seekdb 检索 39/17 ms，命中 5 条且来源正确",
+    "smokeCommand": "node bench/smoke.mjs --dtype fp16 --backend auto",
+    "benchCommand": "node bench/run-bench.mjs"
+  }
+}

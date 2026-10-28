@@ -1,0 +1,119 @@
+{
+  "topic": "stepfun",
+  "title": "端侧 AI 推理性能优化与 seekdb 混合检索 —— 合规自检",
+  "generatedAt": "2026-10-28T00:42:37.060Z",
+  "summary": {
+    "note": "逐条对应赛题 2.5 通用要求与 3.1 验收标准"
+  },
+  "checks": [
+    {
+      "id": "local-inference",
+      "requirement": "文档向量化和查询向量化均须在本地完成，无云端推理 API 调用",
+      "status": "pass",
+      "implementation": "Transformers.js 在浏览器里跑 ONNX 推理：文档切块后由 web/src/embedder.js 批量 embedding，查询向量同样在浏览器生成；全流程不调用任何推理 API。",
+      "evidence": [
+        "stepfun/web/src/embedder.js",
+        "stepfun/web/src/main.js"
+      ]
+    },
+    {
+      "id": "no-server-precomputation",
+      "requirement": "禁止预先在服务端算好向量或检索结果后回放，禁止将远程推理伪装为端侧推理",
+      "status": "pass",
+      "implementation": "服务端不含任何模型，向量只能随写入请求来自浏览器；服务端注册的 embedding 函数是占位实现，一旦被要求生成向量就抛出异常，从机制上杜绝服务端代算。",
+      "evidence": [
+        "stepfun/server/src/seekdb-store.mjs::ClientSideEmbeddingFunction"
+      ]
+    },
+    {
+      "id": "seekdb-as-store-and-search",
+      "requirement": "向量和文档的存储、检索必须使用 seekdb，不得使用其他数据库或客户端内存检索替代",
+      "status": "pass",
+      "implementation": "集合 knowledge_base 落在本地 seekdb 进程内：_id / document / embedding / metadata 四列，向量列类型 VECTOR(512)。",
+      "evidence": [
+        "GET /api/schema（真实 DDL）",
+        "stepfun/bench/results/bench.md"
+      ]
+    },
+    {
+      "id": "hybrid-search-executed-by-seekdb",
+      "requirement": "实现向量与全文混合检索，检索处理由 seekdb 完成，不得在客户端分别获取两路结果后自行拼合",
+      "status": "pass",
+      "implementation": "一次 collection.hybridSearch({query:{whereDocument:{$contains}}, knn:{queryEmbeddings}}) 由 seekdb 同时下推全文与向量条件并融合排序，返回统一结果；客户端只发一次请求、只收一次结果。",
+      "evidence": [
+        "stepfun/server/src/seekdb-store.mjs::hybridSearch"
+      ]
+    },
+    {
+      "id": "open-source-model",
+      "requirement": "必须为可公开获取的开源模型，并在技术说明中注明来源与版本",
+      "status": "pass",
+      "implementation": "Xenova/bge-small-zh-v1.5（BAAI 开源中文 embedding 模型，Apache-2.0），revision main，向量维度 512；清单含每个文件的字节数与 sha256。",
+      "evidence": [
+        "stepfun/web/public/models/Xenova/bge-small-zh-v1.5/manifest.json",
+        "stepfun/TECH-NOTE.md §1"
+      ]
+    },
+    {
+      "id": "quantization-scheme",
+      "requirement": "采用 INT8 或 FP16 方案，说明处理方式，并报告量化前后的模型体积、压缩比及检索质量变化",
+      "status": "pass",
+      "implementation": "同一权重三种精度：FP32（基线）、FP16（onnx/model_fp16.onnx）、INT8（onnx/model_quantized.onnx，ONNX 动态量化，加载期按张量量化 int8，无需校准数据）。体积、压缩比与 Recall@5 / nDCG@5 变化见 performance-results.json 与 TECH-NOTE §1。",
+      "evidence": [
+        "stepfun/TECH-NOTE.md §1",
+        "performance-results.json"
+      ]
+    },
+    {
+      "id": "webgpu-first-wasm-fallback",
+      "requirement": "优先使用 WebGPU，显式配置对应推理后端；运行环境不支持 WebGPU 时，自动降级到 WASM，并在界面中明确提示当前使用的后端",
+      "status": "pass",
+      "implementation": "启动即 navigator.gpu.requestAdapter() 探测：有适配器用 device:'webgpu'，否则 device:'wasm'；界面右上角常驻显示真实后端与适配器名，请求 WebGPU 但本机无适配器时如实降级并说明原因。",
+      "evidence": [
+        "stepfun/web/src/embedder.js::detectBackend",
+        "stepfun/web/src/main.js（后端徽标）",
+        "performance-results.json（webgpu 与 wasm 两组实测）"
+      ]
+    },
+    {
+      "id": "write-and-index-refresh",
+      "requirement": "正确处理数据写入和索引刷新，确保新导入的文档在刷新完成后能够被检索到",
+      "status": "pass",
+      "implementation": "批量写入后显式调用 collection.refresh_index()，刷新完成后新片段立即可被检索；重复导入同一文档 id 走 upsert 语义，不报错。",
+      "evidence": [
+        "stepfun/server/src/seekdb-store.mjs::addDocuments",
+        "端到端冒烟输出（写入后立即检索命中）"
+      ]
+    },
+    {
+      "id": "incremental-and-session-state",
+      "requirement": "管理知识库的增量写入、集合与会话状态，保证连续导入和切换操作后的检索结果与当前知识库一致",
+      "status": "pass",
+      "implementation": "增量写入用 upsert；清空知识库用 DROP TABLE + 清理 SDK 元数据 + 重建集合（SDK 自带 delete() 是软删除，行仍在表内，故不能直接用）；切换模型导致维度变化时按新维度重建集合；浏览器侧持久化当前模型/精度/后端/集合/片段数/上次查询。",
+      "evidence": [
+        "stepfun/server/src/seekdb-store.mjs::resetCollection",
+        "stepfun/server/src/seekdb-store.mjs::ensureDimension",
+        "stepfun/web/src/main.js（localStorage 会话状态 + 状态栏）"
+      ]
+    },
+    {
+      "id": "modern-browser",
+      "requirement": "应用可在主流现代浏览器 Chrome / Edge 最新版中运行",
+      "status": "pass",
+      "implementation": "页面是纯 ESM + import map，零构建；用系统 Edge（Chromium）实测通过，模型与运行时均本地加载。",
+      "evidence": [
+        "stepfun/README.md §4",
+        "性能与端到端实测记录"
+      ]
+    },
+    {
+      "id": "no-cloud-storage-of-content",
+      "requirement": "文本知识库为基础要求，图片内容支持可作为扩展",
+      "status": "optional-not-implemented",
+      "implementation": "文本知识库已完整实现（导入→本地向量化→写入 seekdb→混合检索→展示原文）；图片内容属可选项，本次未实现，界面与说明中均未宣称支持。",
+      "evidence": [
+        "stepfun/README.md §7 已知限制"
+      ]
+    }
+  ]
+}

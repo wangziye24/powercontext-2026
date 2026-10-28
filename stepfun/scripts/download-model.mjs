@@ -20,16 +20,19 @@ const argModel = process.argv.includes("--model")
   ? process.argv[process.argv.indexOf("--model") + 1]
   : "Xenova/bge-small-zh-v1.5";
 
-/** 需要的文件：配置 + 分词器 + 三种精度的 ONNX 权重。 */
+/** 需要的文件：配置 + 分词器 + 量化权重（INT8 / FP16，随应用分发，运行时零下载）。 */
 const FILES = [
   ["config.json", "模型配置"],
   ["tokenizer.json", "分词器"],
   ["tokenizer_config.json", "分词器配置"],
   ["special_tokens_map.json", "特殊 token"],
-  ["onnx/model.onnx", "权重 FP32"],
-  ["onnx/model_fp16.onnx", "权重 FP16"],
   ["onnx/model_quantized.onnx", "权重 INT8(q8)"],
+  ["onnx/model_fp16.onnx", "权重 FP16"],
 ];
+
+/** FP32 基线权重 90 MiB，默认不随应用分发；需要复现"量化前基线"时加 --with-fp32 下载。 */
+const FP32_FILE = ["onnx/model.onnx", "权重 FP32"];
+const withFp32 = process.argv.includes("--with-fp32");
 
 const HOSTS = [process.env.HF_ENDPOINT ?? "https://huggingface.co/", "https://hf-mirror.com/"];
 
@@ -74,7 +77,8 @@ async function main() {
 
   const downloadStarted = Date.now();
   const manifest = { model, revision, source: host, files: [], downloadedAt: new Date().toISOString() };
-  for (const [file, label] of FILES) {
+  const wanted = withFp32 ? [...FILES, FP32_FILE] : FILES;
+  for (const [file, label] of wanted) {
     const target = path.join(base, file);
     if (fs.existsSync(target) && fs.statSync(target).size > 0) {
       const buffer = fs.readFileSync(target);
@@ -97,10 +101,14 @@ async function main() {
     fp16: total([...common, "权重 FP16"]),
     q8: total([...common, "权重 INT8(q8)"]),
   };
-  manifest.compression = {
-    fp32ToFp16: manifest.totals.fp32 / manifest.totals.fp16,
-    fp32ToInt8: manifest.totals.fp32 / manifest.totals.q8,
-  };
+  // FP32 基线默认不随应用分发，缺它时压缩比留空而不是给出错误数字
+  manifest.compression =
+    manifest.totals.fp32 > 0
+      ? {
+          fp32ToFp16: manifest.totals.fp32 / manifest.totals.fp16,
+          fp32ToInt8: manifest.totals.fp32 / manifest.totals.q8,
+        }
+      : { fp32ToFp16: null, fp32ToInt8: null, note: "FP32 基线未随应用分发，用 --with-fp32 下载后可计算" };
 
   manifest.downloadSeconds = Number(((Date.now() - downloadStarted) / 1000).toFixed(2));
   manifest.downloadedBytes = manifest.files.reduce((sum, item) => sum + item.bytes, 0);
@@ -114,10 +122,14 @@ async function main() {
       `FP16 ${(manifest.totals.fp16 / 1048576).toFixed(2)} MiB · ` +
       `INT8 ${(manifest.totals.q8 / 1048576).toFixed(2)} MiB`,
   );
-  console.log(
-    `[model] 压缩比：FP32→FP16 ${manifest.compression.fp32ToFp16.toFixed(2)}× · ` +
-      `FP32→INT8 ${manifest.compression.fp32ToInt8.toFixed(2)}×`,
-  );
+  if (manifest.compression.fp32ToFp16) {
+    console.log(
+      `[model] 压缩比：FP32→FP16 ${manifest.compression.fp32ToFp16.toFixed(2)}× · ` +
+        `FP32→INT8 ${manifest.compression.fp32ToInt8.toFixed(2)}×`,
+    );
+  } else {
+    console.log("[model] FP32 基线未随应用分发（用 --with-fp32 下载后可计算压缩比）");
+  }
 }
 
 main().catch((error) => {
