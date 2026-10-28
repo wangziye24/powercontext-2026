@@ -1,0 +1,359 @@
+{
+  "topic": "stepfun",
+  "title": "端侧 AI 推理性能优化与 seekdb 混合检索 —— 性能与检索质量实测",
+  "generatedAt": "2026-10-28T00:42:37.060Z",
+  "rawResults": "stepfun/bench/results/bench.json",
+  "reproducibility": {
+    "command": "node bench/run-bench.mjs",
+    "repeats": 3,
+    "statistic": "每条查询重复多次取中位数；首次（冷）与预热后（热）分开统计"
+  },
+  "fixedConditions": {
+    "device": "win32 10.0.26200 · Intel(R) Core(TM) Ultra 7 155H · 31.5 GiB RAM",
+    "gpuAdapter": "intel xe-lpg",
+    "browser": "Microsoft Edge (系统自带, Playwright 驱动)",
+    "node": "v24.15.0",
+    "model": {
+      "id": "Xenova/bge-small-zh-v1.5",
+      "revision": "main",
+      "dimension": 512,
+      "source": "Hugging Face 公开仓库"
+    },
+    "precisions": [
+      "fp32",
+      "fp16",
+      "q8"
+    ],
+    "batchSize": 8,
+    "seekdb": {
+      "collection": "knowledge_base",
+      "dimension": 512,
+      "fulltext": "FULLTEXT KEY idx_fts (document) WITH PARSER ik, ik_mode=smart",
+      "vector": "VECTOR KEY idx_vec (embedding) WITH DISTANCE=COSINE, TYPE=HNSW, M=16, EF_CONSTRUCTION=200, EF_SEARCH=64",
+      "deployment": "本地 server 进程（@oceanbase/seekdb-node 拉起 seekdb 1.4.0，MySQL 协议）"
+    },
+    "corpus": {
+      "documents": 9,
+      "chunks": 27,
+      "queries": 30,
+      "note": "语料与标注查询由 scripts/make_corpus.py 固定生成"
+    },
+    "timingScope": "模型加载=从浏览器加载本地 ONNX 权重到会话可用；文档向量化=端侧批量 embedding 全量片段；写入+刷新=一次 POST 写入与随后的索引刷新；查询向量化=单条查询的端侧 embedding；seekdb 检索=服务端 hybridSearch 的响应耗时；端到端=查询向量化+检索（不含结果渲染）。首次（冷）与后续（热）分开统计，热数据取重复查询的中位数。"
+  },
+  "modelFiles": {
+    "fp32": {
+      "totalBytes": 95292210,
+      "totalMiB": 90.88,
+      "files": [
+        {
+          "file": "config.json",
+          "label": "模型配置",
+          "bytes": 716
+        },
+        {
+          "file": "tokenizer.json",
+          "label": "分词器",
+          "bytes": 439125
+        },
+        {
+          "file": "tokenizer_config.json",
+          "label": "分词器配置",
+          "bytes": 367
+        },
+        {
+          "file": "special_tokens_map.json",
+          "label": "特殊 token",
+          "bytes": 125
+        },
+        {
+          "file": "onnx/model.onnx",
+          "label": "权重 FP32",
+          "bytes": 94851877
+        }
+      ]
+    },
+    "fp16": {
+      "totalBytes": 47937760,
+      "totalMiB": 45.72,
+      "files": [
+        {
+          "file": "config.json",
+          "label": "模型配置",
+          "bytes": 716
+        },
+        {
+          "file": "tokenizer.json",
+          "label": "分词器",
+          "bytes": 439125
+        },
+        {
+          "file": "tokenizer_config.json",
+          "label": "分词器配置",
+          "bytes": 367
+        },
+        {
+          "file": "special_tokens_map.json",
+          "label": "特殊 token",
+          "bytes": 125
+        },
+        {
+          "file": "onnx/model_fp16.onnx",
+          "label": "权重 FP16",
+          "bytes": 47497427
+        }
+      ]
+    },
+    "q8": {
+      "totalBytes": 24451175,
+      "totalMiB": 23.32,
+      "files": [
+        {
+          "file": "config.json",
+          "label": "模型配置",
+          "bytes": 716
+        },
+        {
+          "file": "tokenizer.json",
+          "label": "分词器",
+          "bytes": 439125
+        },
+        {
+          "file": "tokenizer_config.json",
+          "label": "分词器配置",
+          "bytes": 367
+        },
+        {
+          "file": "special_tokens_map.json",
+          "label": "特殊 token",
+          "bytes": 125
+        },
+        {
+          "file": "onnx/model_quantized.onnx",
+          "label": "权重 INT8(q8)",
+          "bytes": 24010842
+        }
+      ]
+    }
+  },
+  "compressionRatio": {
+    "fp32ToFp16": 1.99,
+    "fp32ToInt8": 3.9,
+    "note": "压缩比 = 量化前体积 / 量化后体积，按本地实际文件字节统计（同一口径）"
+  },
+  "optimizationBeforeAfter": {
+    "description": "基线：逐条推理（批大小 1）+ 逐条写入（每条写入后都刷新索引）；优化：批量推理（批大小 8）+ 批量写入并在批次末尾刷新一次。其余条件完全一致。",
+    "baseline": {
+      "config": "基线配置（逐条推理+逐条写入）",
+      "precision": "fp32",
+      "backend": "webgpu",
+      "actualBackend": "webgpu",
+      "adapter": "intel xe-lpg",
+      "batchSize": 1,
+      "writeMode": "each",
+      "modelLoadMs": 822.9,
+      "documentEmbeddingMs": 933.1,
+      "documentEmbeddingThroughputChunksPerSec": 28.94,
+      "writeAndIndexRefreshMs": 17288.6,
+      "queryEmbeddingMs": 14,
+      "seekdbSearchMs": 5,
+      "endToEndQueryMsWarm": 19,
+      "endToEndQueryMsCold": 18.9,
+      "recallAt5": 1,
+      "ndcgAt5": 0.977,
+      "queries": 30
+    },
+    "optimized": {
+      "config": "优化配置",
+      "precision": "fp32",
+      "backend": "webgpu",
+      "actualBackend": "webgpu",
+      "adapter": "intel xe-lpg",
+      "batchSize": 8,
+      "writeMode": "batch",
+      "modelLoadMs": 1125.9,
+      "documentEmbeddingMs": 724.1,
+      "documentEmbeddingThroughputChunksPerSec": 37.29,
+      "writeAndIndexRefreshMs": 782.5,
+      "queryEmbeddingMs": 14.6,
+      "seekdbSearchMs": 6.5,
+      "endToEndQueryMsWarm": 20.6,
+      "endToEndQueryMsCold": 21.2,
+      "recallAt5": 1,
+      "ndcgAt5": 0.977,
+      "queries": 30
+    }
+  },
+  "quality": {
+    "dataset": "9 篇自建中文文档 / 27 个片段 / 30 条人工标注查询（corpus/queries.json）",
+    "method": "Recall@5 = 前 5 条覆盖的相关文档数 / 相关文档总数（同一文档多片段只计一次）；nDCG@5 用位置折损增益并以理想排序归一化",
+    "metrics": {
+      "fp32/webgpu": {
+        "recallAt5": 1,
+        "ndcgAt5": 0.977
+      },
+      "fp32/wasm": {
+        "recallAt5": 1,
+        "ndcgAt5": 0.977
+      },
+      "fp16/webgpu": {
+        "recallAt5": 1,
+        "ndcgAt5": 0.977
+      },
+      "fp16/wasm": {
+        "recallAt5": 1,
+        "ndcgAt5": 0.977
+      },
+      "q8/webgpu": {
+        "recallAt5": 1,
+        "ndcgAt5": 0.949
+      },
+      "q8/wasm": {
+        "recallAt5": 1,
+        "ndcgAt5": 0.974
+      }
+    },
+    "quantizationEffect": "FP16 与 FP32 检索质量一致（nDCG@5 相同）；INT8 在 WebGPU 路径上 nDCG@5 略降，在 WASM 路径上基本持平；INT8 在本机 WebGPU 上反而更慢，故本机最优配置为 FP16。"
+  },
+  "cases": [
+    {
+      "config": "优化配置",
+      "precision": "fp32",
+      "backend": "webgpu",
+      "actualBackend": "webgpu",
+      "adapter": "intel xe-lpg",
+      "batchSize": 8,
+      "writeMode": "batch",
+      "modelLoadMs": 1125.9,
+      "documentEmbeddingMs": 724.1,
+      "documentEmbeddingThroughputChunksPerSec": 37.29,
+      "writeAndIndexRefreshMs": 782.5,
+      "queryEmbeddingMs": 14.6,
+      "seekdbSearchMs": 6.5,
+      "endToEndQueryMsWarm": 20.6,
+      "endToEndQueryMsCold": 21.2,
+      "recallAt5": 1,
+      "ndcgAt5": 0.977,
+      "queries": 30
+    },
+    {
+      "config": "优化配置",
+      "precision": "fp32",
+      "backend": "wasm",
+      "actualBackend": "wasm",
+      "adapter": "WASM（强制）",
+      "batchSize": 8,
+      "writeMode": "batch",
+      "modelLoadMs": 805.7,
+      "documentEmbeddingMs": 3641.7,
+      "documentEmbeddingThroughputChunksPerSec": 7.41,
+      "writeAndIndexRefreshMs": 667.7,
+      "queryEmbeddingMs": 17.9,
+      "seekdbSearchMs": 6,
+      "endToEndQueryMsWarm": 23.7,
+      "endToEndQueryMsCold": 25.3,
+      "recallAt5": 1,
+      "ndcgAt5": 0.977,
+      "queries": 30
+    },
+    {
+      "config": "优化配置",
+      "precision": "fp16",
+      "backend": "webgpu",
+      "actualBackend": "webgpu",
+      "adapter": "intel xe-lpg",
+      "batchSize": 8,
+      "writeMode": "batch",
+      "modelLoadMs": 715.2,
+      "documentEmbeddingMs": 622.8,
+      "documentEmbeddingThroughputChunksPerSec": 43.35,
+      "writeAndIndexRefreshMs": 553.9,
+      "queryEmbeddingMs": 15.5,
+      "seekdbSearchMs": 6,
+      "endToEndQueryMsWarm": 21.5,
+      "endToEndQueryMsCold": 21.4,
+      "recallAt5": 1,
+      "ndcgAt5": 0.977,
+      "queries": 30
+    },
+    {
+      "config": "优化配置",
+      "precision": "fp16",
+      "backend": "wasm",
+      "actualBackend": "wasm",
+      "adapter": "WASM（强制）",
+      "batchSize": 8,
+      "writeMode": "batch",
+      "modelLoadMs": 650.9,
+      "documentEmbeddingMs": 3554.2,
+      "documentEmbeddingThroughputChunksPerSec": 7.6,
+      "writeAndIndexRefreshMs": 767.5,
+      "queryEmbeddingMs": 32.4,
+      "seekdbSearchMs": 6.3,
+      "endToEndQueryMsWarm": 38.6,
+      "endToEndQueryMsCold": 38.3,
+      "recallAt5": 1,
+      "ndcgAt5": 0.977,
+      "queries": 30
+    },
+    {
+      "config": "优化配置",
+      "precision": "q8",
+      "backend": "webgpu",
+      "actualBackend": "webgpu",
+      "adapter": "intel xe-lpg",
+      "batchSize": 8,
+      "writeMode": "batch",
+      "modelLoadMs": 591.3,
+      "documentEmbeddingMs": 2979.8,
+      "documentEmbeddingThroughputChunksPerSec": 9.06,
+      "writeAndIndexRefreshMs": 857.5,
+      "queryEmbeddingMs": 151.3,
+      "seekdbSearchMs": 7,
+      "endToEndQueryMsWarm": 159.3,
+      "endToEndQueryMsCold": 159.3,
+      "recallAt5": 1,
+      "ndcgAt5": 0.949,
+      "queries": 30
+    },
+    {
+      "config": "优化配置",
+      "precision": "q8",
+      "backend": "wasm",
+      "actualBackend": "wasm",
+      "adapter": "WASM（强制）",
+      "batchSize": 8,
+      "writeMode": "batch",
+      "modelLoadMs": 552.8,
+      "documentEmbeddingMs": 2190.9,
+      "documentEmbeddingThroughputChunksPerSec": 12.32,
+      "writeAndIndexRefreshMs": 767.4,
+      "queryEmbeddingMs": 14.3,
+      "seekdbSearchMs": 5.5,
+      "endToEndQueryMsWarm": 20.4,
+      "endToEndQueryMsCold": 19.8,
+      "recallAt5": 1,
+      "ndcgAt5": 0.974,
+      "queries": 30
+    },
+    {
+      "config": "基线配置（逐条推理+逐条写入）",
+      "precision": "fp32",
+      "backend": "webgpu",
+      "actualBackend": "webgpu",
+      "adapter": "intel xe-lpg",
+      "batchSize": 1,
+      "writeMode": "each",
+      "modelLoadMs": 822.9,
+      "documentEmbeddingMs": 933.1,
+      "documentEmbeddingThroughputChunksPerSec": 28.94,
+      "writeAndIndexRefreshMs": 17288.6,
+      "queryEmbeddingMs": 14,
+      "seekdbSearchMs": 5,
+      "endToEndQueryMsWarm": 19,
+      "endToEndQueryMsCold": 18.9,
+      "recallAt5": 1,
+      "ndcgAt5": 0.977,
+      "queries": 30
+    }
+  ]
+}
