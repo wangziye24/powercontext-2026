@@ -1,0 +1,129 @@
+{
+  "topic": "gaode",
+  "title": "周边去哪儿：基于高德的地点推荐助手 —— 合规自检",
+  "generatedAt": "2026-10-28T00:55:11.414Z",
+  "scoring": {
+    "note": "评测按数据真实性 40% / 需求满足 30% / 推荐合理性 20% / 表达清晰度 10% 评审，并核对高德工具调用记录",
+    "dimensions": [
+      {
+        "name": "数据真实性",
+        "weight": 0.4,
+        "requirement": "回答中的地点、位置、路线数据与高德返回结果一致"
+      },
+      {
+        "name": "需求满足",
+        "weight": 0.3,
+        "requirement": "数量上限、步行时间上限等明确条件被满足"
+      },
+      {
+        "name": "推荐合理性",
+        "weight": 0.2,
+        "requirement": "筛选、排序、理由有数据依据，正确处理无结果与信息缺失"
+      },
+      {
+        "name": "表达清晰度",
+        "weight": 0.1,
+        "requirement": "列表/表格清晰，信息缺口有补充说明"
+      }
+    ]
+  },
+  "checks": [
+    {
+      "id": "walking-time-from-route-query",
+      "requirement": "步行时间应来自路线查询，不能用直线距离替代",
+      "status": "pass",
+      "implementation": "Skill 规定步行时间只能取自 maps_direction_walking 返回的 route.paths[0].duration（秒），并明确禁止用直线距离或距离测量接口换算；路线查询失败时重试一次，仍失败则丢弃该候选并在备注说明数量。",
+      "evidence": [
+        "gaode/SKILL.md §3 Step 5",
+        "gaode/SKILL.md §6 禁止事项第 2 条"
+      ]
+    },
+    {
+      "id": "hybrid-search-not-client-merged",
+      "requirement": "检索处理由 seekdb 完成，不得在客户端分别获取两路结果后自行拼合",
+      "status": "pass",
+      "implementation": "混合检索由 seekdb 侧一次 hybridSearch 完成（全文 + 向量融合排序），客户端只发一次请求、只收一次结果。",
+      "evidence": [
+        "gaode/SKILL.md §3 Step 5",
+        "gaode/SKILL.md §2 工具表"
+      ]
+    },
+    {
+      "id": "no-fabrication",
+      "requirement": "查询失败或没有找到符合条件的结果时应如实说明，可建议放宽条件；对缺少依据的信息标注未核实，不能编造",
+      "status": "pass",
+      "implementation": "Skill 明确禁止编造地点/地址/距离/耗时；营业时间、排队、安静程度、评分等无数据支撑的信息统一标注「未核实」；结果不足时用固定句式说明原因并给出放宽建议。",
+      "evidence": [
+        "gaode/SKILL.md §5 异常与边界",
+        "gaode/SKILL.md §6 禁止事项"
+      ]
+    },
+    {
+      "id": "time-limit-enforced",
+      "requirement": "只推荐步行上限内可达的地点，不将超时地点列为符合条件的推荐",
+      "status": "pass",
+      "implementation": "以秒为单位比较 duration 与用户上限（先比较再取整，避免四舍五入造成的越界）；超限地点不进入推荐表，备注里也只说明数量。",
+      "evidence": [
+        "gaode/SKILL.md §3 Step 6",
+        "gaode/SKILL.md §6 禁止事项第 3 条"
+      ]
+    },
+    {
+      "id": "count-limit",
+      "requirement": "返回最多 3 个符合条件的推荐",
+      "status": "pass",
+      "implementation": "推荐条数上限 = min(用户要求, 3)，即使用户要求更多也最多给 3 条并说明原因。",
+      "evidence": [
+        "gaode/SKILL.md §3 Step 6"
+      ]
+    },
+    {
+      "id": "independent-options",
+      "requirement": "各地点都是从同一起点出发的独立备选，不需要串成多站行程",
+      "status": "pass",
+      "implementation": "Skill 要求所有候选共用同一起点坐标，且在回答中显式声明每个推荐是独立备选。",
+      "evidence": [
+        "gaode/SKILL.md §3 Step 2",
+        "gaode/SKILL.md §4 回答格式"
+      ]
+    },
+    {
+      "id": "answer-format",
+      "requirement": "用列表或表格呈现推荐结果，包含地点名称、地址、预计步行距离与时间、推荐理由",
+      "status": "pass",
+      "implementation": "固定六列表格：序号 / 地点名称 / 地址 / 步行距离 / 预计步行时间 / 推荐理由；名称与地址按工具返回原文照抄；附数据来源脚注（起点坐标、取整方式）。",
+      "evidence": [
+        "gaode/SKILL.md §4 回答格式"
+      ]
+    },
+    {
+      "id": "requirement-parsing",
+      "requirement": "理解地点类型、步行时间上限、推荐数量等要求",
+      "status": "pass",
+      "implementation": "Step 1 把需求结构化为类型关键词 / 起点 / 城市 / 时间上限 / 数量上限 / 排序偏好 / 其他偏好，并给出类型→高德关键词映射表。",
+      "evidence": [
+        "gaode/SKILL.md §3 Step 1"
+      ]
+    },
+    {
+      "id": "tool-usage-chain",
+      "requirement": "查询地点、获取步行路线、筛选推荐的步骤",
+      "status": "pass",
+      "implementation": "固定链路：maps_around_search（周边搜）→ maps_search_detail（取回 POI 坐标，官方 MCP 的搜索结果不含坐标）→ maps_direction_walking（步行路线）→ 筛选排序 → 回答；并规定半径换算与补救检索顺序。",
+      "evidence": [
+        "gaode/SKILL.md §2 工具表与坑位说明",
+        "gaode/SKILL.md §3 Step 3–5"
+      ]
+    },
+    {
+      "id": "no-secret-in-file",
+      "requirement": "运行环境和高德 API Key 由评测平台配置，不要在 Skill 文件中填写密钥",
+      "status": "pass",
+      "implementation": "Skill 全文不含任何密钥，并明确要求不要在回答或文件中写入 API Key。",
+      "evidence": [
+        "gaode/SKILL.md §2 坑位第 4 条",
+        "gaode/SKILL.md §6 禁止事项第 6 条"
+      ]
+    }
+  ]
+}

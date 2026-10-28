@@ -1,0 +1,69 @@
+{
+  "topic": "minimax",
+  "title": "规有所依，面向软件持续演进的 SDD 上下文管理系统 —— 合规自检",
+  "generatedAt": "2026-10-28T00:55:11.369Z",
+  "checks": [
+    {
+      "id": "current-valid-specs",
+      "requirement": "根据开发任务提供当前有效的规格",
+      "status": "pass",
+      "implementation": "规格条目导入 seekDB 并带 source_hash；检索时按任务文本命中规格，区分「本次要实现」与「必须保持」，规格变更后重新导入并同步正文与哈希（changed_files 精确指出变化条目）。",
+      "evidence": [
+        "minimax/src/sddctx/ingest.py",
+        "minimax/src/sddctx/retrieve.py",
+        "minimax/artifacts/spec-change/"
+      ]
+    },
+    {
+      "id": "relevant-code-and-tests",
+      "requirement": "提供相关代码和测试",
+      "status": "pass",
+      "implementation": "检索同时返回待改函数（带行号区间与关联规格）、工程已有错误类型约定，以及目标功能测试与必须保持的回归测试的完整代码。",
+      "evidence": [
+        "minimax/src/sddctx/retrieve.py",
+        "minimax/artifacts/context/context.json"
+      ]
+    },
+    {
+      "id": "real-code-change",
+      "requirement": "通过实际代码修改验证效果",
+      "status": "pass",
+      "implementation": "由 AI 助手基于检索出的上下文产出 unified diff 并应用到样例工程，改码前后跑真实 pytest：改码前目标测试失败、回归测试通过；改码后全部通过。",
+      "evidence": [
+        "minimax/artifacts/logs/pytest-before-*.log",
+        "minimax/artifacts/logs/pytest-after-*.log",
+        "minimax/artifacts/diff/committed-before-to-after.diff"
+      ]
+    },
+    {
+      "id": "patch-equivalence",
+      "requirement": "提交的代码差异确实来自模型产出，而非手工编辑",
+      "status": "pass",
+      "implementation": "把模型补丁应用到改码前快照，与改码后快照逐字节比较，脚本输出 IDENTICAL。",
+      "evidence": [
+        "minimax/scripts/verify_patch_equivalence.sh",
+        "minimax/artifacts/diff/"
+      ]
+    },
+    {
+      "id": "cross-session-handover",
+      "requirement": "跨会话和任务交接",
+      "status": "pass",
+      "implementation": "任务状态（Scope、已完成、待办、验证结果）写入 PowerContext（内嵌 seekDB），模块重启后读回；下一次改码把上次进展拼进提示词。",
+      "evidence": [
+        "minimax/src/sddctx/taskstate.py",
+        "minimax/artifacts/state/"
+      ]
+    },
+    {
+      "id": "reproducible-scripts",
+      "requirement": "按提交的说明可启动并完成上述操作",
+      "status": "pass",
+      "implementation": "scripts/ 提供一键链路（setup_wsl / init_data / run_verification / demo_spec_change / verify_before_after / verify_patch_equivalence / reset_data），并修复了 6 处会让全新环境跑不起来的可复现性问题。",
+      "evidence": [
+        "minimax/docs/RUNBOOK.md",
+        "minimax/README.md"
+      ]
+    }
+  ]
+}

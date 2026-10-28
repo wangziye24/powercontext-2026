@@ -1,0 +1,75 @@
+{
+  "topic": "minimax",
+  "title": "规有所依，面向软件持续演进的 SDD 上下文管理系统 —— 提交物清单",
+  "generatedAt": "2026-10-28T00:55:11.369Z",
+  "artifacts": [
+    {
+      "type": "context-module",
+      "requirement": "为已有 AI 开发助手实现或改进工程上下文模块",
+      "path": "minimax/src/sddctx",
+      "entry": "minimax/src/sddctx/cli.py（CLI 入口 sddctx）",
+      "components": [
+        "ingest.py / schema.py / db.py / retrieve.py —— 工程资料入 seekDB 并检索上下文",
+        "minimax_client.py / patching.py —— 真实调用 AI 助手产出并应用 unified diff",
+        "taskstate.py —— 任务状态写入 PowerContext"
+      ],
+      "status": "ready"
+    },
+    {
+      "type": "sample-project",
+      "requirement": "验证用工程（规格 + 代码 + 回归测试）",
+      "path": "minimax/sample-project",
+      "status": "ready"
+    },
+    {
+      "type": "scripts",
+      "requirement": "可复现的一键验证链路",
+      "path": "minimax/scripts",
+      "status": "ready"
+    },
+    {
+      "type": "documentation",
+      "requirement": "运行说明、验证样例、技术说明、模型使用记录",
+      "path": "minimax/docs（RUNBOOK / VERIFICATION / ARCHITECTURE / MINIMAX-USAGE）",
+      "status": "ready"
+    },
+    {
+      "type": "evidence",
+      "requirement": "实验结果应来自实际运行",
+      "path": "minimax/artifacts",
+      "status": "ready"
+    }
+  ],
+  "checklist": [
+    {
+      "item": "提供当前有效的规格、相关代码与测试",
+      "status": "pass",
+      "path": "minimax/src/sddctx/retrieve.py"
+    },
+    {
+      "item": "通过实际代码修改验证效果",
+      "status": "pass",
+      "path": "minimax/artifacts/logs/"
+    },
+    {
+      "item": "提交的差异与模型产出一致",
+      "status": "pass",
+      "path": "minimax/scripts/verify_patch_equivalence.sh"
+    },
+    {
+      "item": "跨会话状态可复用",
+      "status": "pass",
+      "path": "minimax/src/sddctx/taskstate.py"
+    },
+    {
+      "item": "按说明可启动并完成上述操作",
+      "status": "pass",
+      "path": "minimax/docs/RUNBOOK.md"
+    }
+  ],
+  "reproduce": {
+    "topic": "规有所依，面向软件持续演进的 SDD 上下文管理系统",
+    "subQuestionId": 800514,
+    "questionId": 600077
+  }
+}

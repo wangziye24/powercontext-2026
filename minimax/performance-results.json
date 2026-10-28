@@ -1,0 +1,40 @@
+{
+  "topic": "minimax",
+  "title": "规有所依，面向软件持续演进的 SDD 上下文管理系统 —— 实测数据",
+  "generatedAt": "2026-10-28T00:55:11.369Z",
+  "sampleCase": {
+    "task": "在订单筛选中增加客户等级过滤（customer_tier），同时保持 SPEC-001 ~ SPEC-003、SPEC-005 ~ SPEC-007 原有行为不变",
+    "specs": 7,
+    "codeSymbols": 7,
+    "targetTests": 8,
+    "regressionTests": 13
+  },
+  "beforeAfter": {
+    "beforeCodeChange": {
+      "targetTests": "8 failed（功能未实现，TypeError: filter_orders() got an unexpected keyword argument 'tier'）",
+      "regressionTests": "13 passed",
+      "exitCode": 1
+    },
+    "afterCodeChange": {
+      "targetTests": "8 passed",
+      "regressionTests": "13 passed",
+      "total": "21 passed",
+      "exitCode": 0
+    },
+    "patchEquivalence": "IDENTICAL（模型补丁应用到改码前快照后，与改码后快照逐字节一致）"
+  },
+  "stateReuse": {
+    "note": "停止并重启 PowerContext Server 后，任务状态仍可读回（阶段、已完成、待办、目标测试与全量测试退出码、日志路径）。"
+  },
+  "reproduce": {
+    "environment": "Linux / WSL Ubuntu（内嵌 seekDB 不支持 Windows）、Python 3.12、uv",
+    "steps": [
+      "bash scripts/setup_wsl.sh",
+      "bash scripts/init_data.sh",
+      "bash scripts/run_verification.sh",
+      "bash scripts/verify_before_after.sh <改码前提交> <改码后提交>",
+      "bash scripts/verify_patch_equivalence.sh <改码前提交> <改码后提交>"
+    ]
+  },
+  "rawResults": "minimax/artifacts/（SQL 记录、模型请求响应、测试日志、代码差异、状态快照）"
+}

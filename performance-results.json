@@ -1,7 +1,7 @@
 {
   "topic": "stepfun",
   "title": "端侧 AI 推理性能优化与 seekdb 混合检索 —— 性能与检索质量实测",
-  "generatedAt": "2026-10-28T00:42:37.060Z",
+  "generatedAt": "2026-10-28T00:55:35.140Z",
   "rawResults": "stepfun/bench/results/bench.json",
   "reproducibility": {
     "command": "node bench/run-bench.mjs",

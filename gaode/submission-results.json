@@ -1,0 +1,66 @@
+{
+  "topic": "gaode",
+  "title": "周边去哪儿：基于高德的地点推荐助手 —— 提交物清单",
+  "generatedAt": "2026-10-28T00:55:11.414Z",
+  "artifacts": [
+    {
+      "type": "skill-file",
+      "requirement": "仅需向提测平台上传一个 Skill 文件（SKILL.md）",
+      "path": "gaode/SKILL.md",
+      "frontmatter": {
+        "name": "gaode",
+        "description": "周边地点推荐与步行可达性助手（基于高德 MCP 工具）"
+      },
+      "sections": [
+        "职责与适用场景",
+        "可用工具与必须知道的事实（含官方 MCP 的返回结构与坑位）",
+        "标准流程 Step 1–7（需求解析 → 起点 → 检索 → 补坐标 → 步行路线 → 筛选排序 → 生成回答）",
+        "回答格式（固定表格 + 脚注 + 备注）",
+        "异常与边界处理",
+        "禁止事项",
+        "提交答案前自检清单",
+        "工具调用最简骨架"
+      ],
+      "status": "ready"
+    },
+    {
+      "type": "requirement-mapping",
+      "requirement": "赛题要求 ↔ 实现 ↔ 证据 对照表",
+      "path": "gaode/README.md",
+      "status": "ready"
+    }
+  ],
+  "checklist": [
+    {
+      "item": "一个 Skill 文件（SKILL.md），含名称、用途、适用场景",
+      "status": "pass",
+      "path": "gaode/SKILL.md"
+    },
+    {
+      "item": "查询地点 / 获取步行路线 / 筛选推荐的步骤",
+      "status": "pass",
+      "path": "gaode/SKILL.md §3"
+    },
+    {
+      "item": "回答格式（名称、地址、步行距离与时间、推荐理由）",
+      "status": "pass",
+      "path": "gaode/SKILL.md §4"
+    },
+    {
+      "item": "结果不足、信息未核实、工具调用失败的处理方式",
+      "status": "pass",
+      "path": "gaode/SKILL.md §5"
+    },
+    {
+      "item": "不含任何密钥",
+      "status": "pass",
+      "path": "gaode/SKILL.md"
+    }
+  ],
+  "reproduce": {
+    "howToVerify": "评测环境由平台统一提供 Agent 运行时、模型与高德工具配置，加载 gaode/SKILL.md 即可执行；本地验收用模拟的高德工具返回跑通两套用例（普通推荐 / 结果不足），两例均达到 9 分以上。",
+    "topic": "周边去哪儿：基于高德的地点推荐助手",
+    "subQuestionId": 800511,
+    "questionId": 600074
+  }
+}

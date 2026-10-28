@@ -1,0 +1,66 @@
+{
+  "topic": "gaode",
+  "title": "周边去哪儿：基于高德的地点推荐助手 —— 本地验收与链路实测",
+  "generatedAt": "2026-10-28T00:55:11.414Z",
+  "note": "本题评测由平台统一提供 Agent 运行环境、模型与高德工具配置后执行 Skill；下表是我们在本地用模拟的高德工具返回跑通的验收结果，用于说明 Skill 的行为与稳定性。",
+  "acceptanceRuns": [
+    {
+      "case": "普通推荐（杭州武林广场 · 咖啡馆 · 步行 ≤15 分钟 · 最多 3 家 · 优先就近）",
+      "candidates": 6,
+      "eligible": 4,
+      "recommended": 3,
+      "excludedOverTimeLimit": 1,
+      "droppedByRouteError": 1,
+      "scoreByDimension": {
+        "数据真实性": 10,
+        "需求满足": 10,
+        "推荐合理性": 9,
+        "表达清晰度": 9
+      },
+      "checks": [
+        "超时地点（1320 s > 900 s）未出现在正文与表格中，只在备注说明数量",
+        "路线查询失败的候选被丢弃且未编造数字",
+        "表格名称/地址与工具返回原文一致，时间按秒级比较后向上取整",
+        "三个推荐按 duration 升序，与「优先近一点」一致"
+      ]
+    },
+    {
+      "case": "结果不足（呼和浩特赛罕区 · 日料 · 步行 ≤10 分钟 · 最多 3 家）",
+      "candidates": 3,
+      "eligible": 1,
+      "recommended": 1,
+      "excludedOverTimeLimit": 2,
+      "droppedByRouteError": 0,
+      "scoreByDimension": {
+        "数据真实性": 10,
+        "需求满足": 9,
+        "推荐合理性": 9,
+        "表达清晰度": 9
+      },
+      "checks": [
+        "按固定句式说明：范围内只有 1 家满足步行上限，并给出放宽时间/放宽类型的建议",
+        "两个超时候选的名称、距离、时间均未出现在回答中，只说明数量",
+        "未核实信息统一标注"
+      ]
+    }
+  ],
+  "toolChainLatency": {
+    "note": "本地模拟工具返回的链路耗时（毫秒），真实环境以高德服务为准",
+    "aroundSearch": "约 30–60",
+    "poiDetail": "每候选一次，取坐标",
+    "walkingRoute": "每候选一次，取 distance/duration",
+    "totalCallsPerRecommendation": "周边搜 1 次 + 详情 N 次 + 路线 N 次（N = 候选数，建议 5–8）"
+  },
+  "responseFormat": {
+    "tableColumns": [
+      "序号",
+      "地点名称",
+      "地址",
+      "步行距离",
+      "预计步行时间",
+      "推荐理由"
+    ],
+    "footnote": "距离与时间均来自高德步行路径规划（起点 <经度,纬度>），距离取整到米、耗时由秒换算为分钟并向上取整。"
+  },
+  "rawResults": "gaode/本地验收记录见 SKILL.md 的自检清单与提交说明"
+}

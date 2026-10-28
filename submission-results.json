@@ -1,7 +1,7 @@
 {
   "topic": "stepfun",
   "title": "端侧 AI 推理性能优化与 seekdb 混合检索 —— 提交物清单",
-  "generatedAt": "2026-10-28T00:42:37.060Z",
+  "generatedAt": "2026-10-28T00:55:35.140Z",
   "artifacts": [
     {
       "type": "runnable-web-application",
@@ -22,7 +22,7 @@
       "type": "complete-source-code",
       "requirement": "4.2 完整源码：应用源码、依赖与配置、模型获取及量化步骤、seekdb 集合/表结构与索引配置、用于复现测试的数据或生成方式",
       "path": "stepfun",
-      "sourceFileCount": 86,
+      "sourceFileCount": 89,
       "language": "JavaScript (ESM) + Shell + Python（语料生成）",
       "modelAcquisition": "stepfun/scripts/download-model.mjs（公开权重；INT8/FP16 随仓库分发，FP32 基线用 --with-fp32 现取）",
       "collectionAndIndex": "集合 knowledge_base：VECTOR(512) + document + metadata；FULLTEXT KEY idx_fts (document) WITH PARSER ik, ik_mode=smart；VECTOR KEY idx_vec (embedding) WITH DISTANCE=COSINE, TYPE=HNSW, M=16, EF_CONSTRUCTION=200, EF_SEARCH=64",
