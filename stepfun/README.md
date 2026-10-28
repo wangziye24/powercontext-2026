@@ -117,3 +117,21 @@ URL 参数 `?dtype=fp32|fp16|q8` 与 `?backend=webgpu|wasm` 可直接指定精�
 - 语料规模较小（`corpus/` 为演示与评测用），真实场景需要更细的切块与更大的集合。
 - 混合检索目前使用 seekdb 默认融合权重，未做权重调参对比。
 - WASM 后端在长文档上的吞吐明显低于 WebGPU，详见 `TECH-NOTE.md` 的实测数据。
+
+---
+
+## 轻量分支说明（`stepfun-2026-submission-lite`）
+
+本分支为轻量形态：**不携带**浏览器端第三方运行时与端侧模型权重（合计约 119 MiB），
+以减小代码拉取体积；其余内容（完整源码、一页技术说明、基准原始数据、三份评测器输入结果）完全一致。
+
+代价是首次启动需要联网取这两样东西，`npm run setup` / `npm start` 会自动完成：
+
+```bash
+npm --prefix server install --legacy-peer-deps
+npm --prefix web install          # 约 394 MiB
+node scripts/prepare.mjs           # 生成 web/public/vendor，并下载 INT8/FP16 权重（约 68 MiB）
+npm start
+```
+
+完整形态（`stepfun-2026-resubmit-v5` 与基准分支）已内置这两样，开箱即用、离线可跑。

@@ -24,10 +24,15 @@ function log(message) {
 /** 1) 浏览器端第三方 ESM / wasm 运行时（已随仓库提供，缺失时才重新生成） */
 const vendorMarker = path.join(WEB, "public", "vendor", "transformers.web.js");
 if (force || !fs.existsSync(vendorMarker)) {
-  log("浏览器端第三方产物缺失，重新生成（需要先 npm --prefix web install）…");
+  log("浏览器端第三方产物缺失：先安装前端依赖，再生成运行时（约 394 MiB，可能需要几分钟）…");
+  const install = spawnSync("npm", ["--prefix", path.join(WEB), "install"], { stdio: "inherit", shell: true });
+  if (install.status !== 0) {
+    console.error("[prepare] 前端依赖安装失败：请检查网络后重试");
+    process.exit(install.status ?? 1);
+  }
   const result = spawnSync(process.execPath, [path.join(HERE, "copy-web-assets.mjs")], { stdio: "inherit" });
   if (result.status !== 0) {
-    console.error("[prepare] 拷贝失败：请先执行 npm --prefix web install");
+    console.error("[prepare] 拷贝失败");
     process.exit(result.status ?? 1);
   }
 } else {
