@@ -1,0 +1,17 @@
+# 运行依赖（版本已钉死，便于评审复现）
+# 安装：pip install -r requirements.txt
+#
+# powercontext 提供三样东西：
+#   - Server（保存任务状态的持久化后端）
+#   - seekdb extra（内嵌 seekDB 运行时，本作品的工程资料索引与任务状态都存在里面）
+#   - cli extra（powercontext 命令行）
+# seekdb 只支持 Linux / macOS，Windows 请改用 OceanBase 实例或 SQLite 后端。
+powercontext[cli,server,seekdb]==1.4.0
+
+# 上下文模块自身的依赖
+SQLAlchemy>=2.0
+httpx>=0.27
+PyYAML>=6.0
+
+# 验证样例的测试
+pytest>=8.0

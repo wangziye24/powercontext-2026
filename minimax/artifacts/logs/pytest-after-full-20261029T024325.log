@@ -1,0 +1,9 @@
+$ /home/wzy20/minimax-venv/bin/python -m pytest -q tests/test_filter_regression.py tests/test_filter_tier.py
+# cwd: /tmp/sddctx-reproduce.iLDBvb/project
+# started_at: 2026-10-29T10:43:25+08:00
+# finished_at: 2026-10-29T10:43:25+08:00
+# exit_code: 0
+# git_describe: not-a-git-repository
+
+.....................                                                    [100%]
+21 passed in 0.01s

@@ -1,17 +1,18 @@
 {
   "topic": "minimax",
   "title": "规有所依，面向软件持续演进的 SDD 上下文管理系统 —— 实测数据",
-  "generatedAt": "2026-10-28T00:55:11.369Z",
+  "generatedAt": "2026-10-29T02:44:18.807Z",
   "sampleCase": {
     "task": "在订单筛选中增加客户等级过滤（customer_tier），同时保持 SPEC-001 ~ SPEC-003、SPEC-005 ~ SPEC-007 原有行为不变",
     "specs": 7,
-    "codeSymbols": 7,
+    "codeSymbols": 8,
     "targetTests": 8,
-    "regressionTests": 13
+    "regressionTests": 13,
+    "documents": 8
   },
   "beforeAfter": {
     "beforeCodeChange": {
-      "targetTests": "8 failed（功能未实现，TypeError: filter_orders() got an unexpected keyword argument 'tier'）",
+      "targetTests": "8 failed（功能未实现：TypeError: filter_orders() got an unexpected keyword argument 'tier'）",
       "regressionTests": "13 passed",
       "exitCode": 1
     },
@@ -21,20 +22,33 @@
       "total": "21 passed",
       "exitCode": 0
     },
-    "patchEquivalence": "IDENTICAL（模型补丁应用到改码前快照后，与改码后快照逐字节一致）"
+    "patchEquivalence": "IDENTICAL（模型补丁应用到修改前快照后，与 sample-project 逐字节一致）"
+  },
+  "minimaxCall": {
+    "model": "MiniMax-M3.1-Flash",
+    "endpoint": "https://api.minimaxi.com/v1/chat/completions",
+    "latencySeconds": 102.9,
+    "inputTokens": 4283,
+    "outputTokens": 9150,
+    "reasoningTokens": 8560,
+    "contentTokens": 590,
+    "finishReason": "stop",
+    "record": "artifacts/minimax/minimax-call-20261026T071003.json"
   },
   "stateReuse": {
-    "note": "停止并重启 PowerContext Server 后，任务状态仍可读回（阶段、已完成、待办、目标测试与全量测试退出码、日志路径）。"
+    "note": "停止并重启 PowerContext Server 后，任务状态仍可读回（阶段、已完成、待办、目标测试与全量测试退出码、日志路径）"
   },
   "reproduce": {
-    "environment": "Linux / WSL Ubuntu（内嵌 seekDB 不支持 Windows）、Python 3.12、uv",
+    "environment": "Linux 或 WSL Ubuntu；Python 3.11~3.14（3.12 实测）；内嵌 seekdb 的数据目录必须放在 Linux 原生文件系统上（不能是 /mnt/c、/mnt/d）",
+    "needsApiKey": false,
     "steps": [
       "bash scripts/setup_wsl.sh",
-      "bash scripts/init_data.sh",
-      "bash scripts/run_verification.sh",
-      "bash scripts/verify_before_after.sh <改码前提交> <改码后提交>",
-      "bash scripts/verify_patch_equivalence.sh <改码前提交> <改码后提交>"
+      "bash scripts/reproduce.sh"
+    ],
+    "notes": [
+      "没有 MINIMAX_API_KEY 时，apply 步骤自动使用 artifacts/diff/minimax-*.patch 回放已记录的模型产出",
+      "所有数据目录与工作工程都在临时目录，仓库与已有状态不受影响"
     ]
   },
-  "rawResults": "minimax/artifacts/（SQL 记录、模型请求响应、测试日志、代码差异、状态快照）"
+  "rawResults": "artifacts/（SQL 记录、MiniMax 请求响应、测试日志、代码差异、状态快照、规格变更对比）"
 }

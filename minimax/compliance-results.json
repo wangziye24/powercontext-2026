@@ -1,68 +1,77 @@
 {
   "topic": "minimax",
   "title": "规有所依，面向软件持续演进的 SDD 上下文管理系统 —— 合规自检",
-  "generatedAt": "2026-10-28T00:55:11.369Z",
+  "generatedAt": "2026-10-29T02:44:18.807Z",
+  "summary": {
+    "note": "逐条对应赛题 4.1 的 6 项必做验收；一键复现命令为 bash scripts/reproduce.sh",
+    "verifier": "scripts/reproduce.sh（逐项打印 PASS/FAIL，退出码 0 表示全部通过）"
+  },
   "checks": [
     {
-      "id": "current-valid-specs",
-      "requirement": "根据开发任务提供当前有效的规格",
+      "id": "runnable",
+      "requirement": "能够运行：按运行说明可以初始化数据、启动模块并执行验证样例，不依赖未交付的本地文件或状态",
       "status": "pass",
-      "implementation": "规格条目导入 seekDB 并带 source_hash；检索时按任务文本命中规格，区分「本次要实现」与「必须保持」，规格变更后重新导入并同步正文与哈希（changed_files 精确指出变化条目）。",
+      "implementation": "setup_wsl.sh 建虚拟环境并安装依赖（含 pytest），seekdb 自检；reproduce.sh 用全新的 $SDDCTX_HOME 与临时工作工程，从零建库、建 Scope 跑完整流程。资料、测试、修改前快照（snapshots/before）全部随仓库交付。",
       "evidence": [
-        "minimax/src/sddctx/ingest.py",
-        "minimax/src/sddctx/retrieve.py",
-        "minimax/artifacts/spec-change/"
+        "scripts/setup_wsl.sh",
+        "scripts/reproduce.sh",
+        "artifacts/logs/"
       ]
     },
     {
-      "id": "relevant-code-and-tests",
-      "requirement": "提供相关代码和测试",
+      "id": "minimax-participation",
+      "requirement": "MiniMax 实际参与：开发记录包含本次任务、提供的上下文和代码修改过程，并与提交的代码差异对应",
       "status": "pass",
-      "implementation": "检索同时返回待改函数（带行号区间与关联规格）、工程已有错误类型约定，以及目标功能测试与必须保持的回归测试的完整代码。",
+      "implementation": "sddctx apply 通过 OpenAI 兼容 HTTP API 调用 MiniMax-M3.1-Flash，把检索出的规格/代码/测试渲染成提示，模型返回 unified diff 后由模块解析并应用。原始请求、响应、token 用量全部留档。",
       "evidence": [
-        "minimax/src/sddctx/retrieve.py",
-        "minimax/artifacts/context/context.json"
+        "artifacts/minimax/minimax-call-20261026T071003.json",
+        "artifacts/minimax/minimax-prompt-20261026T071003.txt",
+        "artifacts/diff/minimax-20261026T071003.patch",
+        "docs/MINIMAX-USAGE.md"
       ]
     },
     {
-      "id": "real-code-change",
-      "requirement": "通过实际代码修改验证效果",
+      "id": "context-correct",
+      "requirement": "上下文正确：输出包含样例规定的必要规格、代码和测试来源；规格更新并重新导入后使用更新内容",
       "status": "pass",
-      "implementation": "由 AI 助手基于检索出的上下文产出 unified diff 并应用到样例工程，改码前后跑真实 pytest：改码前目标测试失败、回归测试通过；改码后全部通过。",
+      "implementation": "按任务检索 7 条规格（SPEC-004 标为本次要实现，其余标为必须保持）、待改函数 filter_orders（含行号区间与关联规格）、8 个目标测试与 13 个回归测试，全部带 source_path 与 source_hash；规格改动后重新 ingest，changed_files 精确命中 SPEC-004，正文与哈希随之变化。",
       "evidence": [
-        "minimax/artifacts/logs/pytest-before-*.log",
-        "minimax/artifacts/logs/pytest-after-*.log",
-        "minimax/artifacts/diff/committed-before-to-after.diff"
+        "artifacts/context/context.json",
+        "artifacts/spec-change/",
+        "docs/VERIFICATION.md"
       ]
     },
     {
-      "id": "patch-equivalence",
-      "requirement": "提交的代码差异确实来自模型产出，而非手工编辑",
+      "id": "database-participation",
+      "requirement": "数据库实际参与：seekdb／OceanBase 中保存了工程资料或索引，实际查询结果用于任务上下文",
       "status": "pass",
-      "implementation": "把模型补丁应用到改码前快照，与改码后快照逐字节比较，脚本输出 IDENTICAL。",
+      "implementation": "内嵌 seekdb（pylibseekdb）保存文档全文、规格条目、代码符号与测试函数；上下文召回全部由 SQL 完成，SQL 记录随证据交付。导入统计：8 个文档 / 7 条规格 / 8 个代码符号 / 21 个测试函数。",
       "evidence": [
-        "minimax/scripts/verify_patch_equivalence.sh",
-        "minimax/artifacts/diff/"
+        "artifacts/db/ingest-*.sql.txt",
+        "artifacts/db/context-*.sql.txt",
+        "src/sddctx/retrieve.py"
       ]
     },
     {
-      "id": "cross-session-handover",
-      "requirement": "跨会话和任务交接",
+      "id": "state-reuse",
+      "requirement": "状态能够复用：从空状态开始保存任务记录，重启模块后能够读取，并用于后续上下文或任务处理",
       "status": "pass",
-      "implementation": "任务状态（Scope、已完成、待办、验证结果）写入 PowerContext（内嵌 seekDB），模块重启后读回；下一次改码把上次进展拼进提示词。",
+      "implementation": "任务阶段、已完成、待办、目标/全量测试退出码与日志路径写入 PowerContext（内嵌 seekdb）；重启 Server 后 sddctx state show 仍可读回，下一次 apply 会把上次状态拼进提示。任务 key 用任务文本的 SHA-1 前 12 位，跨进程稳定。",
       "evidence": [
-        "minimax/src/sddctx/taskstate.py",
-        "minimax/artifacts/state/"
+        "artifacts/state/verify-*.json",
+        "src/sddctx/taskstate.py"
       ]
     },
     {
-      "id": "reproducible-scripts",
-      "requirement": "按提交的说明可启动并完成上述操作",
+      "id": "code-change-effective",
+      "requirement": "代码修改有效：同一组目标功能测试修改前因目标行为未实现而失败，修改后全部通过；相关回归测试也全部通过",
       "status": "pass",
-      "implementation": "scripts/ 提供一键链路（setup_wsl / init_data / run_verification / demo_spec_change / verify_before_after / verify_patch_equivalence / reset_data），并修复了 6 处会让全新环境跑不起来的可复现性问题。",
+      "implementation": "修改前快照 snapshots/before 的 8 个目标用例全部因 TypeError: unexpected keyword argument 'tier' 失败（功能未实现，非环境错误），回归 13 个通过；应用模型补丁后目标 8 个通过、全量 21 个通过；补丁产物与 sample-project 逐字节一致（IDENTICAL）。",
       "evidence": [
-        "minimax/docs/RUNBOOK.md",
-        "minimax/README.md"
+        "artifacts/logs/pytest-before-*.log",
+        "artifacts/logs/pytest-after-*.log",
+        "artifacts/diff/committed-before-to-after.diff",
+        "snapshots/before/"
       ]
     }
   ]

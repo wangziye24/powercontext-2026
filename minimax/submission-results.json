@@ -1,75 +1,104 @@
 {
   "topic": "minimax",
   "title": "规有所依，面向软件持续演进的 SDD 上下文管理系统 —— 提交物清单",
-  "generatedAt": "2026-10-28T00:55:11.369Z",
+  "generatedAt": "2026-10-29T02:44:18.807Z",
   "artifacts": [
     {
-      "type": "context-module",
-      "requirement": "为已有 AI 开发助手实现或改进工程上下文模块",
+      "type": "complete-source-code",
+      "requirement": "完整源码：上下文模块、AI 助手接入代码及运行所需的配套程序",
       "path": "minimax/src/sddctx",
       "entry": "minimax/src/sddctx/cli.py（CLI 入口 sddctx）",
       "components": [
-        "ingest.py / schema.py / db.py / retrieve.py —— 工程资料入 seekDB 并检索上下文",
-        "minimax_client.py / patching.py —— 真实调用 AI 助手产出并应用 unified diff",
-        "taskstate.py —— 任务状态写入 PowerContext"
+        "ingest.py / schema.py / db.py / retrieve.py —— 工程资料入库 seekdb 并检索上下文",
+        "minimax_client.py / patching.py —— 真实调用 MiniMax 产出并应用 unified diff（含 --replay 回放模式）",
+        "taskstate.py —— 任务状态写入 PowerContext 并读回",
+        "context.py —— 把检索结果渲染成评测样例要求的任务上下文与提示词"
       ],
       "status": "ready"
     },
     {
-      "type": "sample-project",
-      "requirement": "验证用工程（规格 + 代码 + 回归测试）",
-      "path": "minimax/sample-project",
+      "type": "run-instructions",
+      "requirement": "运行说明：依赖版本、配置步骤、数据初始化、调用入口、测试命令及已知限制",
+      "path": "minimax/docs/RUNBOOK.md",
+      "quickstart": [
+        "bash scripts/setup_wsl.sh",
+        "bash scripts/reproduce.sh"
+      ],
       "status": "ready"
     },
     {
-      "type": "scripts",
-      "requirement": "可复现的一键验证链路",
-      "path": "minimax/scripts",
+      "type": "verification-sample",
+      "requirement": "验证样例：任务描述、有效规格、初始数据、操作步骤、预期结果及重置方法",
+      "path": "minimax/docs/VERIFICATION.md",
+      "beforeSnapshot": "minimax/snapshots/before",
+      "afterSnapshot": "minimax/sample-project",
       "status": "ready"
     },
     {
-      "type": "documentation",
-      "requirement": "运行说明、验证样例、技术说明、模型使用记录",
-      "path": "minimax/docs（RUNBOOK / VERIFICATION / ARCHITECTURE / MINIMAX-USAGE）",
+      "type": "code-and-tests",
+      "requirement": "代码与测试：修改前后代码快照、代码差异、新增功能测试、相关回归测试及运行日志",
+      "paths": [
+        "minimax/snapshots/before",
+        "minimax/sample-project",
+        "minimax/artifacts/diff",
+        "minimax/artifacts/logs",
+        "minimax/artifacts/state"
+      ],
       "status": "ready"
     },
     {
-      "type": "evidence",
-      "requirement": "实验结果应来自实际运行",
-      "path": "minimax/artifacts",
+      "type": "technical-usage-record",
+      "requirement": "技术使用记录：MiniMax 开发记录、数据库查询记录、PowerContext 状态写入与复用记录",
+      "paths": [
+        "minimax/artifacts/minimax",
+        "minimax/artifacts/db",
+        "minimax/docs/MINIMAX-USAGE.md"
+      ],
+      "status": "ready"
+    },
+    {
+      "type": "one-page-technical-note",
+      "requirement": "一页技术说明：模块结构、上下文选择方式和各项技术的分工",
+      "path": "minimax/docs/ARCHITECTURE.md",
       "status": "ready"
     }
   ],
   "checklist": [
     {
-      "item": "提供当前有效的规格、相关代码与测试",
+      "item": "能够运行（无密钥亦可一键复现）",
       "status": "pass",
-      "path": "minimax/src/sddctx/retrieve.py"
+      "path": "scripts/reproduce.sh"
     },
     {
-      "item": "通过实际代码修改验证效果",
+      "item": "MiniMax 实际参与并与提交差异对应",
       "status": "pass",
-      "path": "minimax/artifacts/logs/"
+      "path": "artifacts/minimax/"
     },
     {
-      "item": "提交的差异与模型产出一致",
+      "item": "上下文正确（规格/代码/测试来源真实）",
       "status": "pass",
-      "path": "minimax/scripts/verify_patch_equivalence.sh"
+      "path": "artifacts/context/context.json"
     },
     {
-      "item": "跨会话状态可复用",
+      "item": "数据库实际参与（seekdb SQL 召回）",
       "status": "pass",
-      "path": "minimax/src/sddctx/taskstate.py"
+      "path": "artifacts/db/"
     },
     {
-      "item": "按说明可启动并完成上述操作",
+      "item": "状态能够复用（重启后可读回）",
       "status": "pass",
-      "path": "minimax/docs/RUNBOOK.md"
+      "path": "artifacts/state/"
+    },
+    {
+      "item": "代码修改有效（改前失败、改后全过）",
+      "status": "pass",
+      "path": "artifacts/logs/"
     }
   ],
   "reproduce": {
     "topic": "规有所依，面向软件持续演进的 SDD 上下文管理系统",
     "subQuestionId": 800514,
-    "questionId": 600077
+    "questionId": 600077,
+    "command": "bash scripts/reproduce.sh"
   }
 }

@@ -1,0 +1,8 @@
+{
+  "mode": "replay",
+  "note": "本次 apply 没有发起新的模型调用：回放的是开发过程中记录下来的 MiniMax 产出，用于在没有 MINIMAX_API_KEY 的评审环境里复现同一组代码修改。",
+  "recorded_call": "artifacts/minimax/minimax-call-20261026T071003.json",
+  "patch": "/mnt/d/HuaweiMoveData/Users/wzy20/Desktop/项目/OceanBase数据库大赛/code/minimax-repo/minimax/artifacts/diff/minimax-20261026T071003.patch",
+  "model": "MiniMax-M3.1-Flash",
+  "replayed_at": "2026-10-29T10:43:22+08:00"
+}

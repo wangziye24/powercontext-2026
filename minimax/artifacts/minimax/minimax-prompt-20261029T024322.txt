@@ -1,0 +1,482 @@
+# system
+你是一名资深 Python 工程师，正在按规格驱动开发（SDD）的方式修改一个已有工程。你只能依据下面提供的规格条目与文件内容工作，并保持未被任务要求的既有行为完全不变。你没有任何工具，无法读取文件系统，因此你必须只根据下面给出的文件内容来写补丁。输出必须是一个标准的 unified diff：以 '--- a/路径' 与 '+++ b/路径' 开头，包含 '@@' 区块；不要输出解释文字，不要输出整个文件，不要修改测试文件。
+
+# user
+以下是上一次运行保存的任务状态，请在此基础上继续：
+```json
+{
+  "task_key": "task-a5e45dab992c",
+  "task": "在订单筛选中增加客户等级过滤（customer_tier），同时保持 SPEC-001 ~ SPEC-003、SPEC-005 ~ SPEC-007 描述的原有行为完全不变。",
+  "stage": "patch-applied",
+  "done": [
+    "MiniMax 补丁已应用到 src/orders/filter.py"
+  ],
+  "todo": [
+    "运行目标测试与回归测试",
+    "记录验证结果"
+  ],
+  "applied": [
+    {
+      "path": "src/orders/filter.py",
+      "added": 20,
+      "removed": 3,
+      "hunks": 4,
+      "created": false
+    }
+  ],
+  "minimax_call": "/home/wzy20/mm-dbg-artifacts/minimax/minimax-replay-20261029T024304.json",
+  "diff": "/home/wzy20/mm-dbg-artifacts/diff/applied-20261029T024304.patch",
+  "context_specs": [],
+  "updated_at": "2026-10-29T10:43:04+08:00"
+}
+```
+
+# 开发任务
+
+在订单筛选中增加客户等级过滤（customer_tier），同时保持 SPEC-001 ~ SPEC-003、SPEC-005 ~ SPEC-007 描述的原有行为完全不变。
+
+# 适用的规格条目
+
+## SPEC-004 客户等级过滤 【本次要实现】
+来源：specs/filtering.md
+
+- `filter_orders` 接受可选关键字参数 `tier`，用于按客户等级筛选订单。
+- 允许的等级集合为：`VIP`、`GOLD`、`SILVER`。
+- 等级比较**大小写不敏感**：`tier="vip"` 与 `tier="VIP"` 等价。
+- 传入不在允许集合中的等级时，必须抛出 `InvalidTierError`。
+- `tier` 为 `None` 时不按等级过滤（视为未提供）。
+- 订单的 `customer_tier` 为 `None` 表示该订单没有等级信息，只有 `tier="NONE"` 才能匹配到这类订单。
+
+## SPEC-001 状态过滤 【本次要实现】
+来源：specs/filtering.md
+
+- `filter_orders` 接受可选关键字参数 `status`。
+- `status` 只能取 `paid`、`pending`、`cancelled` 之一，大小写敏感。
+- 传入其它值时必须抛出 `InvalidStatusError`。
+- 提供 `status` 时，只返回 `status` 等于该值的订单。
+
+## SPEC-003 关键词搜索 【本次要实现】
+来源：specs/filtering.md
+
+- `filter_orders` 接受可选关键字参数 `keyword`。
+- 关键词匹配是**大小写不敏感**的子串匹配，匹配范围是订单的 `name` 或 `customer_email`。
+- `keyword` 为空字符串时不过滤（视为未提供）。
+
+## SPEC-005 条件组合 【本次要实现】
+来源：specs/filtering.md
+
+- 多个过滤条件同时提供时，条件之间是**与（AND）**关系：订单必须同时满足全部条件才会被返回。
+- 返回结果的顺序与输入顺序一致（稳定过滤，不重排）。
+
+## SPEC-006 空条件 【本次要实现】
+来源：specs/filtering.md
+
+- 未提供任何过滤条件时，`filter_orders` 返回全部订单，顺序与输入一致。
+
+## SPEC-007 缺少金额的订单 【本次要实现】
+来源：specs/filtering.md
+
+- `amount` 为 `None` 的订单，在任何金额区间过滤（提供 `min_amount` 或 `max_amount`）下都必须被排除。
+- 未提供金额区间时，`amount` 为 `None` 的订单正常保留。
+
+## SPEC-002 金额区间过滤 【本次要实现】
+来源：specs/filtering.md
+
+- `filter_orders` 接受可选关键字参数 `min_amount` 与 `max_amount`。
+- 区间是**闭区间**：`min_amount <= amount <= max_amount`。
+- 当 `min_amount` 与 `max_amount` 同时提供且 `min_amount > max_amount` 时，必须抛出 `InvalidRangeError`。
+- 只提供其中一个端点时，另一端不设限制。
+
+# 需要修改的代码符号
+
+- src/orders/filter.py::filter_orders（function，第 18-62 行）
+  关联规格：SPEC-001, SPEC-002, SPEC-003, SPEC-005, SPEC-006, SPEC-007
+
+# 相关文件的当前完整内容
+
+## src/orders/filter.py（本次要修改）
+
+```python
+"""Order filtering rules.
+
+The behaviour of this module is defined by ``specs/filtering.md``. Every
+specification entry that applies to this function is referenced in the
+docstring so a development assistant can connect a change to its rule.
+"""
+
+from __future__ import annotations
+
+from collections.abc import Iterable
+
+from .errors import InvalidRangeError, InvalidStatusError
+from .models import Order
+
+VALID_STATUSES = ("paid", "pending", "cancelled")
+
+
+def filter_orders(
+    orders: Iterable[Order],
+    *,
+    status: str | None = None,
+    min_amount: float | None = None,
+    max_amount: float | None = None,
+    keyword: str | None = None,
+) -> list[Order]:
+    """Return the orders that satisfy every provided condition.
+
+    Implements SPEC-001 (status), SPEC-002 (amount range), SPEC-003 (keyword),
+    SPEC-005 (AND combination), SPEC-006 (no condition) and SPEC-007 (orders
+    without an amount).
+    """
+
+    if status is not None and status not in VALID_STATUSES:
+        raise InvalidStatusError(f"unknown order status: {status!r}")
+    if min_amount is not None and max_amount is not None and min_amount > max_amount:
+        raise InvalidRangeError(
+            f"min_amount {min_amount} is greater than max_amount {max_amount}"
+        )
+
+    selected = list(orders)
+
+    if status is not None:
+        selected = [order for order in selected if order.status == status]
+
+    if min_amount is not None or max_amount is not None:
+        selected = [
+            order
+            for order in selected
+            if order.amount is not None
+            and (min_amount is None or order.amount >= min_amount)
+            and (max_amount is None or order.amount <= max_amount)
+        ]
+
+    if keyword:
+        needle = keyword.lower()
+        selected = [
+            order
+            for order in selected
+            if needle in order.name.lower() or needle in order.customer_email.lower()
+        ]
+
+    return selected
+```
+
+## src/orders/errors.py（同包参考文件（仅供遵循工程约定，除非必要请不要修改））
+
+```python
+"""Errors raised by the orders filter."""
+
+from __future__ import annotations
+
+
+class OrderFilterError(ValueError):
+    """Base class for every invalid filter argument."""
+
+
+class InvalidStatusError(OrderFilterError):
+    """Raised when an unknown order status is requested."""
+
+
+class InvalidRangeError(OrderFilterError):
+    """Raised when the requested amount range is contradictory."""
+
+
+class InvalidTierError(OrderFilterError):
+    """Raised when an unknown customer tier is requested."""
+```
+
+## src/orders/models.py（同包参考文件（仅供遵循工程约定，除非必要请不要修改））
+
+```python
+"""Data model of the orders package."""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+
+
+@dataclass(frozen=True)
+class Order:
+    """One order that can be filtered."""
+
+    id: str
+    status: str
+    amount: float | None
+    name: str
+    customer_email: str
+    customer_tier: str | None = None
+```
+
+## src/orders/__init__.py（同包参考文件（仅供遵循工程约定，除非必要请不要修改））
+
+```python
+"""Package exports of the orders domain."""
+
+from __future__ import annotations
+
+from .errors import (
+    InvalidRangeError,
+    InvalidStatusError,
+    InvalidTierError,
+    OrderFilterError,
+)
+from .filter import VALID_STATUSES, filter_orders
+from .models import Order
+
+__all__ = [
+    "InvalidRangeError",
+    "InvalidStatusError",
+    "InvalidTierError",
+    "Order",
+    "OrderFilterError",
+    "VALID_STATUSES",
+    "filter_orders",
+]
+```
+
+# 该包已有的错误类型（新增错误请沿用同样的命名与基类）
+
+## src/orders/errors.py::InvalidRangeError
+
+```python
+class InvalidRangeError(OrderFilterError):
+    """Raised when the requested amount range is contradictory."""
+```
+
+## src/orders/errors.py::InvalidStatusError
+
+```python
+class InvalidStatusError(OrderFilterError):
+    """Raised when an unknown order status is requested."""
+```
+
+## src/orders/errors.py::InvalidTierError
+
+```python
+class InvalidTierError(OrderFilterError):
+    """Raised when an unknown customer tier is requested."""
+```
+
+## src/orders/errors.py::OrderFilterError
+
+```python
+class OrderFilterError(ValueError):
+    """Base class for every invalid filter argument."""
+```
+
+# 用于验证的测试（只读，禁止修改）
+
+## tests/test_filter_regression.py::test_spec_001_filters_by_status（目标功能测试，覆盖规格：SPEC-001）
+
+```python
+def test_spec_001_filters_by_status(orders):
+    """SPEC-001: filtering by status keeps only the orders in that status."""
+    paid = filter_orders(orders, status="paid")
+    assert [order.id for order in paid] == ["o-1", "o-3", "o-5"]
+```
+
+## tests/test_filter_regression.py::test_spec_001_rejects_unknown_status（目标功能测试，覆盖规格：SPEC-001）
+
+```python
+def test_spec_001_rejects_unknown_status(orders):
+    """SPEC-001: an unknown status is rejected with InvalidStatusError."""
+    with pytest.raises(InvalidStatusError):
+        filter_orders(orders, status="refunded")
+```
+
+## tests/test_filter_regression.py::test_spec_003_empty_keyword_does_not_filter（目标功能测试，覆盖规格：SPEC-003）
+
+```python
+def test_spec_003_empty_keyword_does_not_filter(orders):
+    """SPEC-003: an empty keyword is treated as no keyword at all."""
+    assert len(filter_orders(orders, keyword="")) == len(orders)
+```
+
+## tests/test_filter_regression.py::test_spec_003_keyword_is_case_insensitive（目标功能测试，覆盖规格：SPEC-003）
+
+```python
+def test_spec_003_keyword_is_case_insensitive(orders):
+    """SPEC-003: the keyword is matched case insensitively."""
+    selected = filter_orders(orders, keyword="KEYBOARD")
+    assert [order.id for order in selected] == ["o-2", "o-5"]
+```
+
+## tests/test_filter_regression.py::test_spec_003_keyword_matches_email（目标功能测试，覆盖规格：SPEC-003）
+
+```python
+def test_spec_003_keyword_matches_email(orders):
+    """SPEC-003: the keyword also matches the customer email."""
+    selected = filter_orders(orders, keyword="ada@example.com")
+    assert [order.id for order in selected] == ["o-1"]
+```
+
+## tests/test_filter_regression.py::test_spec_005_conditions_are_combined_with_and（目标功能测试，覆盖规格：SPEC-005）
+
+```python
+def test_spec_005_conditions_are_combined_with_and(orders):
+    """SPEC-005: several conditions are combined with AND."""
+    selected = filter_orders(orders, status="paid", min_amount=50.0)
+    assert [order.id for order in selected] == ["o-1"]
+```
+
+## tests/test_filter_regression.py::test_spec_005_result_order_is_stable（目标功能测试，覆盖规格：SPEC-005）
+
+```python
+def test_spec_005_result_order_is_stable(orders):
+    """SPEC-005: the result keeps the order of the input."""
+    selected = filter_orders(orders, status="paid")
+    assert [order.id for order in selected] == sorted(
+        [order.id for order in selected], key=lambda item: [o.id for o in orders].index(item)
+    )
+```
+
+## tests/test_filter_regression.py::test_spec_007_orders_without_amount_are_excluded_by_range（目标功能测试，覆盖规格：SPEC-007）
+
+```python
+def test_spec_007_orders_without_amount_are_excluded_by_range(orders):
+    """SPEC-007: orders without an amount never survive an amount range."""
+    selected = filter_orders(orders, min_amount=0.0)
+    assert "o-3" not in [order.id for order in selected]
+```
+
+## tests/test_filter_regression.py::test_spec_007_orders_without_amount_survive_without_range（目标功能测试，覆盖规格：SPEC-007）
+
+```python
+def test_spec_007_orders_without_amount_survive_without_range(orders):
+    """SPEC-007: orders without an amount stay when no range is given."""
+    assert "o-3" in [order.id for order in filter_orders(orders)]
+```
+
+## tests/test_filter_regression.py::test_spec_002_amount_range_is_inclusive（目标功能测试，覆盖规格：SPEC-002）
+
+```python
+def test_spec_002_amount_range_is_inclusive(orders):
+    """SPEC-002: the amount range is closed on both ends."""
+    selected = filter_orders(orders, min_amount=45.5, max_amount=120.0)
+    assert [order.id for order in selected] == ["o-1", "o-2", "o-5"]
+```
+
+## tests/test_filter_regression.py::test_spec_002_rejects_contradictory_range（目标功能测试，覆盖规格：SPEC-002）
+
+```python
+def test_spec_002_rejects_contradictory_range(orders):
+    """SPEC-002: a contradictory range is rejected with InvalidRangeError."""
+    with pytest.raises(InvalidRangeError):
+        filter_orders(orders, min_amount=100.0, max_amount=10.0)
+```
+
+## tests/test_filter_regression.py::test_spec_002_single_endpoint_is_unbounded（目标功能测试，覆盖规格：SPEC-002）
+
+```python
+def test_spec_002_single_endpoint_is_unbounded(orders):
+    """SPEC-002: a single endpoint leaves the other side unbounded."""
+    assert [order.id for order in filter_orders(orders, min_amount=900.0)] == ["o-4"]
+    assert [order.id for order in filter_orders(orders, max_amount=46.0)] == ["o-2", "o-5"]
+```
+
+## tests/test_filter_regression.py::test_spec_006_without_conditions_every_order_is_kept（目标功能测试，覆盖规格：SPEC-006）
+
+```python
+def test_spec_006_without_conditions_every_order_is_kept(orders):
+    """SPEC-006: without any condition every order is returned."""
+    assert [order.id for order in filter_orders(orders)] == [
+        "o-1",
+        "o-2",
+        "o-3",
+        "o-4",
+        "o-5",
+    ]
+```
+
+## tests/test_filter_tier.py::test_spec_004_combines_with_other_conditions（目标功能测试，覆盖规格：SPEC-004）
+
+```python
+def test_spec_004_combines_with_other_conditions(orders):
+    """SPEC-004: the tier filter combines with the other conditions."""
+    selected = filter_orders(orders, tier="VIP", status="paid")
+    assert [order.id for order in selected] == ["o-1", "o-5"]
+```
+
+## tests/test_filter_tier.py::test_spec_004_filters_by_tier（目标功能测试，覆盖规格：SPEC-004）
+
+```python
+def test_spec_004_filters_by_tier(orders):
+    """SPEC-004: filtering by tier keeps only the orders in that tier."""
+    selected = filter_orders(orders, tier="VIP")
+    assert [order.id for order in selected] == ["o-1", "o-5"]
+```
+
+## tests/test_filter_tier.py::test_spec_004_gold_tier_matches（目标功能测试，覆盖规格：SPEC-004）
+
+```python
+def test_spec_004_gold_tier_matches(orders):
+    """SPEC-004: every allowed tier can be selected."""
+    selected = filter_orders(orders, tier="GOLD")
+    assert [order.id for order in selected] == ["o-2"]
+```
+
+## tests/test_filter_tier.py::test_spec_004_none_tier_matches_orders_without_tier（目标功能测试，覆盖规格：SPEC-004）
+
+```python
+def test_spec_004_none_tier_matches_orders_without_tier(orders):
+    """SPEC-004: only tier NONE selects the orders without a tier."""
+    selected = filter_orders(orders, tier="NONE")
+    assert [order.id for order in selected] == ["o-3"]
+```
+
+## tests/test_filter_tier.py::test_spec_004_rejects_unknown_tier（目标功能测试，覆盖规格：SPEC-004）
+
+```python
+def test_spec_004_rejects_unknown_tier(orders):
+    """SPEC-004: an unknown tier is rejected with InvalidTierError."""
+    with pytest.raises(InvalidTierError):
+        filter_orders(orders, tier="diamond")
+```
+
+## tests/test_filter_tier.py::test_spec_004_silver_tier_matches（目标功能测试，覆盖规格：SPEC-004）
+
+```python
+def test_spec_004_silver_tier_matches(orders):
+    """SPEC-004: every allowed tier can be selected."""
+    selected = filter_orders(orders, tier="silver")
+    assert [order.id for order in selected] == ["o-4"]
+```
+
+## tests/test_filter_tier.py::test_spec_004_tier_comparison_is_case_insensitive（目标功能测试，覆盖规格：SPEC-004）
+
+```python
+def test_spec_004_tier_comparison_is_case_insensitive(orders):
+    """SPEC-004: the tier comparison ignores the case."""
+    selected = filter_orders(orders, tier="vip")
+    assert [order.id for order in selected] == ["o-1", "o-5"]
+```
+
+## tests/test_filter_tier.py::test_spec_004_tier_none_does_not_filter（目标功能测试，覆盖规格：SPEC-004）
+
+```python
+def test_spec_004_tier_none_does_not_filter(orders):
+    """SPEC-004: tier None means no tier filtering at all."""
+    assert len(filter_orders(orders, tier=None)) == len(orders)
+```
+
+# 输出要求
+1. 只输出 unified diff，不要任何解释。
+2. 路径使用相对于工程根目录的路径，并加上 a/ 与 b/ 前缀。
+3. 新增文件使用 '--- /dev/null' 与 '+++ b/路径'。
+4. hunk 的上下文行与删除行必须与上面给出的文件内容逐字一致，否则补丁无法应用。
+5. 禁止修改 tests/ 目录下的任何文件，禁止删除或削弱任何断言。
+6. 只实现标记为【本次要实现】的规格；标记为【必须保持的原有行为】的规格行为不能改变。
+7. 如果需要新增错误类型，请沿用该包已有的错误类型命名与继承关系。
+8. 上文「规格要求但工程中尚不存在的类型」必须在本次修改中新增，否则代码无法运行。
+9. 补丁的 hunk 行号请按上面给出的文件内容计算（含文件开头的 license 注释）；即使行号有偏差，上下文行也必须与文件内容逐字一致。
+
+输出格式示例：
+```diff
+--- a/src/orders/filter.py
++++ b/src/orders/filter.py
+@@ -1,7 +1,7 @@
+ unchanged line
+-removed line
++added line
+```
+
